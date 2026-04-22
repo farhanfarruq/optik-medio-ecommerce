@@ -334,7 +334,7 @@ const submitOrder = async () => {
         };
 
         const addressResponse = await apiClient.post('/addresses', addressPayload);
-        shippingAddressId = addressResponse.data.id;
+         shippingAddressId = addressResponse.data.id;
     }
 
     // Build items list — map frames first, then find their attached lenses

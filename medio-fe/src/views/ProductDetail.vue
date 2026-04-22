@@ -108,7 +108,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
   <!-- Loading State -->
   <main v-if="isLoading" class="flex-grow flex items-center justify-center py-32">
     <div class="flex flex-col items-center gap-4">
-      <div class="w-14 h-14 rounded-full border-4 border-t-transparent animate-spin" style="border-color: rgba(193,154,81,0.25); border-top-color: #c19a51;"></div>
+      <div class="w-14 h-14 rounded-none border-4 border-t-transparent animate-spin" style="border-color: rgba(193,154,81,0.25); border-top-color: #c19a51;"></div>
       <p class="text-sm font-medium text-stone-500">Memuat produk...</p>
     </div>
   </main>
@@ -157,7 +157,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
         <div class="lg:col-span-7 flex flex-col gap-5">
           <!-- Main Image -->
           <div
-            class="relative aspect-[4/3] rounded-2xl overflow-hidden flex items-center justify-center group border"
+            class="relative aspect-[4/3] rounded-none overflow-hidden flex items-center justify-center group border"
             style="background: linear-gradient(145deg, #f5f2ee, #ede7dc); border-color: rgba(193,154,81,0.15);"
           >
             <img
@@ -169,7 +169,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
             <button
               v-if="product.images?.length > 1 && activeImage > 0"
               @click="activeImage--"
-              class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+              class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-none flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
               style="background: rgba(255,255,255,0.9); box-shadow: 0 2px 12px rgba(0,0,0,0.1);"
             >
               <span class="material-symbols-outlined text-lg" style="color: #1a1209;">chevron_left</span>
@@ -177,7 +177,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
             <button
               v-if="product.images?.length > 1 && activeImage < product.images.length - 1"
               @click="activeImage++"
-              class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+              class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-none flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
               style="background: rgba(255,255,255,0.9); box-shadow: 0 2px 12px rgba(0,0,0,0.1);"
             >
               <span class="material-symbols-outlined text-lg" style="color: #1a1209;">chevron_right</span>
@@ -190,7 +190,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
               v-for="(img, index) in product.images"
               :key="index"
               @click="activeImage = index"
-              class="aspect-square rounded-xl overflow-hidden border-2 transition-all p-2"
+              class="aspect-square rounded-none overflow-hidden border-2 transition-all p-2"
               :style="activeImage === index
                 ? 'border-color: #c19a51; opacity: 1; background: linear-gradient(145deg, #f5f2ee, #ede7dc);'
                 : 'border-color: transparent; opacity: 0.6; background: linear-gradient(145deg, #f5f2ee, #ede7dc);'"
@@ -211,11 +211,11 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
             </p>
             <div
               v-if="product.is_best_seller"
-              class="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider text-white animate-pulse"
-              style="background: linear-gradient(135deg, #e67e22, #f39c12); box-shadow: 0 4px 15px rgba(230,126,34,0.35);"
+              class="flex items-center gap-1.5 px-3 py-1 rounded-md text-[9px] font-bold uppercase tracking-[0.1em] text-white"
+              style="background: rgba(26,18,9,0.8); backdrop-filter: blur(4px); border: 1px solid rgba(193,154,81,0.3);"
             >
-              <span class="material-symbols-outlined text-xs">bolt</span>
-              Paling Laris
+              <span class="material-symbols-outlined text-[10px]" style="color: #c19a51;">trending_up</span>
+              Terlaris
             </div>
           </div>
 
@@ -230,7 +230,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
               </p>
               <div class="flex items-center gap-2">
                 <span
-                  class="w-2.5 h-2.5 rounded-full"
+                  class="w-2.5 h-2.5 rounded-none"
                   :style="product.stock > 0 ? 'background: #16a34a; box-shadow: 0 0 8px rgba(22,163,74,0.5);' : 'background: #dc2626;'"
                 ></span>
                 <p class="text-sm font-bold" :style="product.stock > 0 ? 'color: #15803d;' : 'color: #dc2626;'">
@@ -251,7 +251,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
           <!-- Prescription Notice -->
           <div
             v-if="product.is_prescription_required"
-            class="p-4 rounded-xl flex items-start gap-3 border"
+            class="p-4 rounded-none flex items-start gap-3 border"
             style="background: rgba(193,154,81,0.07); border-color: rgba(193,154,81,0.25);"
           >
             <span class="material-symbols-outlined mt-0.5" style="color: #c19a51;">info</span>
@@ -272,7 +272,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
                 :key="color.name"
                 @click="formState.color = color"
                 :style="{ backgroundColor: color.hex }"
-                :class="['w-10 h-10 rounded-full border-4 focus:outline-none transition-all', formState.color?.name === color.name ? 'scale-110' : 'border-transparent hover:scale-105']"
+                :class="['w-10 h-10 rounded-none border-4 focus:outline-none transition-all', formState.color?.name === color.name ? 'scale-110' : 'border-transparent hover:scale-105']"
                 :style-extra="formState.color?.name === color.name ? 'border-color: #c19a51; box-shadow: 0 0 0 2px rgba(193,154,81,0.4);' : ''"
               ></button>
             </div>
@@ -286,7 +286,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
                 v-for="size in product.variants.sizes"
                 :key="size"
                 @click="formState.size = size"
-                class="px-4 py-2.5 rounded-xl border text-sm font-bold transition-all"
+                class="px-4 py-2.5 rounded-none border text-sm font-bold transition-all"
                 :style="formState.size === size
                   ? 'background: #1a1209; color: white; border-color: #1a1209; box-shadow: 0 4px 12px rgba(26,18,9,0.2);'
                   : 'background: transparent; color: #5a5248; border-color: rgba(193,154,81,0.25);'"
@@ -300,7 +300,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
           <div v-if="product.is_prescription_required" class="flex flex-col gap-6 pt-6 border-t" style="border-color: rgba(193,154,81,0.15);">
             <h2 class="font-bold text-lg" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Resep Kacamata Anda</h2>
 
-            <div class="p-5 rounded-2xl border" style="background: rgba(245,242,238,0.8); border-color: rgba(193,154,81,0.15);">
+            <div class="p-5 rounded-none border" style="background: rgba(245,242,238,0.8); border-color: rgba(193,154,81,0.15);">
               <div class="grid grid-cols-5 gap-3 mb-4">
                 <div class="col-span-1"></div>
                 <div class="text-center text-[10px] font-black uppercase tracking-widest" style="color: #8a7a60;">SPH</div>
@@ -309,16 +309,16 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
                 <div class="text-center text-[10px] font-black uppercase tracking-widest" style="color: #8a7a60;">ADD</div>
 
                 <div class="flex items-center justify-end pr-2 text-xs font-black" style="color: #1a1209;">OD</div>
-                <div><select v-model="formState.prescription.od.sph" class="w-full rounded-lg border-0 text-xs p-2 focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
-                <div><select v-model="formState.prescription.od.cyl" class="w-full rounded-lg border-0 text-xs p-2 focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
-                <div><input v-model="formState.prescription.od.axis" type="number" class="w-full rounded-lg text-xs p-2 text-center focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"/></div>
-                <div><select v-model="formState.prescription.od.add" class="w-full rounded-lg border-0 text-xs p-2 focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
+                <div><select v-model="formState.prescription.od.sph" class="w-full rounded-none border-0 text-xs p-2 focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
+                <div><select v-model="formState.prescription.od.cyl" class="w-full rounded-none border-0 text-xs p-2 focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
+                <div><input v-model="formState.prescription.od.axis" type="number" class="w-full rounded-none text-xs p-2 text-center focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"/></div>
+                <div><select v-model="formState.prescription.od.add" class="w-full rounded-none border-0 text-xs p-2 focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
 
                 <div class="flex items-center justify-end pr-2 text-xs font-black mt-2" style="color: #1a1209;">OS</div>
-                <div class="mt-2"><select v-model="formState.prescription.os.sph" class="w-full rounded-lg border-0 text-xs p-2 focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
-                <div class="mt-2"><select v-model="formState.prescription.os.cyl" class="w-full rounded-lg border-0 text-xs p-2 focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
-                <div class="mt-2"><input v-model="formState.prescription.os.axis" type="number" class="w-full rounded-lg text-xs p-2 text-center focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"/></div>
-                <div class="mt-2"><select v-model="formState.prescription.os.add" class="w-full rounded-lg border-0 text-xs p-2 focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
+                <div class="mt-2"><select v-model="formState.prescription.os.sph" class="w-full rounded-none border-0 text-xs p-2 focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
+                <div class="mt-2"><select v-model="formState.prescription.os.cyl" class="w-full rounded-none border-0 text-xs p-2 focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
+                <div class="mt-2"><input v-model="formState.prescription.os.axis" type="number" class="w-full rounded-none text-xs p-2 text-center focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"/></div>
+                <div class="mt-2"><select v-model="formState.prescription.os.add" class="w-full rounded-none border-0 text-xs p-2 focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
               </div>
 
               <div class="pt-4 border-t" style="border-color: rgba(193,154,81,0.15);">
@@ -335,16 +335,16 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
                 <div v-if="formState.pdType === 'dual'" class="grid grid-cols-2 gap-3">
                   <div>
                     <label class="block text-[10px] font-bold mb-1.5" style="color: #8a7a60;">PD Kanan</label>
-                    <input v-model="formState.prescription.pdRight" type="number" class="w-full rounded-lg p-2.5 text-sm" style="background: white; border: 1px solid rgba(193,154,81,0.2);"/>
+                    <input v-model="formState.prescription.pdRight" type="number" class="w-full rounded-none p-2.5 text-sm" style="background: white; border: 1px solid rgba(193,154,81,0.2);"/>
                   </div>
                   <div>
                     <label class="block text-[10px] font-bold mb-1.5" style="color: #8a7a60;">PD Kiri</label>
-                    <input v-model="formState.prescription.pdLeft" type="number" class="w-full rounded-lg p-2.5 text-sm" style="background: white; border: 1px solid rgba(193,154,81,0.2);"/>
+                    <input v-model="formState.prescription.pdLeft" type="number" class="w-full rounded-none p-2.5 text-sm" style="background: white; border: 1px solid rgba(193,154,81,0.2);"/>
                   </div>
                 </div>
                 <div v-else>
                   <label class="block text-[10px] font-bold mb-1.5" style="color: #8a7a60;">PD</label>
-                  <input v-model="formState.prescription.pdSingle" type="number" class="w-full rounded-lg p-2.5 text-sm" style="background: white; border: 1px solid rgba(193,154,81,0.2);"/>
+                  <input v-model="formState.prescription.pdSingle" type="number" class="w-full rounded-none p-2.5 text-sm" style="background: white; border: 1px solid rgba(193,154,81,0.2);"/>
                 </div>
               </div>
             </div>
@@ -354,7 +354,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
           <button
             @click="handleAddToCartClick"
             :disabled="product.stock <= 0"
-            class="w-full py-4 px-6 font-black text-sm uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-3 shadow-lg"
+            class="w-full py-4 px-6 font-black text-sm uppercase tracking-widest rounded-none transition-all flex items-center justify-center gap-3 shadow-lg"
             :style="product.stock > 0
               ? (addedToCart
                 ? 'background: linear-gradient(135deg, #15803d, #16a34a); color: white; box-shadow: 0 8px 25px rgba(22,163,74,0.3);'
@@ -389,16 +389,16 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
     <!-- ╚══════════════════════════════════════╝ -->
     <Teleport to="body">
       <div v-if="isLensModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(10,8,5,0.75); backdrop-filter: blur(20px);">
-        <div class="w-full max-w-2xl rounded-3xl p-8 border" style="background: #faf8f5; border-color: rgba(193,154,81,0.2); box-shadow: 0 30px 80px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
+        <div class="w-full max-w-2xl rounded-none p-8 border" style="background: #faf8f5; border-color: rgba(193,154,81,0.2); box-shadow: 0 30px 80px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
           <div class="flex items-center justify-between mb-8">
             <h2 class="text-2xl font-black" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Pilih Lensa Anda</h2>
-            <button @click="isLensModalOpen = false" class="w-10 h-10 rounded-full flex items-center justify-center transition-all" style="background: rgba(193,154,81,0.1); color: #7a6230;">
+            <button @click="isLensModalOpen = false" class="w-10 h-10 rounded-none flex items-center justify-center transition-all" style="background: rgba(193,154,81,0.1); color: #7a6230;">
               <span class="material-symbols-outlined">close</span>
             </button>
           </div>
 
           <div v-if="isLensesLoading" class="flex justify-center py-12">
-            <div class="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin" style="border-color: rgba(193,154,81,0.25); border-top-color: #c19a51;"></div>
+            <div class="w-10 h-10 rounded-none border-4 border-t-transparent animate-spin" style="border-color: rgba(193,154,81,0.25); border-top-color: #c19a51;"></div>
           </div>
 
           <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -406,7 +406,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
               v-for="lens in lenses.slice(0, 4)"
               :key="lens.id"
               @click="executeAddToCart(lens)"
-              class="p-5 rounded-2xl border text-left transition-all hover:-translate-y-1 hover:shadow-lg active:scale-95"
+              class="p-5 rounded-none border text-left transition-all hover:-translate-y-1 hover:shadow-lg active:scale-95"
               style="border-color: rgba(193,154,81,0.2); background: white;"
             >
               <h3 class="font-bold text-base mb-1" style="color: #1a1209;">{{ lens.name }}</h3>
@@ -414,12 +414,12 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
               <p class="font-black text-base" style="color: #c19a51;">+Rp {{ lens.price.toLocaleString('id-ID') }}</p>
             </button>
 
-            <div v-if="lenses.length === 0" class="col-span-2 text-center py-8 rounded-xl" style="background: rgba(220,38,38,0.05); color: #dc2626;">
+            <div v-if="lenses.length === 0" class="col-span-2 text-center py-8 rounded-none" style="background: rgba(220,38,38,0.05); color: #dc2626;">
               Tidak ada lensa ditemukan. Hubungi tim kami.
             </div>
           </div>
 
-          <button @click="isLensModalOpen = false" class="mt-8 w-full py-3 text-sm font-bold rounded-xl transition-all" style="color: #8a7a60; border: 1px solid rgba(193,154,81,0.2);">
+          <button @click="isLensModalOpen = false" class="mt-8 w-full py-3 text-sm font-bold rounded-none transition-all" style="color: #8a7a60; border: 1px solid rgba(193,154,81,0.2);">
             Batal
           </button>
         </div>

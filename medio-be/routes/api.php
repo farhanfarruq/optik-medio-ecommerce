@@ -6,6 +6,7 @@ use App\Http\Controllers\API\CategoryController;
 use App\Http\Controllers\API\ProductController;
 use App\Http\Controllers\API\ShippingController;
 use App\Http\Controllers\API\WebhookController;
+use App\Http\Controllers\API\DiscountController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/webhook/xendit', [WebhookController::class, 'xendit']);
@@ -19,6 +20,8 @@ Route::prefix('auth')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
     });
 });
+
+Route::post('/discounts/validate', [DiscountController::class, 'validateCode']);
 
 Route::get('/categories', [CategoryController::class, 'index']);
 

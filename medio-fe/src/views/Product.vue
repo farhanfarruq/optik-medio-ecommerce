@@ -133,7 +133,7 @@ const goToDetail = (slug: string) => {
       <!-- All categories chip -->
       <button
         @click="goToCategory(null)"
-        class="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider transition-all hover:shadow-md active:scale-95"
+        class="flex items-center gap-2 px-4 py-2 rounded-none text-xs font-black uppercase tracking-wider transition-all hover:shadow-md active:scale-95"
         :style="!categorySlug
           ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white; box-shadow: 0 4px 14px rgba(26,18,9,0.25);'
           : 'background: rgba(193,154,81,0.08); color: #7a6230; border: 1px solid rgba(193,154,81,0.3);'"
@@ -146,7 +146,7 @@ const goToDetail = (slug: string) => {
         v-for="cat in categories"
         :key="cat.id"
         @click="goToCategory(cat.slug)"
-        class="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider transition-all hover:shadow-md active:scale-95"
+        class="flex items-center gap-2 px-4 py-2 rounded-none text-xs font-black uppercase tracking-wider transition-all hover:shadow-md active:scale-95"
         :style="categorySlug === cat.slug
           ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white; box-shadow: 0 4px 14px rgba(26,18,9,0.25);'
           : 'background: rgba(193,154,81,0.08); color: #7a6230; border: 1px solid rgba(193,154,81,0.3);'"
@@ -154,7 +154,7 @@ const goToDetail = (slug: string) => {
         {{ cat.name }}
         <span
           v-if="cat.products_count !== undefined"
-          class="text-[9px] px-1.5 py-0.5 rounded-full"
+          class="text-[9px] px-1.5 py-0.5 rounded-none"
           :style="categorySlug === cat.slug ? 'background: rgba(255,255,255,0.2); color: rgba(255,255,255,0.8);' : 'background: rgba(193,154,81,0.15); color: #c19a51;'"
         >{{ cat.products_count }}</span>
       </button>
@@ -171,11 +171,11 @@ const goToDetail = (slug: string) => {
     </div>
 
     <!-- Error State -->
-    <div v-if="hasError" class="text-center py-24 rounded-3xl border border-dashed" style="border-color: rgba(220,38,38,0.25); background: rgba(220,38,38,0.03);">
+    <div v-if="hasError" class="text-center py-24 rounded-none border border-dashed" style="border-color: rgba(220,38,38,0.25); background: rgba(220,38,38,0.03);">
       <span class="material-symbols-outlined text-5xl mb-4 block" style="color: rgba(220,38,38,0.5);">wifi_off</span>
       <h2 class="text-xl font-bold text-stone-800 mb-2">Gagal memuat produk</h2>
       <p class="text-stone-500 mb-6">Terjadi kesalahan server. Silakan coba lagi.</p>
-      <button @click="fetchProducts" class="px-6 py-3 rounded-xl font-bold text-white text-sm shadow-lg transition-all active:scale-95"
+      <button @click="fetchProducts" class="px-6 py-3 rounded-none font-bold text-white text-sm shadow-lg transition-all active:scale-95"
         style="background: linear-gradient(135deg, #1a1209 0%, #3d2c0e 100%);">
         Coba Lagi
       </button>
@@ -183,18 +183,18 @@ const goToDetail = (slug: string) => {
 
     <!-- Loading Skeleton -->
     <div v-else-if="isLoading" class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-7">
-      <div v-for="i in 12" :key="i" class="animate-pulse rounded-2xl overflow-hidden" style="background: rgba(245,242,238,0.9);">
+      <div v-for="i in 12" :key="i" class="animate-pulse rounded-none overflow-hidden" style="background: rgba(245,242,238,0.9);">
         <div class="aspect-[4/5]" style="background: linear-gradient(135deg, #e8e2d8, #d4cdc0);"></div>
         <div class="p-5 space-y-3">
-          <div class="h-3 rounded-full w-1/3" style="background: #d4cdc0;"></div>
-          <div class="h-4 rounded-full w-3/4" style="background: #dcd7ce;"></div>
-          <div class="h-3 rounded-full w-1/2" style="background: #d4cdc0;"></div>
+          <div class="h-3 rounded-none w-1/3" style="background: #d4cdc0;"></div>
+          <div class="h-4 rounded-none w-3/4" style="background: #dcd7ce;"></div>
+          <div class="h-3 rounded-none w-1/2" style="background: #d4cdc0;"></div>
         </div>
       </div>
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="products.length === 0" class="text-center py-32 rounded-3xl border border-dashed" style="border-color: rgba(193,154,81,0.25); background: rgba(193,154,81,0.04);">
+    <div v-else-if="products.length === 0" class="text-center py-32 rounded-none border border-dashed" style="border-color: rgba(193,154,81,0.25); background: rgba(193,154,81,0.04);">
       <span class="material-symbols-outlined text-7xl mb-6 block" style="color: rgba(193,154,81,0.4);">inventory_2</span>
       <h2 class="text-2xl font-bold text-stone-700 mb-3" style="font-family: 'Outfit', sans-serif;">Produk tidak ditemukan</h2>
       <p class="text-stone-500">Coba pilih kategori lain atau kembali lagi nanti.</p>
@@ -206,7 +206,7 @@ const goToDetail = (slug: string) => {
         v-for="product in products"
         :key="product.id"
         @click="goToDetail(product.slug)"
-        class="group relative flex flex-col cursor-pointer rounded-2xl overflow-hidden transition-all duration-500 hover:-translate-y-1.5 hover:shadow-2xl"
+        class="group relative flex flex-col cursor-pointer rounded-none overflow-hidden transition-all duration-500 hover:-translate-y-1.5 hover:shadow-2xl"
         style="background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.06);"
       >
         <!-- Image Wrapper -->
@@ -222,7 +222,7 @@ const goToDetail = (slug: string) => {
 
           <!-- Wishlist Button -->
           <button
-            class="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-md"
+            class="absolute top-3 right-3 w-9 h-9 rounded-none flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-md"
             style="background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);"
             @click.stop
           >
@@ -232,10 +232,10 @@ const goToDetail = (slug: string) => {
           <!-- Best Seller Badge -->
           <div
             v-if="product.is_best_seller"
-            class="absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider text-white"
-            style="background: linear-gradient(135deg, #e67e22, #f39c12); box-shadow: 0 4px 15px rgba(230,126,34,0.45);"
+            class="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-[0.1em] text-white"
+            style="background: rgba(26,18,9,0.8); backdrop-filter: blur(4px); border: 1px solid rgba(193,154,81,0.3);"
           >
-            <span class="material-symbols-outlined text-xs">bolt</span>
+            <span class="material-symbols-outlined text-[10px]" style="color: #c19a51;">trending_up</span>
             Terlaris
           </div>
 
@@ -269,7 +269,7 @@ const goToDetail = (slug: string) => {
               Rp {{ product.price.toLocaleString('id-ID') }}
             </p>
             <span v-if="product.stock > 0" class="flex items-center gap-1 text-[9px] font-bold" style="color: #16a34a;">
-              <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>
+              <span class="w-1.5 h-1.5 rounded-none bg-green-500 inline-block"></span>
               Tersedia
             </span>
           </div>
@@ -282,7 +282,7 @@ const goToDetail = (slug: string) => {
         >
           <div class="px-4 md:px-5 pb-4">
             <button
-              class="w-full py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-white transition-all active:scale-95"
+              class="w-full py-2.5 rounded-none text-xs font-black uppercase tracking-wider text-white transition-all active:scale-95"
               style="background: linear-gradient(135deg, #1a1209 0%, #3d2c0e 100%);"
             >
               Lihat Detail

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\Discount;
 use App\Repositories\Interfaces\OrderRepositoryInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -33,6 +34,7 @@ class OrderController extends Controller
             'items.*.prescription'         => 'nullable|array',
             'items.*.linked_item_index'    => 'nullable|integer',
             'notes'                        => 'nullable|string|max:500',
+            'discount_id'                  => 'nullable|exists:discounts,id',
         ]);
 
         $items    = [];
@@ -68,6 +70,22 @@ class OrderController extends Controller
                 'linked_item_index' => $item['linked_item_index'] ?? null,
             ];
         }
+        
+        $discountAmount = 0;
+        if ($request->discount_id) {
+            $discount = Discount::find($request->discount_id);
+            if ($discount && $discount->isValid()) {
+                if ($discount->type === 'percentage') {
+                    $discountAmount = ($subtotal * $discount->value) / 100;
+                } else {
+                    $discountAmount = $discount->value;
+                }
+                
+                // Ensure discount doesn't exceed subtotal
+                $discountAmount = min($discountAmount, $subtotal);
+                $discount->increment('used_count');
+            }
+        }
 
         $orderData = [
             'user_id'             => $request->user()->id,
@@ -75,7 +93,9 @@ class OrderController extends Controller
             'status'              => 'unpaid',
             'subtotal'            => $subtotal,
             'shipping_cost'       => $request->shipping_cost,
-            'total_price'         => $subtotal + $request->shipping_cost,
+            'discount_id'         => $request->discount_id,
+            'discount_amount'     => $discountAmount,
+            'total_price'         => $subtotal + $request->shipping_cost - $discountAmount,
             'courier'             => $request->courier,
             'courier_service'     => $request->courier_service,
             'notes'               => $request->notes,

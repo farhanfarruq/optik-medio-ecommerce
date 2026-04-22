@@ -46,7 +46,7 @@ const handleUserClick = () => {
       <!-- Logo -->
       <router-link to="/" class="flex items-center gap-3 group">
         <div
-          class="relative overflow-hidden rounded-xl group-hover:scale-110 transition-transform duration-300 p-1"
+          class="relative overflow-hidden rounded-none group-hover:scale-110 transition-transform duration-300 p-1"
           :class="isScrolled ? 'bg-white shadow-md' : 'bg-white/10 backdrop-blur-sm shadow-xl'"
         >
           <img src="/gambar/medio.jpeg" alt="Optik Medio" class="h-9 w-auto object-contain" />
@@ -68,7 +68,7 @@ const handleUserClick = () => {
         :class="isScrolled ? 'text-stone-800' : 'text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]'"
       >
         <button
-          class="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+          class="w-10 h-10 rounded-none flex items-center justify-center transition-all hover:scale-110 active:scale-95"
           :class="isScrolled ? 'hover:bg-stone-100' : 'hover:bg-white/15'"
         >
           <span class="material-symbols-outlined text-2xl">search</span>
@@ -76,7 +76,7 @@ const handleUserClick = () => {
 
         <button
           @click="handleUserClick"
-          class="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+          class="w-10 h-10 rounded-none flex items-center justify-center transition-all hover:scale-110 active:scale-95"
           :class="isScrolled ? 'hover:bg-stone-100' : 'hover:bg-white/15'"
         >
           <span class="material-symbols-outlined text-2xl">person</span>
@@ -84,13 +84,13 @@ const handleUserClick = () => {
 
         <button
           @click="goToCart"
-          class="relative w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+          class="relative w-10 h-10 rounded-none flex items-center justify-center transition-all hover:scale-110 active:scale-95"
           :class="isScrolled ? 'hover:bg-stone-100' : 'hover:bg-white/15'"
         >
           <span class="material-symbols-outlined text-2xl">shopping_cart</span>
           <span
             v-if="cartStore.items.length"
-            class="absolute -top-1 -right-1 text-white text-[9px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-white font-black shadow-lg"
+            class="absolute -top-1 -right-1 text-white text-[9px] w-5 h-5 flex items-center justify-center rounded-none border-2 border-white font-black shadow-lg"
             style="background: #c19a51;"
           >
             {{ cartStore.items.length }}

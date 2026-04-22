@@ -172,10 +172,10 @@ const deleteAddress = async (id: number) => {
   <div class="relative w-full" style="margin-bottom: -60px;">
     <div class="relative overflow-hidden" style="height: 280px;">
       <img src="/gambar/hero-bg.jpeg" alt="" class="absolute inset-0 w-full h-full object-cover object-center" style="transform: scale(1.08); object-position: center 40%;" />
-      <div class="absolute inset-0" style="background: linear-gradient(135deg, rgba(10,8,5,0.82) 0%, rgba(30,20,10,0.65) 100%);"></div>
+      <div class="absolute inset-0" style="background: linear-gradient(135deg, rgba(10,8,5,0.65) 0%, rgba(30,20,10,0.45) 100%);"></div>
       <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, #F5F2EE 100%);"></div>
       <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(193,154,81,0.6), transparent);"></div>
-      <div class="relative z-10 h-full max-w-[1000px] mx-auto px-6 flex flex-col justify-end pb-24 pt-24">
+      <div class="relative z-10 h-full max-w-[1000px] mx-auto px-6 flex flex-col justify-end pb-24 pt-36">
         <router-link to="/" class="flex items-center gap-2 text-sm font-bold mb-3 group w-fit transition-all" style="color: rgba(193,154,81,0.9);">
           <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
           Kembali ke Beranda
@@ -187,14 +187,14 @@ const deleteAddress = async (id: number) => {
     </div>
   </div>
 
-  <main class="max-w-[1000px] mx-auto w-full px-6 pb-20 flex-grow" style="padding-top: 140px;">
+  <main class="max-w-[1000px] mx-auto w-full px-6 pb-20 flex-grow" style="padding-top: 160px;">
     <div class="flex flex-col md:flex-row gap-10">
 
       <aside class="w-full md:w-56 shrink-0">
-        <nav class="flex flex-col gap-1 rounded-2xl overflow-hidden border p-2" style="background: white; border-color: rgba(193,154,81,0.15); box-shadow: 0 2px 12px rgba(0,0,0,0.05);">
+        <nav class="flex flex-col gap-1 rounded-none overflow-hidden border p-2" style="background: white; border-color: rgba(193,154,81,0.15); box-shadow: 0 2px 12px rgba(0,0,0,0.05);">
           <button
             @click="activeTab = 'profile'"
-            class="flex items-center gap-3 text-left px-4 py-3 rounded-xl text-sm font-bold transition-all"
+            class="flex items-center gap-3 text-left px-4 py-3 rounded-none text-sm font-bold transition-all"
             :style="activeTab === 'profile'
               ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white;'
               : 'color: #5a5248; background: transparent;'"
@@ -204,7 +204,7 @@ const deleteAddress = async (id: number) => {
           </button>
           <button
             @click="activeTab = 'addresses'"
-            class="flex items-center gap-3 text-left px-4 py-3 rounded-xl text-sm font-bold transition-all"
+            class="flex items-center gap-3 text-left px-4 py-3 rounded-none text-sm font-bold transition-all"
             :style="activeTab === 'addresses'
               ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white;'
               : 'color: #5a5248; background: transparent;'"
@@ -214,7 +214,7 @@ const deleteAddress = async (id: number) => {
           </button>
           <button
             @click="activeTab = 'orders'"
-            class="flex items-center gap-3 text-left px-4 py-3 rounded-xl text-sm font-bold transition-all"
+            class="flex items-center gap-3 text-left px-4 py-3 rounded-none text-sm font-bold transition-all"
             :style="activeTab === 'orders'
               ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white;'
               : 'color: #5a5248; background: transparent;'"
@@ -225,7 +225,7 @@ const deleteAddress = async (id: number) => {
           <div class="h-px my-1" style="background: rgba(193,154,81,0.15);"></div>
           <button
             @click="handleLogout"
-            class="flex items-center gap-3 text-left px-4 py-3 rounded-xl text-sm font-bold transition-all"
+            class="flex items-center gap-3 text-left px-4 py-3 rounded-none text-sm font-bold transition-all"
             style="color: #dc2626;"
           >
             <span class="material-symbols-outlined text-base">logout</span>
@@ -236,10 +236,10 @@ const deleteAddress = async (id: number) => {
 
       <div class="flex-grow">
         
-        <div v-if="activeTab === 'profile'" class="bg-surface-container-low p-8 rounded-xl border border-outline-variant/15">
+        <div v-if="activeTab === 'profile'" class="bg-surface-container-low p-8 rounded-none border border-outline-variant/15">
           <div class="flex items-center justify-between mb-8">
             <h2 class="font-headline text-2xl text-primary">Personal Information</h2>
-            <div class="bg-secondary-fixed/30 text-secondary px-4 py-1.5 rounded-full text-sm font-semibold flex items-center gap-1">
+            <div class="bg-secondary-fixed/30 text-secondary px-4 py-1.5 rounded-none text-sm font-semibold flex items-center gap-1">
               <span class="material-symbols-outlined text-sm">stars</span>
               {{ authStore.user?.loyalty_points || 0 }} Loyalty Points
             </div>
@@ -260,15 +260,15 @@ const deleteAddress = async (id: number) => {
         <div v-if="activeTab === 'addresses'">
            <div class="flex items-center justify-between mb-6">
              <h2 class="font-headline text-2xl text-primary">Shipping Addresses</h2>
-             <button @click="openAddressModal" class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-container transition-colors">Add New Address</button>
+             <button @click="openAddressModal" class="bg-primary text-white px-4 py-2 rounded-none text-sm font-medium hover:bg-primary-container transition-colors">Add New Address</button>
            </div>
            
            <div class="grid grid-cols-1 gap-4">
               <div v-if="authStore.user?.addresses?.length > 0">
-                 <div v-for="addr in authStore.user.addresses" :key="addr.id" class="p-6 bg-surface-container-low border border-outline-variant/15 rounded-xl">
+                 <div v-for="addr in authStore.user.addresses" :key="addr.id" class="p-6 bg-surface-container-low border border-outline-variant/15 rounded-none">
                     <div class="flex justify-between items-start">
                        <div>
-                          <p class="font-bold text-primary">{{ addr.recipient_name }} <span v-if="addr.is_default" class="ml-2 text-[10px] bg-secondary-fixed/30 text-secondary px-2 py-0.5 rounded-full uppercase">Default</span></p>
+                          <p class="font-bold text-primary">{{ addr.recipient_name }} <span v-if="addr.is_default" class="ml-2 text-[10px] bg-secondary-fixed/30 text-secondary px-2 py-0.5 rounded-none uppercase">Default</span></p>
                           <p class="text-sm text-on-surface-variant mt-1">{{ addr.phone }}</p>
                           <p class="text-sm text-on-surface mt-3">{{ addr.address }}</p>
                           <p class="text-sm text-on-surface">{{ addr.district }}, {{ addr.city }}, {{ addr.province }} {{ addr.postal_code }}</p>
@@ -279,7 +279,7 @@ const deleteAddress = async (id: number) => {
                     </div>
                  </div>
               </div>
-              <div v-else class="text-center py-12 bg-surface-container-low rounded-xl">
+              <div v-else class="text-center py-12 bg-surface-container-low rounded-none">
                  <p class="text-on-surface-variant">No addresses saved yet.</p>
               </div>
            </div>
@@ -289,16 +289,16 @@ const deleteAddress = async (id: number) => {
           <h2 class="font-headline text-2xl text-primary mb-6">Order History</h2>
           
           <div v-if="isLoadingOrders" class="animate-pulse flex flex-col gap-4">
-            <div class="h-24 bg-surface-container-low rounded-lg w-full"></div>
-            <div class="h-24 bg-surface-container-low rounded-lg w-full"></div>
+            <div class="h-24 bg-surface-container-low rounded-none w-full"></div>
+            <div class="h-24 bg-surface-container-low rounded-none w-full"></div>
           </div>
           
-          <div v-else-if="orders.length === 0" class="text-center py-12 bg-surface-container-low rounded-xl">
+          <div v-else-if="orders.length === 0" class="text-center py-12 bg-surface-container-low rounded-none">
             <p class="text-on-surface-variant">You haven't placed any orders yet.</p>
           </div>
           
           <div v-else class="flex flex-col gap-4">
-            <div v-for="order in orders" :key="order.id" class="bg-surface-container-low p-6 rounded-xl border border-outline-variant/15 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:shadow-md transition-shadow">
+            <div v-for="order in orders" :key="order.id" class="bg-surface-container-low p-6 rounded-none border border-outline-variant/15 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:shadow-md transition-shadow">
               <div>
                 <p class="text-xs text-on-surface-variant uppercase tracking-wider mb-1">Order #{{ order.order_number }}</p>
                 <p class="font-medium text-primary">Rp {{ (Number(order.total_price) || 0).toLocaleString('id-ID') }}</p>
@@ -328,10 +328,10 @@ const deleteAddress = async (id: number) => {
   <!-- Address Modal -->
   <Teleport to="body">
     <div v-if="showAddressModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-6 py-10">
-      <div class="bg-surface-container-low w-full max-w-2xl rounded-2xl p-8 max-h-full overflow-y-auto shadow-2xl border border-outline-variant/20">
+      <div class="bg-surface-container-low w-full max-w-2xl rounded-none p-8 max-h-full overflow-y-auto shadow-2xl border border-outline-variant/20">
         <div class="flex justify-between items-center mb-8">
           <h3 class="text-2xl font-headline text-primary">Add New Address</h3>
-          <button @click="showAddressModal = false" class="text-on-surface-variant hover:text-primary transition-colors p-2 hover:bg-surface-container-highest rounded-full flex items-center justify-center">
+          <button @click="showAddressModal = false" class="text-on-surface-variant hover:text-primary transition-colors p-2 hover:bg-surface-container-highest rounded-none flex items-center justify-center">
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
@@ -339,40 +339,40 @@ const deleteAddress = async (id: number) => {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="md:col-span-2">
             <label class="block text-sm font-semibold text-on-surface-variant mb-2">Recipient Name</label>
-            <input v-model="addressForm.recipient_name" type="text" class="w-full bg-surface-container-highest p-4 rounded-xl border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all" placeholder="e.g. John Doe" />
+            <input v-model="addressForm.recipient_name" type="text" class="w-full bg-surface-container-highest p-4 rounded-none border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all" placeholder="e.g. John Doe" />
           </div>
           <div>
             <label class="block text-sm font-semibold text-on-surface-variant mb-2">Phone Number</label>
-            <input v-model="addressForm.phone" type="text" class="w-full bg-surface-container-highest p-4 rounded-xl border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all" placeholder="e.g. 08123456789" />
+            <input v-model="addressForm.phone" type="text" class="w-full bg-surface-container-highest p-4 rounded-none border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all" placeholder="e.g. 08123456789" />
           </div>
           <div>
             <label class="block text-sm font-semibold text-on-surface-variant mb-2">Province</label>
-            <select v-model="addressForm.province_id" class="w-full bg-surface-container-highest p-4 rounded-xl border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all">
+            <select v-model="addressForm.province_id" class="w-full bg-surface-container-highest p-4 rounded-none border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all">
               <option value="">{{ isProvLoading ? 'Loading...' : 'Select Province' }}</option>
               <option v-for="prov in provinces" :key="prov.id || (prov as any).province_id" :value="prov.id || (prov as any).province_id">{{ prov.name || (prov as any).province_name || (prov as any).province }}</option>
             </select>
           </div>
           <div>
             <label class="block text-sm font-semibold text-on-surface-variant mb-2">City</label>
-            <select v-model="addressForm.city_id" :disabled="!addressForm.province_id" class="w-full bg-surface-container-highest p-4 rounded-xl border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all">
+            <select v-model="addressForm.city_id" :disabled="!addressForm.province_id" class="w-full bg-surface-container-highest p-4 rounded-none border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all">
               <option value="">{{ isCityLoading ? 'Loading...' : 'Select City' }}</option>
               <option v-for="city in cities" :key="city.id" :value="city.id">{{ city.name }}</option>
             </select>
           </div>
           <div>
             <label class="block text-sm font-semibold text-on-surface-variant mb-2">District</label>
-            <select v-model="addressForm.district_id" :disabled="!addressForm.city_id" class="w-full bg-surface-container-highest p-4 rounded-xl border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all">
+            <select v-model="addressForm.district_id" :disabled="!addressForm.city_id" class="w-full bg-surface-container-highest p-4 rounded-none border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all">
               <option value="">{{ isDistLoading ? 'Loading...' : 'Select District' }}</option>
               <option v-for="dist in districts" :key="dist.id" :value="dist.id">{{ dist.name }}</option>
             </select>
           </div>
           <div class="md:col-span-2">
             <label class="block text-sm font-semibold text-on-surface-variant mb-2">Full Address</label>
-            <textarea v-model="addressForm.address" rows="3" class="w-full bg-surface-container-highest p-4 rounded-xl border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all" placeholder="Street name, house number, etc."></textarea>
+            <textarea v-model="addressForm.address" rows="3" class="w-full bg-surface-container-highest p-4 rounded-none border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all" placeholder="Street name, house number, etc."></textarea>
           </div>
           <div>
             <label class="block text-sm font-semibold text-on-surface-variant mb-2">Postal Code</label>
-            <input v-model="addressForm.postal_code" type="text" class="w-full bg-surface-container-highest p-4 rounded-xl border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all" />
+            <input v-model="addressForm.postal_code" type="text" class="w-full bg-surface-container-highest p-4 rounded-none border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all" />
           </div>
           <div class="flex items-center gap-3 py-2">
             <input v-model="addressForm.is_default" type="checkbox" id="is_default" class="w-5 h-5 rounded border-outline-variant/30 text-secondary focus:ring-secondary" />
@@ -381,8 +381,8 @@ const deleteAddress = async (id: number) => {
         </div>
 
         <div class="mt-10 flex gap-4 sticky bottom-0 bg-surface-container-low pt-4 border-t border-outline-variant/10">
-          <button @click="showAddressModal = false" class="flex-grow py-4 rounded-xl font-bold text-primary hover:bg-surface-container-highest transition-all">Cancel</button>
-          <button @click="saveAddress" :disabled="isSavingAddress" class="flex-grow py-4 rounded-xl font-bold bg-primary text-on-primary hover:bg-primary-container transition-all shadow-lg shadow-primary/20 disabled:opacity-50">
+          <button @click="showAddressModal = false" class="flex-grow py-4 rounded-none font-bold text-primary hover:bg-surface-container-highest transition-all">Cancel</button>
+          <button @click="saveAddress" :disabled="isSavingAddress" class="flex-grow py-4 rounded-none font-bold bg-primary text-on-primary hover:bg-primary-container transition-all shadow-lg shadow-primary/20 disabled:opacity-50">
             {{ isSavingAddress ? 'Saving...' : 'Save Address' }}
           </button>
         </div>

@@ -68,7 +68,7 @@
 ───────────────────────────────────────────── */
 @layer components {
   .btn-primary {
-    @apply px-6 py-3 rounded-2xl font-bold text-sm text-white uppercase tracking-wider transition-all active:scale-95 shadow-lg;
+    @apply px-6 py-3 rounded-none font-bold text-sm text-white uppercase tracking-wider transition-all active:scale-95 shadow-lg;
     background: linear-gradient(135deg, #1a1209 0%, #3d2c0e 100%);
   }
   .btn-primary:hover {
@@ -76,14 +76,14 @@
   }
 
   .btn-outline {
-    @apply px-6 py-3 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all active:scale-95;
+    @apply px-6 py-3 rounded-none font-bold text-sm uppercase tracking-wider transition-all active:scale-95;
     border: 1px solid rgba(193, 154, 81, 0.3);
     color: #7a6230;
     background: rgba(193, 154, 81, 0.06);
   }
 
   .input-field {
-    @apply w-full rounded-xl p-3.5 text-sm transition-all outline-none;
+    @apply w-full rounded-none p-3.5 text-sm transition-all outline-none;
     background: white;
     border: 1px solid rgba(193, 154, 81, 0.2);
     color: #1a1209;
@@ -94,7 +94,7 @@
   }
 
   .card {
-    @apply rounded-2xl;
+    @apply rounded-none;
     background: white;
     border: 1px solid rgba(193, 154, 81, 0.12);
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);

@@ -28,7 +28,7 @@ class ProductResource extends Resource
                     ->required()
                     ->maxLength(255)
                     ->live(onBlur: true)
-                    ->afterStateUpdated(fn (string $operation, $state, Forms\Set $set) => $operation === 'create' ? $set('slug', Str::slug($state) . '-' . Str::random(5)) : null),
+                    ->afterStateUpdated(fn (string $operation, $state, $set) => $operation === 'create' ? $set('slug', Str::slug($state) . '-' . Str::random(5)) : null),
                 Forms\Components\TextInput::make('slug')
                     ->disabled()
                     ->dehydrated()
@@ -53,6 +53,9 @@ class ProductResource extends Resource
                 Forms\Components\Toggle::make('is_active')
                     ->required()
                     ->default(true),
+                Forms\Components\Toggle::make('is_best_seller')
+                    ->required()
+                    ->default(false),
                 Forms\Components\Toggle::make('is_prescription_required')
                     ->required()
                     ->default(false),
@@ -62,6 +65,8 @@ class ProductResource extends Resource
                 Forms\Components\FileUpload::make('images')
                     ->multiple()
                     ->image()
+                    ->disk('public')
+                    ->visibility('public')
                     ->directory('products')
                     ->columnSpanFull(),
             ]);
@@ -77,6 +82,7 @@ class ProductResource extends Resource
                 Tables\Columns\TextColumn::make('price')->money('IDR')->sortable(),
                 Tables\Columns\TextColumn::make('stock')->numeric()->sortable(),
                 Tables\Columns\IconColumn::make('is_active')->boolean(),
+                Tables\Columns\IconColumn::make('is_best_seller')->label('Best Seller')->boolean(),
                 Tables\Columns\IconColumn::make('is_prescription_required')->boolean(),
             ])
             ->filters([ Tables\Filters\TrashedFilter::make() ])

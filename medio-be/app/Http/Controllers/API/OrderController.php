@@ -47,7 +47,9 @@ class OrderController extends Controller
                 ], 422);
             }
 
-            if ($product->is_prescription_required && empty($item['prescription'])) {
+            // Only enforce prescription check for items that are NOT a child/linked lens
+            $isLinkedLens = isset($item['linked_item_index']);
+            if ($product->is_prescription_required && empty($item['prescription']) && !$isLinkedLens) {
                 return response()->json([
                     'message' => 'Produk "' . $product->name . '" membutuhkan data resep mata.',
                 ], 422);
@@ -87,7 +89,6 @@ class OrderController extends Controller
 
         return response()->json($order, 201);
     }
-
     public function show(Request $request, int $id): JsonResponse
     {
         $order = $this->orderRepo->findById($id);
@@ -97,5 +98,26 @@ class OrderController extends Controller
         }
 
         return response()->json($order);
+    }
+
+    public function syncPayment(Request $request, int $id, \App\Services\XenditService $xenditService): JsonResponse
+    {
+        $order = $this->orderRepo->findById($id);
+
+        if ($order->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        if (!$order->payment) {
+            return response()->json(['message' => 'Payment record not found'], 404);
+        }
+
+        $status = $xenditService->syncInvoice($order);
+
+        return response()->json([
+            'message' => 'Sync completed',
+            'status'  => $status,
+            'order'   => $order->fresh(['payment'])
+        ]);
     }
 }

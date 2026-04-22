@@ -31,7 +31,11 @@ class ProductRepository implements ProductRepositoryInterface
             $query->where('name', 'like', '%' . $filters['search'] . '%');
         }
 
-        return $query->paginate($filters['per_page'] ?? 12);
+        $perPage = $filters['per_page'] ?? 100;
+        if ($perPage === 'all') {
+            return $query->get();
+        }
+        return $query->paginate((int) $perPage);
     }
 
     public function findById(int $id)

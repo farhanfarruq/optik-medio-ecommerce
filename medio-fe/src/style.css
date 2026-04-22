@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────
+   Google Fonts
+───────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ─────────────────────────────────────────────
+   Design Tokens (CSS Variables)
+───────────────────────────────────────────── */
+@layer base {
+  :root {
+    /* Core palette */
+    --primary:                 0 0% 10%;          /* #1a1209 */
+    --primary-container:       25 50% 20%;
+    --secondary:               38 55% 32%;         /* warm gold */
+    --secondary-container:     38 55% 90%;
+    --background:              30 20% 96%;          /* warm off-white #F5F2EE */
+    --surface:                 30 20% 98%;
+    --surface-container-lowest:0 0% 100%;
+    --surface-container-low:   30 15% 96%;
+    --surface-container:       30 12% 94%;
+    --surface-container-high:  30 10% 91%;
+    --surface-container-highest: 30 8% 88%;
+    --on-surface:              25 30% 12%;
+    --on-surface-variant:      25 12% 40%;
+    --on-background:           25 30% 12%;
+    --outline:                 30 15% 75%;
+    --outline-variant:         30 10% 88%;
+    --error:                   0 70% 45%;
+    --error-container:         0 100% 93%;
+    --on-error:                0 0% 100%;
+    --on-primary:              0 0% 100%;
+
+    /* Gold accent */
+    --gold:                    #c19a51;
+    --gold-light:              rgba(193, 154, 81, 0.12);
+    --dark-rich:               #1a1209;
+  }
+
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-[#F5F2EE] text-stone-900;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #1a1209;
+  }
+
+  ::selection {
+    background: rgba(193, 154, 81, 0.2);
+    color: #1a1209;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   Reusable Components
+───────────────────────────────────────────── */
+@layer components {
+  .btn-primary {
+    @apply px-6 py-3 rounded-2xl font-bold text-sm text-white uppercase tracking-wider transition-all active:scale-95 shadow-lg;
+    background: linear-gradient(135deg, #1a1209 0%, #3d2c0e 100%);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 8px 25px rgba(26, 18, 9, 0.25);
+  }
+
+  .btn-outline {
+    @apply px-6 py-3 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all active:scale-95;
+    border: 1px solid rgba(193, 154, 81, 0.3);
+    color: #7a6230;
+    background: rgba(193, 154, 81, 0.06);
+  }
+
+  .input-field {
+    @apply w-full rounded-xl p-3.5 text-sm transition-all outline-none;
+    background: white;
+    border: 1px solid rgba(193, 154, 81, 0.2);
+    color: #1a1209;
+  }
+  .input-field:focus {
+    border-color: rgba(193, 154, 81, 0.6);
+    box-shadow: 0 0 0 3px rgba(193, 154, 81, 0.12);
+  }
+
+  .card {
+    @apply rounded-2xl;
+    background: white;
+    border: 1px solid rgba(193, 154, 81, 0.12);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .section-hero {
+    @apply relative overflow-hidden;
+  }
+
+  .gold-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(193, 154, 81, 0.4), transparent);
+  }
+}
+
+/* ─────────────────────────────────────────────
+   Material Symbols
+───────────────────────────────────────────── */
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+  vertical-align: middle;
+}
+
+/* ─────────────────────────────────────────────
+   Scrollbar Styling
+───────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(193, 154, 81, 0.25);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(193, 154, 81, 0.45);
+}
+
+/* ─────────────────────────────────────────────
+   Page Transition
+───────────────────────────────────────────── */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}

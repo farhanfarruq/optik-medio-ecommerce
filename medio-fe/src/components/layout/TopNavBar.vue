@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { useCartStore } from '../../stores/cartStore';
 import { useAuthStore } from '../../stores/authStore';
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted } from 'vue';
 
 const cartStore = useCartStore();
 const authStore = useAuthStore();
 const router = useRouter();
-const route = useRoute();
 
 const isScrolled = ref(false);
 

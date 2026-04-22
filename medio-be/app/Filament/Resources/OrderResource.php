@@ -56,7 +56,14 @@ class OrderResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('order_number')->searchable(),
-                Tables\Columns\TextColumn::make('user.name')->sortable(),
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label('Pelanggan')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('items.product_name')
+                    ->label('Produk')
+                    ->listWithLineBreaks()
+                    ->bulleted()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('total_price')->money('IDR')->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()

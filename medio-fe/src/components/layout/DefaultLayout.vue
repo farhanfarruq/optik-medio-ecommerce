@@ -31,7 +31,7 @@ const isFullHeroPage = computed(() =>
         src="/gambar/halaman-lain.jpeg"
         alt=""
         class="w-full h-full object-cover"
-        style="opacity: 0.08; filter: grayscale(0.6) blur(0px);"
+        style="opacity: 0.5; filter: grayscale(0.6) blur(0px);"
       />
       <!-- Very light warm tint to blend seamlessly -->
       <div

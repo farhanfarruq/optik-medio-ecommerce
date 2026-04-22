@@ -80,7 +80,8 @@ const discountAmount = computed(() => {
   if (appliedDiscount.value.type === 'percentage') {
     return (subtotal * appliedDiscount.value.value) / 100;
   }
-  return appliedDiscount.value.value;
+  // Cap flat discount at subtotal to prevent negative totals
+  return Math.min(subtotal, Number(appliedDiscount.value.value));
 });
 
 const selectAddress = async (addr: any) => {
@@ -295,7 +296,8 @@ const selectedShippingCost = computed(() => {
 });
 
 const grandTotal = computed(() => {
-  return cartStore.cartTotal + selectedShippingCost.value - discountAmount.value;
+  const subtotalAfterDiscount = Math.max(0, cartStore.cartTotal - discountAmount.value);
+  return subtotalAfterDiscount + selectedShippingCost.value;
 });
 
 const submitOrder = async () => {

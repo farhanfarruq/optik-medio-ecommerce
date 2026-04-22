@@ -6,6 +6,9 @@ import { productRepository } from '../repositories/ProductRepository';
 import type { Product } from '../types';
 
 import { resolveImageUrl } from '../core/utils/image';
+import { useToast } from '../composables/useToast';
+
+const { showToast } = useToast();
 
 const route = useRoute();
 const router = useRouter();
@@ -98,6 +101,7 @@ const executeAddToCart = (selectedLens: any = null) => {
 
   isLensModalOpen.value = false;
   addedToCart.value = true;
+  showToast('Produk berhasil ditambahkan ke keranjang!', 'success');
   setTimeout(() => { addedToCart.value = false; }, 2500);
 };
 

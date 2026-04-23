@@ -352,15 +352,15 @@ const goToDetail = (slug: string) => {
 
         <!-- Card Body -->
         <div class="p-4 md:p-5 flex flex-col flex-grow">
-          <span class="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] mb-1.5" style="color: #c19a51;">
-            {{ product.brand || 'Optik Medio' }}
+          <span class="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] mb-1" style="color: #8a7a60;">
+            {{ product.name }}
           </span>
           <h3
-            class="font-bold text-sm md:text-base leading-snug mb-3 transition-colors duration-300 line-clamp-2"
-            style="color: #1a1209; font-family: 'Outfit', sans-serif;"
+            class="font-bold text-base md:text-lg leading-tight mb-3 transition-colors duration-300 line-clamp-1"
+            style="color: #1a1209; font-family: 'Outfit', sans-serif; letter-spacing: -0.01em;"
             :class="{ 'group-hover:text-amber-800': product.stock > 0 }"
           >
-            {{ product.name }}
+            {{ product.brand || 'Optik Medio' }}
           </h3>
           <div class="flex justify-between items-center mt-auto">
             <div v-if="!product.is_not_for_sale">

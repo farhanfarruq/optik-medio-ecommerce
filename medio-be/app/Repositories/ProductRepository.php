@@ -28,7 +28,12 @@ class ProductRepository implements ProductRepositoryInterface
         }
 
         if (!empty($filters['search'])) {
-            $query->where('name', 'like', '%' . $filters['search'] . '%');
+            $search = $filters['search'];
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('brand', 'like', '%' . $search . '%')
+                  ->orWhere('sku', 'like', '%' . $search . '%');
+            });
         }
 
         $perPage = $filters['per_page'] ?? 100;

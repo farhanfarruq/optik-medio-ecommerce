@@ -176,8 +176,8 @@ class ImportOptikProducts extends Command
                     'sku'                      => $sku,
                     'description'              => $this->generateDescription($item),
                     'brand'                    => $item['brand'] ?? null,
-                    'price'                    => $item['price_final'] ?? $item['price_original'] ?? 0,
-                    'stock'                    => $stock,
+                    'price'                    => (Str::contains($categoryName, 'Lensa Kacamata') && ($item['price_final'] ?? 0) <= 0) ? 100000 : ($item['price_final'] ?? $item['price_original'] ?? 0),
+                    'stock'                    => Str::contains($categoryName, 'Lensa Kacamata') ? 999 : $stock,
                     'weight'                   => 200, // ~200 gram termasuk kemasan
                     'dimensions'               => null,
                     'variants'                 => null,

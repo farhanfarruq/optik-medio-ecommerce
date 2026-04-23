@@ -3,6 +3,7 @@ import DefaultLayout from '../components/layout/DefaultLayout.vue';
 import Home from '../views/Product.vue'; // Assuming Home is the product list for now
 import ProductDetail from '../views/ProductDetail.vue';
 import Login from '../views/Login.vue';
+import Register from '../views/Register.vue';
 import CartView from '../views/CartView.vue';
 import Profile from '../views/Profile.vue';
 import CheckoutView from '../views/checkout/CheckoutView.vue';
@@ -18,6 +19,7 @@ const routes = [
       { path: 'products/category/:slug', name: 'ProductsByCategory', component: Home },
       { path: 'products/:slug', name: 'ProductDetail', component: ProductDetail },
       { path: 'login', name: 'Login', component: Login },
+      { path: 'register', name: 'Register', component: Register },
       { path: 'cart', name: 'Cart', component: CartView },
       { path: 'profile', name: 'Profile', component: Profile },
       { path: 'checkout', name: 'Checkout', component: CheckoutView },

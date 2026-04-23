@@ -42,15 +42,16 @@ class OrderController extends Controller
 
         foreach ($request->items as $item) {
             $product = Product::findOrFail($item['product_id']);
+            $isLinkedLens = isset($item['linked_item_index']);
 
-            if ($product->stock < $item['quantity']) {
+            // Skip stock check for linked lens items (lensa selalu tersedia di toko optik)
+            if (!$isLinkedLens && $product->stock < $item['quantity']) {
                 return response()->json([
                     'message' => 'Stok produk "' . $product->name . '" tidak mencukupi.',
                 ], 422);
             }
 
             // Only enforce prescription check for items that are NOT a child/linked lens
-            $isLinkedLens = isset($item['linked_item_index']);
             if ($product->is_prescription_required && empty($item['prescription']) && !$isLinkedLens) {
                 return response()->json([
                     'message' => 'Produk "' . $product->name . '" membutuhkan data resep mata.',
@@ -104,7 +105,10 @@ class OrderController extends Controller
         $order = $this->orderRepo->create($orderData, $items);
 
         foreach ($request->items as $item) {
-            Product::where('id', $item['product_id'])->decrement('stock', $item['quantity']);
+            // Jangan kurangi stok untuk lensa yang di-link (selalu tersedia)
+            if (!isset($item['linked_item_index'])) {
+                Product::where('id', $item['product_id'])->decrement('stock', $item['quantity']);
+            }
         }
 
         return response()->json($order, 201);

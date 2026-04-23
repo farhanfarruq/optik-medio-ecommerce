@@ -38,6 +38,8 @@ class AdminPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             ->maxContentWidth('full')
             ->brandName('Optik Medio')
+            ->brandLogo(asset('images/medio.jpeg'))
+            ->brandLogoHeight('3rem')
             ->navigationGroups([
                 'Produk',
                 'Penjualan',

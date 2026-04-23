@@ -7,14 +7,12 @@ import { computed } from 'vue';
 
 const route = useRoute();
 
-// Pages without ANY hero at all — only Login needs the navbar offset
-const needsTopPadding = computed(() =>
-  route.name === 'Login'
-);
+// Halaman Auth (Login/Register) → tampil full-screen tanpa navbar/footer
+const isAuthPage = computed(() => ['Login', 'Register'].includes(route.name as string));
 
 // Full-bleed hero pages (no bg texture overlay needed)
 const isFullHeroPage = computed(() =>
-  ['Home', 'Products', 'ProductsByCategory', 'Checkout'].includes(route.name as string)
+  ['Home', 'Products', 'ProductsByCategory', 'Checkout', 'Login'].includes(route.name as string)
 );
 </script>
 
@@ -40,13 +38,13 @@ const isFullHeroPage = computed(() =>
       ></div>
     </div>
 
-    <TopNavBar />
+    <TopNavBar v-if="!isAuthPage" />
     <ToastContainer />
 
-    <div :class="['flex-grow flex flex-col relative z-10', { 'pt-20': needsTopPadding }]">
+    <div class="flex-grow flex flex-col relative z-10">
       <router-view />
     </div>
 
-    <Footer class="relative z-10" />
+    <Footer v-if="!isAuthPage" class="relative z-10" />
   </div>
 </template>

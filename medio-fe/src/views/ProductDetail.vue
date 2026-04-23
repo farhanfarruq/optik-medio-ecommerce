@@ -141,7 +141,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
             <span class="material-symbols-outlined text-sm">chevron_right</span>
             <router-link to="/products" class="hover:text-white transition-colors">Koleksi</router-link>
             <span class="material-symbols-outlined text-sm">chevron_right</span>
-            <span class="text-white">{{ product.name }}</span>
+            <span class="text-white">{{ product.brand || 'Optik Medio' }}</span>
           </nav>
           <button @click="router.back()" class="flex items-center gap-2 text-sm font-bold transition-all group w-fit" style="color: rgba(193,154,81,0.9);">
             <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
@@ -208,10 +208,10 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
         <!-- ── Right: Product Info ── -->
         <div class="lg:col-span-5 flex flex-col gap-7">
 
-          <!-- Brand + Best Seller -->
+          <!-- Category + Best Seller -->
           <div class="flex items-center justify-between">
             <p class="text-[10px] font-black uppercase tracking-[0.3em]" style="color: #c19a51;">
-              {{ product.brand || 'Optik Medio' }}
+              Koleksi {{ (product as any).category?.name || 'Optik' }}
             </p>
             <div
               v-if="product.is_best_seller"
@@ -224,9 +224,12 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
           </div>
 
           <!-- Name + Price -->
-          <div class="flex flex-col gap-3">
-            <h1 class="font-bold text-3xl md:text-4xl leading-tight tracking-tight" style="color: #1a1209; font-family: 'Outfit', sans-serif;">
+          <div class="flex flex-col gap-2">
+            <p class="text-xs font-black uppercase tracking-[0.2em]" style="color: #8a7a60;">
               {{ product.name }}
+            </p>
+            <h1 class="font-bold text-4xl md:text-5xl leading-tight tracking-tight" style="color: #1a1209; font-family: 'Outfit', sans-serif; letter-spacing: -0.02em;">
+              {{ product.brand || 'Optik Medio' }}
             </h1>
             <div class="flex items-center justify-between">
               <p v-if="!product.is_not_for_sale" class="text-2xl font-black" style="color: #7a6230;">

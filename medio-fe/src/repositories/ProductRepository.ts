@@ -13,11 +13,12 @@ export interface IProductRepository {
   getProducts(filters?: any): Promise<any>;
   getProductBySlug(slug: string): Promise<Product>;
   getCategories(): Promise<Category[]>;
+  getBrands(): Promise<string[]>;
 }
 
 class ProductRepository implements IProductRepository {
   async getProducts(filters: any = {}): Promise<any> {
-    const { data } = await apiClient.get('/products', { params: { per_page: 100, ...filters } });
+    const { data } = await apiClient.get('/products', { params: { per_page: 24, ...filters } });
     return data;
   }
 
@@ -28,6 +29,11 @@ class ProductRepository implements IProductRepository {
 
   async getCategories(): Promise<Category[]> {
     const { data } = await apiClient.get('/categories');
+    return data;
+  }
+
+  async getBrands(): Promise<string[]> {
+    const { data } = await apiClient.get('/products/brands');
     return data;
   }
 }

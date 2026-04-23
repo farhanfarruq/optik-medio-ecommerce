@@ -24,4 +24,16 @@ class ProductController extends Controller
 
         return response()->json($product);
     }
+
+    public function brands(): JsonResponse
+    {
+        $brands = \App\Models\Product::select('brand')
+            ->whereNotNull('brand')
+            ->where('brand', '!=', '')
+            ->distinct()
+            ->orderBy('brand')
+            ->pluck('brand');
+
+        return response()->json($brands);
+    }
 }

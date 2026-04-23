@@ -26,6 +26,7 @@ Route::post('/discounts/validate', [DiscountController::class, 'validateCode']);
 Route::get('/categories', [CategoryController::class, 'index']);
 
 Route::prefix('products')->group(function () {
+    Route::get('/brands', [ProductController::class, 'brands']);
     Route::get('/', [ProductController::class, 'index']);
     Route::get('/{slug}', [ProductController::class, 'show']);
 });

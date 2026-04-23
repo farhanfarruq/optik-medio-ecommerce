@@ -229,10 +229,13 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
               {{ product.name }}
             </h1>
             <div class="flex items-center justify-between">
-              <p class="text-2xl font-black" style="color: #7a6230;">
+              <p v-if="!product.is_not_for_sale" class="text-2xl font-black" style="color: #7a6230;">
                 Rp {{ product.price.toLocaleString('id-ID') }}
               </p>
-              <div class="flex items-center gap-2">
+              <p v-else class="text-xl font-bold uppercase tracking-widest" style="color: #c19a51;">
+                Katalog Informasi
+              </p>
+              <div v-if="!product.is_not_for_sale" class="flex items-center gap-2">
                 <span
                   class="w-2.5 h-2.5 rounded-none"
                   :style="product.stock > 0 ? 'background: #16a34a; box-shadow: 0 0 8px rgba(22,163,74,0.5);' : 'background: #dc2626;'"
@@ -254,7 +257,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
 
           <!-- Prescription Notice -->
           <div
-            v-if="product.is_prescription_required"
+            v-if="product.is_prescription_required && !product.is_not_for_sale"
             class="p-4 rounded-none flex items-start gap-3 border"
             style="background: rgba(193,154,81,0.07); border-color: rgba(193,154,81,0.25);"
           >
@@ -265,8 +268,27 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
             </div>
           </div>
 
+          <!-- Info Only Notice -->
+          <div
+            v-if="product.is_not_for_sale"
+            class="p-6 rounded-none flex flex-col gap-4 border"
+            style="background: rgba(26,18,9,0.03); border-color: rgba(193,154,81,0.2); border-left: 4px solid #c19a51;"
+          >
+            <div class="flex items-center gap-2 text-stone-800">
+              <span class="material-symbols-outlined text-xl" style="color: #c19a51;">menu_book</span>
+              <p class="text-base font-bold">Katalog Brand Lensa</p>
+            </div>
+            <p class="text-sm leading-relaxed text-stone-600">
+              Informasi produk ini merupakan bagian dari katalog brand lensa yang kami gunakan di Optik Medio. 
+              Produk ini tidak dijual secara terpisah. Untuk konsultasi lebih lanjut mengenai lensa terbaik untuk kebutuhan mata Anda, silakan hubungi tim ahli kami.
+            </p>
+            <button class="w-fit px-6 py-2 bg-[#1a1209] text-white text-xs font-bold uppercase tracking-widest hover:bg-stone-800 transition-colors">
+              Hubungi CS Optik Medio
+            </button>
+          </div>
+
           <!-- Color Selector -->
-          <div v-if="product.variants?.colors?.length" class="flex flex-col gap-3">
+          <div v-if="product.variants?.colors?.length && !product.is_not_for_sale" class="flex flex-col gap-3">
             <p class="text-xs font-bold uppercase tracking-wider" style="color: #5a5248;">
               Warna: <span class="font-medium" style="color: #1a1209;">{{ formState.color?.name }}</span>
             </p>
@@ -283,7 +305,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
           </div>
 
           <!-- Size Selector -->
-          <div v-if="product.variants?.sizes?.length" class="flex flex-col gap-3">
+          <div v-if="product.variants?.sizes?.length && !product.is_not_for_sale" class="flex flex-col gap-3">
             <p class="text-xs font-bold uppercase tracking-wider" style="color: #5a5248;">Ukuran</p>
             <div class="flex gap-2 flex-wrap">
               <button
@@ -301,7 +323,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
           </div>
 
           <!-- Prescription Form -->
-          <div v-if="product.is_prescription_required" class="flex flex-col gap-6 pt-6 border-t" style="border-color: rgba(193,154,81,0.15);">
+          <div v-if="product.is_prescription_required && !product.is_not_for_sale" class="flex flex-col gap-6 pt-6 border-t" style="border-color: rgba(193,154,81,0.15);">
             <h2 class="font-bold text-lg" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Resep Kacamata Anda</h2>
 
             <div class="p-5 rounded-none border" style="background: rgba(245,242,238,0.8); border-color: rgba(193,154,81,0.15);">
@@ -356,6 +378,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
 
           <!-- Add to Cart Button -->
           <button
+            v-if="!product.is_not_for_sale"
             @click="handleAddToCartClick"
             :disabled="product.stock <= 0"
             class="w-full py-4 px-6 font-black text-sm uppercase tracking-widest rounded-none transition-all flex items-center justify-center gap-3 shadow-lg"

@@ -42,6 +42,12 @@ export const resolveImageUrl = (imageOrProduct: any, productName: string = '') =
   }
 
   if (imagePath && typeof imagePath === 'string') {
+    if (imagePath.startsWith('http')) {
+      if (imagePath.includes('via.placeholder.com')) {
+          return `https://placehold.co/600x600?text=${encodeURIComponent(name)}`;
+      }
+      return imagePath;
+    }
     return getBaseStorageUrl() + imagePath;
   }
 

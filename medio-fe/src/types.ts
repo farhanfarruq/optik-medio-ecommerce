@@ -35,6 +35,7 @@ export interface Product {
     is_prescription_required: boolean;
     stock: number;
     is_best_seller: boolean;
+    is_not_for_sale?: boolean;
     variants?: {
         colors: { name: string; hex: string }[];
         sizes: string[];

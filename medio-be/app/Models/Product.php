@@ -15,6 +15,7 @@ class Product extends Model
         'category_id',
         'name',
         'slug',
+        'sku',
         'description',
         'brand',
         'price',
@@ -23,8 +24,11 @@ class Product extends Model
         'dimensions',
         'variants',
         'images',
+        'tags',
         'is_active',
         'is_best_seller',
+        'is_new',
+        'is_not_for_sale',
         'is_prescription_required',
     ];
 
@@ -35,8 +39,11 @@ class Product extends Model
         'dimensions'               => 'array',
         'variants'                 => 'array',
         'images'                   => 'array',
+        'tags'                     => 'array',
         'is_active'                => 'boolean',
         'is_best_seller'           => 'boolean',
+        'is_new'                   => 'boolean',
+        'is_not_for_sale'          => 'boolean',
         'is_prescription_required' => 'boolean',
     ];
 

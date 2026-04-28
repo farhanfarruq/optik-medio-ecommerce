@@ -14,6 +14,7 @@ const brands = ref<string[]>([]);
 const isLoading = ref(true);
 const hasError = ref(false);
 const categorySlug = ref(route.params.slug as string);
+const searchQuery = ref(route.query.search as string || '');
 const showFilterPanel = ref(false);
 
 const currentPage = ref(1);
@@ -24,6 +25,7 @@ const selectedBrand = ref<string>('');
 const testimonials = ref<Testimonial[]>([]);
 
 const categoryTitle = computed(() => {
+  if (searchQuery.value) return `Hasil Pencarian: "${searchQuery.value}"`;
   if (!categorySlug.value) return 'Koleksi Kami';
   const found = categories.value.find(c => c.slug === categorySlug.value);
   if (found) return found.name;
@@ -34,6 +36,7 @@ const categoryTitle = computed(() => {
 });
 
 const categoryDescription = computed(() => {
+  if (searchQuery.value) return `Menampilkan produk yang cocok dengan pencarian Anda.`;
   if (!categorySlug.value) return 'Temukan koleksi kacamata premium kami, dibuat untuk kenyamanan dan gaya terbaik Anda.';
   const found = categories.value.find(c => c.slug === categorySlug.value);
   if (found?.description) return found.description;
@@ -62,6 +65,9 @@ const fetchProducts = async (isLoadMore = false) => {
     }
     if (selectedBrand.value) {
       params.brand = selectedBrand.value;
+    }
+    if (searchQuery.value) {
+      params.search = searchQuery.value;
     }
     
     const response = await productRepository.getProducts(params);
@@ -117,7 +123,7 @@ const fetchCategories = async () => {
 onMounted(() => {
   fetchCategories();
   fetchBrands();
-  fetchProducts(false);
+  // fetchProducts(false); // Dipicu oleh watch immediate
   
   // Fetch testimonials from settings
   settingRepository.getSettings().then(data => {
@@ -130,7 +136,12 @@ onMounted(() => {
 watch(() => route.params.slug, (newSlug) => {
   categorySlug.value = (newSlug as string) || '';
   fetchProducts(false);
-});
+}, { immediate: true });
+
+watch(() => route.query.search, (newSearch) => {
+  searchQuery.value = (newSearch as string) || '';
+  fetchProducts(false);
+}, { immediate: true });
 
 watch(selectedBrand, () => {
   fetchProducts(false);
@@ -171,14 +182,14 @@ const goToDetail = (slug: string) => {
       <div class="absolute" style="bottom: 180px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(193,154,81,0.5), transparent);"></div>
 
       <!-- Hero Content -->
-      <div class="relative z-10 h-full max-w-[1440px] mx-auto px-6 md:px-12 flex flex-col justify-end pb-28">
-        <p class="text-xs font-bold uppercase tracking-[0.3em] mb-3" style="color: rgba(193,154,81,0.95);">
-          Optik Medio {{ categorySlug ? '· ' + categoryTitle : '' }}
+      <div class="relative z-10 h-full max-w-[1440px] mx-auto px-6 md:px-12 flex flex-col justify-end pb-20 pt-32">
+        <p v-if="categorySlug || searchQuery" class="text-xs font-bold uppercase tracking-[0.3em] mb-3" style="color: rgba(193,154,81,0.95);">
+          {{ searchQuery ? 'Pencarian' : categoryTitle }}
         </p>
-        <h1 class="text-5xl md:text-7xl font-black tracking-tight leading-none text-white mb-5" style="font-family: 'Outfit', sans-serif; text-shadow: 0 4px 24px rgba(0,0,0,0.3);">
+        <h1 class="text-4xl md:text-6xl font-black tracking-tight leading-tight text-white mb-4" style="font-family: 'Outfit', sans-serif; text-shadow: 0 4px 24px rgba(0,0,0,0.3);">
           {{ categoryTitle }}
         </h1>
-        <p class="text-base md:text-lg max-w-xl leading-relaxed" style="color: rgba(255,255,255,0.72);">
+        <p class="text-sm md:text-base max-w-xl leading-relaxed" style="color: rgba(255,255,255,0.72);">
           {{ categoryDescription }}
         </p>
       </div>
@@ -343,14 +354,14 @@ const goToDetail = (slug: string) => {
         <!-- Card Body -->
         <div class="p-4 md:p-5 flex flex-col flex-grow">
           <span class="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] mb-1" style="color: #8a7a60;">
-            {{ product.name }}
+            {{ product.brand ? product.name : '' }}
           </span>
           <h3
             class="font-bold text-base md:text-lg leading-tight mb-3 transition-colors duration-300 line-clamp-1"
             style="color: #1a1209; font-family: 'Outfit', sans-serif; letter-spacing: -0.01em;"
             :class="{ 'group-hover:text-amber-800': product.stock > 0 }"
           >
-            {{ product.brand || 'Optik Medio' }}
+            {{ product.brand || product.name }}
           </h3>
           <div class="flex justify-between items-center mt-auto">
             <div v-if="!product.is_not_for_sale">
@@ -428,11 +439,12 @@ const goToDetail = (slug: string) => {
         <div class="w-12 h-1 bg-amber-600 mx-auto mt-4"></div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+      <!-- Mobile: Horizontal Scroll | Desktop: Grid -->
+      <div class="flex overflow-x-auto md:grid md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto pb-4 md:pb-0 snap-x snap-mandatory scrollbar-hide">
         <div 
           v-for="(t, idx) in testimonials" 
           :key="idx"
-          class="p-8 relative group transition-all duration-500 hover:shadow-xl border border-stone-100"
+          class="min-w-[85vw] md:min-w-0 p-8 relative group transition-all duration-500 hover:shadow-xl border border-stone-100 snap-center"
           style="background: white;"
         >
           <div class="absolute -top-4 -left-4 w-12 h-12 flex items-center justify-center bg-stone-900 text-amber-500">
@@ -460,3 +472,14 @@ const goToDetail = (slug: string) => {
 
   </main>
 </template>
+
+<style scoped>
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+</style>

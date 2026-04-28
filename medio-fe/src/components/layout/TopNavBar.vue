@@ -11,9 +11,14 @@ const router = useRouter();
 const isScrolled = ref(false);
 const isSearchOpen = ref(false);
 const searchQuery = ref('');
+const windowWidth = ref(window.innerWidth);
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 50;
+};
+
+const updateWidth = () => {
+  windowWidth.value = window.innerWidth;
 };
 
 const toggleSearch = () => {
@@ -35,11 +40,13 @@ const executeSearch = () => {
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll);
+  window.addEventListener('resize', updateWidth);
   handleScroll();
 });
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
+  window.removeEventListener('resize', updateWidth);
 });
 
 const goToCart = () => router.push('/cart');
@@ -81,77 +88,71 @@ const handleUserClick = () => {
 
       <!-- Actions -->
       <div
-        class="flex items-center gap-6 transition-all duration-300"
+        class="flex items-center gap-3 md:gap-6 transition-all duration-300 h-full"
         :class="isScrolled ? 'text-stone-800' : 'text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]'"
       >
-        <button
-          @click="toggleSearch"
-          class="w-10 h-10 rounded-none flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-          :class="isScrolled ? 'hover:bg-stone-100' : 'hover:bg-white/15'"
+        <!-- Integrated Search Bar -->
+        <div 
+          class="relative flex items-center h-12 transition-all duration-500 ease-out overflow-hidden"
+          :class="isSearchOpen ? 'w-[200px] md:w-[350px] px-4 bg-white/10 backdrop-blur-md border-b border-amber-500/50' : 'w-10'"
+          :style="isSearchOpen && isScrolled ? 'background: rgba(0,0,0,0.03);' : ''"
         >
-          <span class="material-symbols-outlined text-2xl">search</span>
-        </button>
-
-        <button
-          @click="handleUserClick"
-          class="w-10 h-10 rounded-none flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-          :class="isScrolled ? 'hover:bg-stone-100' : 'hover:bg-white/15'"
-        >
-          <span class="material-symbols-outlined text-2xl">person</span>
-        </button>
-
-        <button
-          @click="goToCart"
-          class="relative w-10 h-10 rounded-none flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-          :class="isScrolled ? 'hover:bg-stone-100' : 'hover:bg-white/15'"
-        >
-          <span class="material-symbols-outlined text-2xl">shopping_cart</span>
-          <span
-            v-if="cartStore.items.length"
-            class="absolute -top-1 -right-1 text-white text-[9px] w-5 h-5 flex items-center justify-center rounded-none border-2 border-white font-black shadow-lg"
-            style="background: #c19a51;"
+          <button
+            @click="isSearchOpen ? executeSearch() : toggleSearch()"
+            class="shrink-0 w-10 h-10 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+            :class="{ 'text-amber-500': isSearchOpen }"
           >
-            {{ cartStore.items.length }}
-          </span>
-        </button>
+            <span class="material-symbols-outlined text-2xl">search</span>
+          </button>
+          
+          <input
+            v-if="isSearchOpen"
+            id="search-input"
+            v-model="searchQuery"
+            type="text"
+            placeholder="Cari..."
+            class="w-full bg-transparent border-none text-sm font-bold focus:ring-0 outline-none placeholder:text-stone-500 px-2"
+            :class="isScrolled ? 'text-stone-900' : 'text-white'"
+            @keyup.enter="executeSearch"
+            @blur="() => { if(!searchQuery) isSearchOpen = false }"
+          />
+
+          <button 
+            v-if="isSearchOpen" 
+            @click="isSearchOpen = false" 
+            class="shrink-0 text-stone-400 hover:text-stone-600 p-1"
+          >
+            <span class="material-symbols-outlined text-sm">close</span>
+          </button>
+        </div>
+
+        <!-- User & Cart (Hidden when search is wide on mobile) -->
+        <div v-if="!isSearchOpen || windowWidth > 768" class="flex items-center gap-3 md:gap-6">
+          <button
+            @click="handleUserClick"
+            class="w-10 h-10 rounded-none flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+            :class="isScrolled ? 'hover:bg-stone-100' : 'hover:bg-white/15'"
+          >
+            <span class="material-symbols-outlined text-2xl">person</span>
+          </button>
+
+          <button
+            @click="goToCart"
+            class="relative w-10 h-10 rounded-none flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+            :class="isScrolled ? 'hover:bg-stone-100' : 'hover:bg-white/15'"
+          >
+            <span class="material-symbols-outlined text-2xl">shopping_cart</span>
+            <span
+              v-if="cartStore.items.length"
+              class="absolute -top-1 -right-1 text-white text-[9px] w-5 h-5 flex items-center justify-center rounded-none border-2 border-white font-black shadow-lg"
+              style="background: #c19a51;"
+            >
+              {{ cartStore.items.length }}
+            </span>
+          </button>
+        </div>
       </div>
     </div>
-
-    <!-- Search Overlay -->
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-300 ease-out"
-        enter-from-class="opacity-0 translate-y-[-20px]"
-        enter-to-class="opacity-100 translate-y-0"
-        leave-active-class="transition duration-200 ease-in"
-        leave-from-class="opacity-100 translate-y-0"
-        leave-to-class="opacity-0 translate-y-[-20px]"
-      >
-        <div v-if="isSearchOpen" class="fixed inset-0 z-[100] flex items-start justify-center pt-32 px-6">
-          <!-- Backdrop -->
-          <div class="absolute inset-0 bg-[#0a0805]/90 backdrop-blur-md" @click="toggleSearch"></div>
-          
-          <!-- Content -->
-          <div class="relative w-full max-w-3xl">
-            <div class="flex items-center gap-4 border-b-2 border-[#c19a51] pb-4">
-              <span class="material-symbols-outlined text-4xl text-[#c19a51]">search</span>
-              <input
-                id="search-input"
-                v-model="searchQuery"
-                type="text"
-                placeholder="Cari produk atau merk..."
-                class="w-full bg-transparent border-none text-white text-3xl font-bold focus:ring-0 outline-none placeholder:text-stone-600"
-                @keyup.enter="executeSearch"
-              />
-              <button @click="toggleSearch" class="text-stone-400 hover:text-white transition-colors">
-                <span class="material-symbols-outlined text-3xl">close</span>
-              </button>
-            </div>
-            <p class="text-stone-500 text-sm mt-4 tracking-widest font-bold uppercase">Tekan Enter untuk mencari</p>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
 
     <!-- Bottom border that appears when solid -->
     <div

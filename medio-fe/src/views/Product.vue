@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { productRepository, type Category } from '../repositories/ProductRepository';
 import type { Product } from '../types';
 import { resolveImageUrl } from '../core/utils/image';
+import { settingRepository, type Testimonial } from '../repositories/SettingRepository';
 
 const route = useRoute();
 const router = useRouter();
@@ -20,8 +21,7 @@ const lastPage = ref(1);
 const totalProducts = ref(0);
 const isLoadingMore = ref(false);
 const selectedBrand = ref<string>('');
-const loadMoreTrigger = ref<HTMLElement | null>(null);
-let observer: IntersectionObserver | null = null;
+const testimonials = ref<Testimonial[]>([]);
 
 const categoryTitle = computed(() => {
   if (!categorySlug.value) return 'Koleksi Kami';
@@ -91,29 +91,12 @@ const fetchProducts = async (isLoadMore = false) => {
   }
 };
 
-const setupObserver = () => {
-  if (observer) observer.disconnect();
-  
-  observer = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting && !isLoading.value && !isLoadingMore.value && currentPage.value < lastPage.value) {
-      // Tambahkan delay sedikit agar infinite scroll terasa ada jeda
-      setTimeout(() => {
-        if (!isLoadingMore.value) {
-          currentPage.value++;
-          fetchProducts(true);
-        }
-      }, 300);
-    }
-  }, { rootMargin: '100px' });
-  
-  if (loadMoreTrigger.value) {
-    observer.observe(loadMoreTrigger.value);
+const handleLoadMore = () => {
+  if (!isLoadingMore.value && currentPage.value < lastPage.value) {
+    currentPage.value++;
+    fetchProducts(true);
   }
 };
-
-watch(loadMoreTrigger, (newVal) => {
-  if (newVal) setupObserver();
-});
 
 const fetchBrands = async () => {
   try {
@@ -135,6 +118,13 @@ onMounted(() => {
   fetchCategories();
   fetchBrands();
   fetchProducts(false);
+  
+  // Fetch testimonials from settings
+  settingRepository.getSettings().then(data => {
+    if (data.store_testimonials) {
+      testimonials.value = data.store_testimonials;
+    }
+  });
 });
 
 watch(() => route.params.slug, (newSlug) => {
@@ -397,15 +387,76 @@ const goToDetail = (slug: string) => {
       </article>
     </div>
 
-    <!-- Infinite Scroll Trigger -->
-    <div ref="loadMoreTrigger" class="w-full h-16 mt-8 mb-8 flex justify-center items-center">
+    <!-- Load More Section -->
+    <div class="w-full mt-12 mb-8 flex flex-col items-center gap-6">
       <div v-if="isLoadingMore" class="flex items-center gap-3 text-stone-500">
         <span class="material-symbols-outlined animate-spin text-2xl" style="color: #c19a51;">sync</span>
         <span class="text-xs font-bold uppercase tracking-widest" style="color: #1a1209;">Memuat lebih banyak...</span>
       </div>
-      <div v-else-if="!isLoading && products.length > 0 && currentPage >= lastPage" class="text-stone-400 text-xs font-bold uppercase tracking-widest">
-        — Semua produk telah ditampilkan —
+      
+      <div v-else-if="currentPage < lastPage" class="w-full flex justify-center">
+        <button 
+          @click="handleLoadMore"
+          class="group relative px-10 py-4 overflow-hidden transition-all duration-300 hover:shadow-[0_8px_30px_rgb(193,154,81,0.2)] active:scale-95"
+          style="background: #1a1209;"
+        >
+          <!-- Shiny hover effect -->
+          <div class="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" style="background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);"></div>
+          
+          <div class="flex items-center gap-3 relative z-10">
+            <span class="text-xs font-black uppercase tracking-[0.3em] text-white">Tampilkan Lebih Banyak</span>
+            <span class="material-symbols-outlined text-sm text-amber-500 group-hover:translate-y-1 transition-transform">expand_more</span>
+          </div>
+        </button>
+      </div>
+
+      <div v-else-if="!isLoading && products.length > 0" class="flex flex-col items-center gap-2">
+        <div class="w-12 h-[1px] bg-stone-200"></div>
+        <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">
+          Semua {{ totalProducts }} produk telah ditampilkan
+        </span>
       </div>
     </div>
+
+    <!-- ╔══════════════════════════════════════════╗ -->
+    <!-- ║  TESTIMONIALS (FROM GOOGLE MAPS)        ║ -->
+    <!-- ╚══════════════════════════════════════════╝ -->
+    <section v-if="testimonials.length > 0" class="mt-24 mb-16 px-6 md:px-0">
+      <div class="text-center mb-12">
+        <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-3" style="color: #c19a51;">Apa Kata Pelanggan Kami</p>
+        <h2 class="text-3xl md:text-4xl font-black tracking-tight" style="font-family: 'Outfit', sans-serif; color: #1a1209;">Review Google Maps</h2>
+        <div class="w-12 h-1 bg-amber-600 mx-auto mt-4"></div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div 
+          v-for="(t, idx) in testimonials" 
+          :key="idx"
+          class="p-8 relative group transition-all duration-500 hover:shadow-xl border border-stone-100"
+          style="background: white;"
+        >
+          <div class="absolute -top-4 -left-4 w-12 h-12 flex items-center justify-center bg-stone-900 text-amber-500">
+            <span class="material-symbols-outlined">format_quote</span>
+          </div>
+          
+          <div class="flex gap-1 mb-4">
+            <span v-for="star in t.rating" :key="star" class="material-symbols-outlined text-sm" style="color: #fbbf24;">star</span>
+          </div>
+          
+          <p class="text-stone-600 italic leading-relaxed mb-6">"{{ t.review }}"</p>
+          
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center font-black text-xs" style="background: #f5f2ee; color: #c19a51;">
+              {{ t.name.charAt(0) }}
+            </div>
+            <div>
+              <h4 class="font-bold text-sm text-stone-900">{{ t.name }}</h4>
+              <p class="text-[10px] uppercase tracking-widest text-stone-400">Google Reviewer</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 </template>

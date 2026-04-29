@@ -6,6 +6,7 @@ import { shippingRepository, type Location } from '../repositories/ShippingRepos
 import { useRouter } from 'vue-router';
 import { apiClient } from '../core/api/axiosclient';
 import { useToast } from '../composables/useToast';
+import { resolveImageUrl } from '../core/utils/image';
 
 const { showToast } = useToast();
 
@@ -299,10 +300,23 @@ const deleteAddress = async (id: number) => {
           
           <div v-else class="flex flex-col gap-4">
             <div v-for="order in orders" :key="order.id" class="bg-surface-container-low p-6 rounded-none border border-outline-variant/15 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:shadow-md transition-shadow">
-              <div>
-                <p class="text-xs text-on-surface-variant uppercase tracking-wider mb-1">Order #{{ order.order_number }}</p>
-                <p class="font-medium text-primary">Rp {{ (Number(order.total_price) || 0).toLocaleString('id-ID') }}</p>
-                <p class="text-sm text-on-surface-variant mt-1">{{ new Date(order.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }) }}</p>
+              <div class="flex items-center gap-4">
+                <!-- Product Thumbnail Preview -->
+                <div v-if="order.items && order.items.length > 0" class="w-16 h-16 shrink-0 bg-stone-100 border p-1 rounded-none flex items-center justify-center overflow-hidden">
+                  <img 
+                    :src="resolveImageUrl(order.items[0].product, order.items[0].product?.name)" 
+                    class="w-full h-full object-contain mix-blend-multiply"
+                  />
+                </div>
+                <div v-else class="w-16 h-16 shrink-0 bg-stone-50 border p-1 rounded-none flex items-center justify-center">
+                  <span class="material-symbols-outlined text-stone-300">shopping_bag</span>
+                </div>
+
+                <div>
+                  <p class="text-xs text-on-surface-variant uppercase tracking-wider mb-1">Order #{{ order.order_number }}</p>
+                  <p class="font-medium text-primary">Rp {{ (Number(order.total_price) || 0).toLocaleString('id-ID') }}</p>
+                  <p class="text-sm text-on-surface-variant mt-1">{{ new Date(order.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }) }}</p>
+                </div>
               </div>
               
               <div class="flex items-center gap-4">

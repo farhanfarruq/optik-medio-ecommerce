@@ -14,21 +14,62 @@ class AppSettingResource extends Resource
 {
     protected static ?string $model = AppSetting::class;
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-cog-8-tooth';
-    protected static string | \UnitEnum | null $navigationGroup = 'Sistem';
+    protected static string | \UnitEnum | null $navigationGroup = 'Master Data';
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
-                Forms\Components\TextInput::make('key')
-                    ->required()
-                    ->unique(ignoreRecord: true)
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('group')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\Textarea::make('value')
-                    ->columnSpanFull(),
+                \Filament\Forms\Components\Section::make('Konfigurasi Sistem')
+                    ->description('Atur parameter e-commerce di sini.')
+                    ->schema([
+                        Forms\Components\Select::make('group')
+                            ->label('Kategori Pengaturan')
+                            ->options([
+                                'General' => 'Umum',
+                                'SEO' => 'SEO & Metadata',
+                                'Payment' => 'Pembayaran',
+                                'Shipping' => 'Pengiriman',
+                                'Social Media' => 'Media Sosial',
+                                'Integrations' => 'Integrasi',
+                            ])
+                            ->required()
+                            ->searchable()
+                            ->createOptionForm([
+                                Forms\Components\TextInput::make('group')
+                                    ->required()
+                            ]),
+                        Forms\Components\TextInput::make('key')
+                            ->label('Kunci (Key)')
+                            ->required()
+                            ->unique(ignoreRecord: true)
+                            ->maxLength(255)
+                            ->placeholder('Contoh: store_name'),
+                        Forms\Components\Select::make('type')
+                            ->label('Tipe Data')
+                            ->options([
+                                'string' => 'Teks Biasa',
+                                'text' => 'Teks Panjang',
+                                'boolean' => 'Boolean (On/Off)',
+                                'json' => 'JSON',
+                                'number' => 'Angka',
+                            ])
+                            ->default('string')
+                            ->reactive(),
+                        Forms\Components\TextInput::make('value')
+                            ->label('Nilai (Value)')
+                            ->visible(fn ($get) => in_array($get('type'), ['string', 'number']))
+                            ->required(),
+                        Forms\Components\Textarea::make('value')
+                            ->label('Nilai (Value)')
+                            ->visible(fn ($get) => in_array($get('type'), ['text', 'json']))
+                            ->rows(5)
+                            ->required(),
+                        Forms\Components\Toggle::make('value')
+                            ->label('Aktif / Matikan')
+                            ->visible(fn ($get) => $get('type') === 'boolean')
+                            ->required(),
+                    ])->columns(2),
             ]);
     }
 

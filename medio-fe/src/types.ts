@@ -35,10 +35,18 @@ export interface Product {
     is_prescription_required: boolean;
     stock: number;
     is_best_seller: boolean;
+    is_not_for_sale?: boolean;
+    avg_rating?: number | null;
+    review_count?: number;
+    purchase_count?: number | null;
     variants?: {
         colors: { name: string; hex: string }[];
         sizes: string[];
     };
+    buy_promos?: any[];
+    discount_promos?: any[];
+    buy_promos_many?: any[];
+    discount_promos_many?: any[];
 }
 
 export interface CartItem extends Product {
@@ -60,4 +68,26 @@ export interface Order {
     status: string;
     created_at: string;
     items: any[];
+}
+
+export interface Promo {
+    id: number;
+    name: string;
+    description: string;
+    type: 'buy_x_get_y' | 'transaction_discount' | 'product_discount';
+    buy_product_id?: number;
+    buy_quantity?: number;
+    get_product_id?: number;
+    get_quantity?: number;
+    discount_type?: 'percentage' | 'fixed';
+    discount_value?: number;
+    discount_product_id?: number;
+    min_transaction_amount?: number;
+    buy_product?: { slug: string };
+    discount_product?: { slug: string };
+    is_banner_active?: boolean;
+    buy_brands?: string[];
+    discount_brands?: string[];
+    buy_products?: any[];
+    discount_products?: any[];
 }

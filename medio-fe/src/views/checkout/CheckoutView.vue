@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useCartStore } from '../../stores/cartStore';
 import { shippingRepository, type Location } from '../../repositories/ShippingRepository';
 import { orderRepository } from '../../repositories/OrderRepository';
+import { masterDataRepository, type PaymentMethodItem, type BankAccount } from '../../repositories/MasterDataRepository';
 import { useRouter } from 'vue-router';
 import { apiClient } from '../../core/api/axiosclient';
 import { useToast } from '../../composables/useToast';
+import { resolveImageUrl } from '../../core/utils/image';
 
 const { showToast } = useToast();
-
 const cartStore = useCartStore();
 const router = useRouter();
 
@@ -47,6 +48,30 @@ const isAutoFilling = ref(false);
 const userAddresses = ref<any[]>([]);
 const showAddressModal = ref(false);
 
+// State Payment Method & Bank
+const paymentMethods = ref<PaymentMethodItem[]>([]);
+const bankAccounts = ref<BankAccount[]>([]);
+const selectedPaymentMethodId = ref<number | null>(null);
+const selectedBankId = ref<number | null>(null);
+const isLoadingPayment = ref(false);
+
+// State Store Close
+const storeStatus = ref<{ is_closed: boolean; current_close: any | null } | null>(null);
+const isLoadingStoreStatus = ref(false);
+
+const selectedPaymentMethod = computed(() =>
+  paymentMethods.value.find(m => m.id === selectedPaymentMethodId.value) || null
+);
+
+const isManualPayment = computed(() => {
+  const pm = selectedPaymentMethod.value;
+  return pm && pm.provider !== 'xendit';
+});
+
+const needsBankSelection = computed(() =>
+  selectedPaymentMethod.value?.requires_bank_selection ?? false
+);
+
 // State Diskon
 const couponCode = ref('');
 const appliedDiscount = ref<any>(null);
@@ -60,6 +85,8 @@ const applyCoupon = async () => {
     const response = await apiClient.post('/discounts/validate', { code: couponCode.value });
     appliedDiscount.value = response.data.discount;
     showToast('Kupon berhasil diterapkan!', 'success');
+    cartStore.setPromo(null); // Remove promo if applying discount
+    await cartStore.calculateCart(appliedDiscount.value.id, selectedShippingCost.value);
   } catch (error: any) {
     appliedDiscount.value = null;
     const msg = error.response?.data?.message || 'Gagal menerapkan kupon.';
@@ -69,9 +96,30 @@ const applyCoupon = async () => {
   }
 };
 
-const removeCoupon = () => {
+const removeCoupon = async () => {
   appliedDiscount.value = null;
   couponCode.value = '';
+  await cartStore.calculateCart(undefined, selectedShippingCost.value);
+};
+
+const handlePromoSelect = async (promoId: number) => {
+  if (appliedDiscount.value) {
+    await removeCoupon(); // Cannot stack
+  }
+  
+  const targetId = cartStore.appliedPromoId === promoId ? null : promoId;
+  
+  try {
+    await cartStore.setPromo(targetId, appliedDiscount.value?.id, selectedShippingCost.value);
+    if (targetId) {
+      showToast('Promo berhasil diterapkan!', 'success');
+    } else {
+      showToast('Promo dilepas.', 'info');
+    }
+  } catch (err: any) {
+    const msg = err.response?.data?.message || 'Gagal menerapkan promo.';
+    showToast(msg, 'error');
+  }
 };
 
 const discountAmount = computed(() => {
@@ -83,6 +131,10 @@ const discountAmount = computed(() => {
   // Cap flat discount at subtotal to prevent negative totals
   return Math.min(subtotal, Number(appliedDiscount.value.value));
 });
+const formatPromoDescription = (desc: string) => {
+  if (!desc) return '';
+  return desc.replace(/(\d+)\.00%/g, '$1%');
+};
 
 const selectAddress = async (addr: any) => {
   try {
@@ -113,9 +165,16 @@ const selectAddress = async (addr: any) => {
     }));
     form.value.district_id = String(addr.district_id);
     
+    // Re-affirm the address ID after all reactive changes have settled
+    // This prevents the watcher below from clearing the ID on the final district_id change
+    await nextTick();
+    form.value.id = addr.id;
+    
   } catch (error) {
     console.error('Failed to select address', error);
   } finally {
+    // Use nextTick so all pending watchers fire with isAutoFilling=true before we release the guard
+    await nextTick();
     isAutoFilling.value = false;
   }
 };
@@ -124,8 +183,28 @@ const selectAddress = async (addr: any) => {
 onMounted(async () => {
   try {
     isProvLoading.value = true;
-    // Load provinces first to ensure names can be resolved
-    provinces.value = await shippingRepository.getProvinces();
+    isLoadingPayment.value = true;
+    isLoadingStoreStatus.value = true;
+
+    // Fetch semua data awal secara paralel
+    const [, , paymentData, bankData, storeData] = await Promise.all([
+      shippingRepository.getProvinces().then(d => { provinces.value = d; }),
+      cartStore.fetchPromos(),
+      masterDataRepository.getPaymentMethods(),
+      masterDataRepository.getBanks(),
+      masterDataRepository.getStoreStatus(),
+    ]);
+
+    paymentMethods.value = paymentData;
+    bankAccounts.value = bankData;
+    storeStatus.value = storeData;
+
+    // Auto-select metode pembayaran pertama
+    if (paymentMethods.value.length > 0) {
+      selectedPaymentMethodId.value = paymentMethods.value[0].id;
+    }
+
+    await cartStore.calculateCart(appliedDiscount.value?.id, 0);
 
     const userResponse = await apiClient.get('/auth/me');
     const user = userResponse.data;
@@ -133,10 +212,8 @@ onMounted(async () => {
         form.value.recipient_name = user.name;
         userAddresses.value = user.addresses || [];
         
-        // Find default address
         const defaultAddr = userAddresses.value.find((a: any) => a.is_default) || userAddresses.value[0];
         if (defaultAddr) {
-          console.log('Auto-filling with default address:', defaultAddr);
           await selectAddress(defaultAddr);
         }
     }
@@ -144,6 +221,14 @@ onMounted(async () => {
     console.error('Failed to initialize checkout', error);
   } finally {
     isProvLoading.value = false;
+    isLoadingPayment.value = false;
+    isLoadingStoreStatus.value = false;
+  }
+});
+
+watch(() => form.value.selected_service, async (newVal) => {
+  if (newVal && selectedShippingCost.value > 0) {
+    await cartStore.calculateCart(appliedDiscount.value?.id, selectedShippingCost.value);
   }
 });
 
@@ -282,6 +367,9 @@ const calculateShipping = async () => {
       shippingError.value = error?.response?.data?.message || 'Gagal menghitung ongkir untuk tujuan ini.';
     } finally {
       isCalculating.value = false;
+      if (shippingResults.value.length > 0) {
+        await cartStore.calculateCart(appliedDiscount.value?.id, shippingResults.value[0].cost);
+      }
     }
   }
 };
@@ -302,6 +390,11 @@ const grandTotal = computed(() => {
 
 const submitOrder = async () => {
   checkoutError.value = '';
+
+  if (storeStatus.value?.is_closed) {
+    showToast('Toko sedang tutup. Checkout tidak dapat diproses.', 'error');
+    return;
+  }
 
   if (!isAddressComplete.value) {
     showToast('Lengkapi semua data alamat pengiriman terlebih dahulu.', 'error');
@@ -365,7 +458,10 @@ const submitOrder = async () => {
       courier: selected.courier,
       courier_service: selected.service,
       shipping_cost: selected.cost,
+      payment_method_id: selectedPaymentMethodId.value,
+      bank_id: needsBankSelection.value ? selectedBankId.value : null,
       discount_id: appliedDiscount.value?.id || null,
+      promo_id: cartStore.appliedPromoId || null,
       items: itemsPayload,
       notes: ''
     };
@@ -374,9 +470,12 @@ const submitOrder = async () => {
     cartStore.clearCart();
     if (orderResponse.payment?.checkout_url) {
       window.location.href = orderResponse.payment.checkout_url;
+    } else if (isManualPayment.value) {
+      showToast('Pesanan berhasil! Silakan selesaikan pembayaran.', 'success');
+      router.push(`/waiting-payment/${orderResponse.id}`);
     } else {
       showToast('Pesanan berhasil dibuat!', 'success');
-      router.push(`/profile`);
+      router.push('/orders');
     }
   } catch (error: any) {
     console.error('Order failed', error);
@@ -408,17 +507,39 @@ const submitOrder = async () => {
         <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, #F5F2EE 100%);"></div>
         <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(193,154,81,0.6), transparent);"></div>
 
-        <div class="relative z-10 h-full max-w-[1440px] mx-auto px-6 md:px-12 flex flex-col justify-end pb-24 pt-36">
-          <router-link to="/" class="flex items-center gap-2 text-sm font-bold mb-3 group w-fit transition-all" style="color: rgba(193,154,81,0.9);">
-            <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
-            Kembali ke Beranda
-          </router-link>
+        <div class="relative z-10 h-full max-w-[1440px] mx-auto px-6 md:px-12 flex flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 16px)', paddingBottom: '56px' }">
+          <!-- Breadcrumb + Back -->
+          <div>
+            <nav class="flex items-center gap-2 text-xs font-medium mb-2" style="color: rgba(255,255,255,0.55);">
+              <router-link to="/" class="hover:text-white transition-colors">Beranda</router-link>
+              <span class="material-symbols-outlined text-sm">chevron_right</span>
+              <router-link to="/cart" class="hover:text-white transition-colors">Keranjang</router-link>
+              <span class="material-symbols-outlined text-sm">chevron_right</span>
+              <span class="text-white">Checkout</span>
+            </nav>
+            <router-link to="/" class="flex items-center gap-2 text-sm font-bold group w-fit transition-all" style="color: rgba(193,154,81,0.9);">
+              <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
+              Kembali ke Beranda
+            </router-link>
+          </div>
+          <!-- Page Title -->
           <h1 class="text-4xl font-black tracking-tight text-white" style="font-family: 'Outfit', sans-serif;">Checkout</h1>
         </div>
       </div>
     </div>
 
-    <main class="relative z-10 max-w-7xl mx-auto px-6 pb-24" style="padding-top: 160px;">
+    <main class="relative z-10 max-w-7xl mx-auto px-6 pb-24" style="padding-top: calc(var(--header-height, 96px) + 40px);">
+
+      <!-- Store Close Alert Banner -->
+      <div v-if="storeStatus?.is_closed" class="mb-8 p-5 border flex items-start gap-4" style="background: rgba(220,38,38,0.06); border-color: rgba(220,38,38,0.3);">
+        <span class="material-symbols-outlined text-2xl mt-0.5 shrink-0" style="color: #dc2626;">store</span>
+        <div>
+          <p class="font-black text-sm" style="color: #dc2626;">Toko Sedang Tutup</p>
+          <p class="text-xs mt-1" style="color: #b91c1c;" v-if="storeStatus.current_close?.reason">{{ storeStatus.current_close.reason }}</p>
+          <p class="text-xs mt-1" style="color: #ef4444;">Checkout tidak dapat diproses saat ini. Silakan coba lagi nanti.</p>
+        </div>
+      </div>
+
       <div class="flex flex-col lg:flex-row gap-12 lg:gap-16">
         <!-- Left Column: Forms -->
         <div class="w-full lg:w-3/5 xl:w-2/3 flex flex-col gap-8">
@@ -501,15 +622,39 @@ const submitOrder = async () => {
             </div>
           </section>
 
-          <!-- Discount Section -->
+                    <!-- Promos & Discount Section -->
           <section class="bg-white p-8 rounded-none shadow-sm border border-stone-200">
             <div class="flex items-center gap-3 mb-6">
               <div class="w-10 h-10 rounded-none bg-stone-100 flex items-center justify-center text-stone-600">
                 <span class="material-symbols-outlined">sell</span>
               </div>
-              <h2 class="text-xl font-bold text-stone-900" style="font-family: 'Outfit', sans-serif;">Punya Kode Promo?</h2>
+              <h2 class="text-xl font-bold text-stone-900" style="font-family: 'Outfit', sans-serif;">Punya Promo atau Diskon?</h2>
+            </div>
+            
+            <p class="text-xs text-stone-500 mb-4">* Anda hanya dapat menggunakan salah satu: Promo Eksklusif ATAU Kode Diskon.</p>
+
+            <div v-if="cartStore.applicablePromos.length > 0" class="mb-6 flex flex-col gap-3">
+              <h3 class="font-bold text-sm text-stone-800">Pilih Promo Eksklusif</h3>
+              <div 
+                v-for="promo in cartStore.applicablePromos" 
+                :key="promo.id"
+                @click="handlePromoSelect(promo.id)"
+                class="p-4 border rounded-none cursor-pointer transition-all hover:bg-stone-50 flex justify-between items-center"
+                :class="cartStore.appliedPromoId === promo.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-stone-100'"
+              >
+                <div>
+                  <p class="font-bold text-stone-900 text-sm">{{ promo.name }}</p>
+                  <p class="text-xs text-stone-500 mt-1">{{ formatPromoDescription(promo.description) }}</p>
+                </div>
+                <div v-if="cartStore.appliedPromoId === promo.id" class="text-primary">
+                  <span class="material-symbols-outlined">check_circle</span>
+                </div>
+              </div>
             </div>
 
+            <div class="h-px bg-stone-100 mb-6"></div>
+
+            <h3 class="font-bold text-sm text-stone-800 mb-3">Atau Masukkan Kode Diskon</h3>
             <div v-if="!appliedDiscount" class="flex gap-2">
               <input 
                 v-model="couponCode" 
@@ -531,8 +676,8 @@ const submitOrder = async () => {
               <div class="flex items-center gap-3">
                 <span class="material-symbols-outlined text-primary">verified</span>
                 <div>
-                  <p class="font-bold text-stone-900 text-sm">Promo Terpasang: <span class="text-primary uppercase">{{ appliedDiscount.code }}</span></p>
-                  <p class="text-[10px] text-stone-500">Potongan sebesar Rp {{ discountAmount.toLocaleString('id-ID') }}</p>
+                  <p class="font-bold text-stone-900 text-sm">Diskon Terpasang: <span class="text-primary uppercase">{{ appliedDiscount.code }}</span></p>
+                  <p class="text-[10px] text-stone-500" v-if="cartStore.calculatedData">Potongan sebesar Rp {{ cartStore.calculatedData.discount_amount.toLocaleString('id-ID') }}</p>
                 </div>
               </div>
               <button @click="removeCoupon" class="text-xs font-bold text-red-500 hover:underline">Hapus</button>
@@ -574,6 +719,68 @@ const submitOrder = async () => {
                </div>
             </div>
           </section>
+
+          <!-- Payment Method Section -->
+          <section class="bg-white p-8 rounded-none shadow-sm border border-stone-200">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-10 h-10 rounded-none bg-stone-100 flex items-center justify-center text-stone-600">
+                <span class="material-symbols-outlined">credit_card</span>
+              </div>
+              <div>
+                <h2 class="font-black text-lg" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Metode Pembayaran</h2>
+                <p class="text-xs text-stone-500 mt-0.5">Pilih cara pembayaran yang Anda inginkan</p>
+              </div>
+            </div>
+
+            <div v-if="isLoadingPayment" class="flex items-center gap-2 py-6">
+              <span class="material-symbols-outlined animate-spin" style="color: #c19a51;">sync</span>
+              <span class="text-sm text-stone-500">Memuat metode pembayaran...</span>
+            </div>
+
+            <div v-else-if="paymentMethods.length === 0" class="py-6 text-center text-sm text-stone-400">
+              Tidak ada metode pembayaran tersedia.
+            </div>
+
+            <div v-else class="flex flex-col gap-3">
+              <label
+                v-for="pm in paymentMethods"
+                :key="pm.id"
+                class="flex items-start gap-4 p-4 border cursor-pointer transition-all hover:bg-stone-50 rounded-none"
+                :class="selectedPaymentMethodId === pm.id ? 'border-amber-700 bg-amber-50/30 ring-1 ring-amber-700/30' : 'border-stone-100'"
+              >
+                <input type="radio" v-model="selectedPaymentMethodId" :value="pm.id" class="accent-amber-700 w-4 h-4 mt-0.5 shrink-0"/>
+                <div class="flex-grow min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="material-symbols-outlined text-base" style="color: #c19a51;">{{ pm.type === 'online' ? 'account_balance' : 'swap_horiz' }}</span>
+                    <p class="font-bold text-sm" style="color: #1a1209;">{{ pm.name }}</p>
+                    <span v-if="pm.provider === 'xendit'" class="text-[9px] font-black uppercase px-2 py-0.5 rounded" style="background: rgba(193,154,81,0.12); color: #7a6230;">Otomatis</span>
+                  </div>
+                  <p v-if="pm.instructions" class="text-xs text-stone-500 leading-relaxed">{{ pm.instructions }}</p>
+                </div>
+              </label>
+            </div>
+
+            <!-- Bank Account Selection -->
+            <div v-if="needsBankSelection && bankAccounts.length > 0" class="mt-6 pt-6 border-t border-stone-100">
+              <p class="text-sm font-bold mb-3" style="color: #1a1209;">Rekening Tujuan Transfer</p>
+              <div class="flex flex-col gap-3">
+                <label
+                  v-for="bank in bankAccounts"
+                  :key="bank.id"
+                  class="flex items-center gap-4 p-4 border cursor-pointer transition-all hover:bg-stone-50 rounded-none"
+                  :class="selectedBankId === bank.id ? 'border-amber-700 bg-amber-50/30 ring-1 ring-amber-700/30' : 'border-stone-100'"
+                >
+                  <input type="radio" v-model="selectedBankId" :value="bank.id" class="accent-amber-700 w-4 h-4 shrink-0"/>
+                  <div>
+                    <p class="font-bold text-sm" style="color: #1a1209;">{{ bank.name }}</p>
+                    <p class="text-xs text-stone-500">{{ bank.account_number }} a/n {{ bank.account_name }}</p>
+                    <p v-if="bank.branch" class="text-[10px] text-stone-400 mt-0.5">Cabang: {{ bank.branch }}</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </section>
+
         </div>
 
         <!-- Right Column: Summary -->
@@ -582,22 +789,43 @@ const submitOrder = async () => {
             <h2 class="text-xl font-bold text-stone-900 mb-8" style="font-family: 'Outfit', sans-serif;">Ringkasan Pesanan</h2>
 
             <div class="flex flex-col gap-4 text-sm mb-8">
-              <div class="flex justify-between text-stone-500">
-                <span>Subtotal ({{ cartStore.items.length }} item)</span>
-                <span class="font-bold text-stone-900">Rp {{ cartStore.cartTotal.toLocaleString('id-ID') }}</span>
+                            <div class="flex justify-between text-stone-500">
+                <span>Subtotal ({{ cartStore.calculatedData ? cartStore.calculatedData.items.length : cartStore.items.length }} item)</span>
+                <span class="font-bold text-stone-900">Rp {{ (cartStore.calculatedData ? cartStore.calculatedData.subtotal : cartStore.cartTotal).toLocaleString('id-ID') }}</span>
               </div>
               <div class="flex justify-between text-stone-500">
                 <span>Ongkos Kirim</span>
                 <span class="font-bold text-stone-900">Rp {{ selectedShippingCost.toLocaleString('id-ID') }}</span>
               </div>
-              <div v-if="discountAmount > 0" class="flex justify-between text-green-600">
-                <span>Diskon Promo</span>
-                <span class="font-bold">-Rp {{ discountAmount.toLocaleString('id-ID') }}</span>
+              <div v-if="cartStore.calculatedData && cartStore.calculatedData.discount_amount > 0" class="flex justify-between text-green-600">
+                <span>Diskon Promo Code</span>
+                <span class="font-bold">-Rp {{ cartStore.calculatedData.discount_amount.toLocaleString('id-ID') }}</span>
               </div>
+              <div v-if="cartStore.calculatedData && cartStore.calculatedData.promo_discount_amount > 0" class="flex justify-between text-green-600">
+                <span>Promo Eksklusif</span>
+                <span class="font-bold">-Rp {{ cartStore.calculatedData.promo_discount_amount.toLocaleString('id-ID') }}</span>
+              </div>
+              
+              <!-- Free Items -->
+              <div v-if="cartStore.calculatedData" class="mt-4 border-t border-stone-50 pt-4">
+                <div v-for="cItem in cartStore.calculatedData.items" :key="cItem.product_id + (cItem.name || cItem.product_name)">
+                  <div v-if="cItem.is_free" class="flex items-center gap-3 p-3 bg-primary/5 border border-primary/10 mb-2">
+                    <div class="w-12 h-12 rounded-none bg-white border border-primary/10 flex items-center justify-center p-1 shrink-0">
+                      <img :src="resolveImageUrl(cItem.image, cItem.name || cItem.product_name)" class="w-full h-full object-contain" />
+                    </div>
+                    <div class="flex flex-col flex-grow min-w-0">
+                      <p class="text-[9px] font-black uppercase tracking-[0.1em] text-primary mb-0.5">Bonus Hadiah</p>
+                      <h3 class="text-[11px] font-bold text-stone-900 leading-tight line-clamp-2">{{ cItem.name || cItem.product_name }}</h3>
+                      <p class="text-[10px] text-stone-500 mt-1 font-bold">Qty: {{ cItem.quantity }} <span class="ml-2 text-primary">GRATIS</span></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div class="h-px bg-stone-100 my-2"></div>
               <div class="flex justify-between items-center">
                 <span class="text-base font-bold text-stone-900">Total Pembayaran</span>
-                <span class="text-2xl font-black text-primary" style="color: #c19a51;">Rp {{ grandTotal.toLocaleString('id-ID') }}</span>
+                <span class="text-2xl font-black text-primary" style="color: #c19a51;">Rp {{ (cartStore.calculatedData ? cartStore.calculatedData.total_price : grandTotal).toLocaleString('id-ID') }}</span>
               </div>
             </div>
 

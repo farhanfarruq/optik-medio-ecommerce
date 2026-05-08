@@ -13,8 +13,14 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->statefulApi();
+        $middleware->validateCsrfTokens(except: [
+            'api/*',
+        ]);
+        // Tambahkan security headers ke semua response
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         $middleware->alias([
             'admin' => \App\Http\Middleware\IsAdmin::class,
+            'store.open' => \App\Http\Middleware\EnsureStoreIsOpen::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

@@ -14,6 +14,7 @@ class Discount extends Model
         'code',
         'type',
         'value',
+        'min_order_amount',
         'start_date',
         'end_date',
         'is_active',
@@ -25,6 +26,7 @@ class Discount extends Model
         'start_date' => 'datetime',
         'end_date' => 'datetime',
         'is_active' => 'boolean',
+        'min_order_amount' => 'decimal:2',
     ];
 
     public function isValid(): bool

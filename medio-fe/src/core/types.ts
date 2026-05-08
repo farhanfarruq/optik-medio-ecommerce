@@ -15,6 +15,10 @@ export interface Product {
   is_prescription_required: boolean;
   image_url?: string;
   brand_name?: string;
+  buy_promos?: any[];
+  discount_promos?: any[];
+  buy_promos_many?: any[];
+  discount_promos_many?: any[];
 }
 
 export interface Prescription {

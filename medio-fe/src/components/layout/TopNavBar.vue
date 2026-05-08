@@ -9,19 +9,44 @@ const authStore = useAuthStore();
 const router = useRouter();
 
 const isScrolled = ref(false);
+const isSearchOpen = ref(false);
+const searchQuery = ref('');
+const windowWidth = ref(window.innerWidth);
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 50;
 };
 
+const updateWidth = () => {
+  windowWidth.value = window.innerWidth;
+};
+
+const toggleSearch = () => {
+  isSearchOpen.value = !isSearchOpen.value;
+  if (isSearchOpen.value) {
+    setTimeout(() => {
+      document.getElementById('search-input')?.focus();
+    }, 100);
+  }
+};
+
+const executeSearch = () => {
+  if (searchQuery.value.trim()) {
+    router.push({ path: '/products', query: { search: searchQuery.value } });
+    isSearchOpen.value = false;
+    searchQuery.value = '';
+  }
+};
+
 onMounted(() => {
   window.addEventListener('scroll', handleScroll);
-  // Reset scroll state on route change (page might start at top)
+  window.addEventListener('resize', updateWidth);
   handleScroll();
 });
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
+  window.removeEventListener('resize', updateWidth);
 });
 
 const goToCart = () => router.push('/cart');
@@ -33,8 +58,12 @@ const handleUserClick = () => {
 
 <template>
   <nav
+    :style="{
+      top: cartStore.isPromoBannerVisible ? '40px' : '0',
+      transition: 'top 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.5s ease, height 0.5s ease, box-shadow 0.5s ease'
+    }"
     :class="[
-      'fixed top-0 w-full z-50 transition-all duration-500',
+      'fixed w-full z-50',
       isScrolled
         ? 'bg-white/95 backdrop-blur-xl shadow-lg h-20'
         : 'bg-transparent h-24'
@@ -60,41 +89,84 @@ const handleUserClick = () => {
           Optik Medio
         </span>
       </router-link>
+      
+      <!-- Center Links (Empty for now to maintain minimalist look) -->
+      <div class="hidden md:flex items-center gap-8 ml-10 flex-grow">
+      </div>
 
       <!-- Actions -->
       <div
-        class="flex items-center gap-6 transition-all duration-300"
+        class="flex items-center gap-3 md:gap-6 transition-all duration-300 h-full"
         :class="isScrolled ? 'text-stone-800' : 'text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]'"
       >
-        <button
-          class="w-10 h-10 rounded-none flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-          :class="isScrolled ? 'hover:bg-stone-100' : 'hover:bg-white/15'"
+        <!-- Integrated Search Bar -->
+        <div 
+          class="relative flex items-center h-12 transition-all duration-500 ease-out overflow-hidden"
+          :class="isSearchOpen ? 'w-[200px] md:w-[350px] px-4 bg-white/10 backdrop-blur-md border-b border-amber-500/50' : 'w-10'"
+          :style="isSearchOpen && isScrolled ? 'background: rgba(0,0,0,0.03);' : ''"
         >
-          <span class="material-symbols-outlined text-2xl">search</span>
-        </button>
-
-        <button
-          @click="handleUserClick"
-          class="w-10 h-10 rounded-none flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-          :class="isScrolled ? 'hover:bg-stone-100' : 'hover:bg-white/15'"
-        >
-          <span class="material-symbols-outlined text-2xl">person</span>
-        </button>
-
-        <button
-          @click="goToCart"
-          class="relative w-10 h-10 rounded-none flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-          :class="isScrolled ? 'hover:bg-stone-100' : 'hover:bg-white/15'"
-        >
-          <span class="material-symbols-outlined text-2xl">shopping_cart</span>
-          <span
-            v-if="cartStore.items.length"
-            class="absolute -top-1 -right-1 text-white text-[9px] w-5 h-5 flex items-center justify-center rounded-none border-2 border-white font-black shadow-lg"
-            style="background: #c19a51;"
+          <button
+            @click="isSearchOpen ? executeSearch() : toggleSearch()"
+            class="shrink-0 w-10 h-10 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+            :class="{ 'text-amber-500': isSearchOpen }"
           >
-            {{ cartStore.items.length }}
-          </span>
-        </button>
+            <span class="material-symbols-outlined text-2xl">search</span>
+          </button>
+          
+          <input
+            v-if="isSearchOpen"
+            id="search-input"
+            v-model="searchQuery"
+            type="text"
+            placeholder="Cari..."
+            class="w-full bg-transparent border-none text-sm font-bold focus:ring-0 outline-none placeholder:text-stone-500 px-2"
+            :class="isScrolled ? 'text-stone-900' : 'text-white'"
+            @keyup.enter="executeSearch"
+            @blur="() => { if(!searchQuery) isSearchOpen = false }"
+          />
+
+          <button 
+            v-if="isSearchOpen" 
+            @click="isSearchOpen = false" 
+            class="shrink-0 text-stone-400 hover:text-stone-600 p-1"
+          >
+            <span class="material-symbols-outlined text-sm">close</span>
+          </button>
+        </div>
+
+        <!-- User & Cart (Hidden when search is wide on mobile) -->
+        <div v-if="!isSearchOpen || windowWidth > 768" class="flex items-center gap-2 md:gap-4">
+          <router-link 
+            to="/blog" 
+            class="w-10 h-10 rounded-none flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+            :class="isScrolled ? 'hover:bg-stone-100 text-stone-800' : 'hover:bg-white/15 text-white'"
+            title="Blog & Artikel"
+          >
+            <span class="material-symbols-outlined text-2xl">menu_book</span>
+          </router-link>
+          <button
+            @click="handleUserClick"
+            class="w-10 h-10 rounded-none flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+            :class="isScrolled ? 'hover:bg-stone-100' : 'hover:bg-white/15'"
+          >
+            <span class="material-symbols-outlined text-2xl">person</span>
+          </button>
+
+          <button
+            @click="goToCart"
+            class="relative w-10 h-10 rounded-none flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+            :class="isScrolled ? 'hover:bg-stone-100' : 'hover:bg-white/15'"
+          >
+            <span class="material-symbols-outlined text-2xl">shopping_cart</span>
+            <span
+              v-if="cartStore.items.length"
+              class="absolute -top-1 -right-1 text-white text-[9px] w-5 h-5 flex items-center justify-center rounded-none border-2 border-white font-black shadow-lg"
+              style="background: #c19a51;"
+            >
+              {{ cartStore.items.length }}
+            </span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -107,3 +179,6 @@ const handleUserClick = () => {
     ></div>
   </nav>
 </template>
+
+<style scoped>
+</style>

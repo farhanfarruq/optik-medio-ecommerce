@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { computed, ref, reactive, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCartStore } from '../stores/cartStore';
+import { useWishlistStore } from '../stores/wishlistStore';
 import { productRepository } from '../repositories/ProductRepository';
+import { reviewRepository, type Review } from '../repositories/ReviewRepository';
 import type { Product } from '../types';
 
 import { resolveImageUrl } from '../core/utils/image';
@@ -13,11 +15,14 @@ const { showToast } = useToast();
 const route = useRoute();
 const router = useRouter();
 const cartStore = useCartStore();
+const wishlistStore = useWishlistStore();
 
 const product = ref<Product | null>(null);
 const isLoading = ref(true);
 const lenses = ref<Product[]>([]);
 const isLensesLoading = ref(false);
+const productReviews = ref<Review[]>([]);
+const reviewSummary = ref({ avg_rating: 0, total_reviews: 0 });
 
 const formState = reactive({
   color: null as any,
@@ -41,6 +46,16 @@ onMounted(async () => {
   try {
     const data = await productRepository.getProductBySlug(slug);
     product.value = data;
+    try {
+      const reviews = await reviewRepository.getProductReviews(slug);
+      productReviews.value = reviews.reviews;
+      reviewSummary.value = {
+        avg_rating: reviews.avg_rating,
+        total_reviews: reviews.total_reviews,
+      };
+    } catch (reviewError) {
+      console.warn('Failed to fetch reviews', reviewError);
+    }
 
     if (data.variants) {
       if (data.variants.colors && data.variants.colors.length > 0) {
@@ -105,7 +120,49 @@ const executeAddToCart = (selectedLens: any = null) => {
   setTimeout(() => { addedToCart.value = false; }, 2500);
 };
 
+const isWishlisted = computed(() => product.value ? wishlistStore.isWishlisted(product.value.id) : false);
+
+const toggleWishlist = async () => {
+  if (!product.value) return;
+
+  const added = await wishlistStore.toggleWishlist(product.value);
+  showToast(
+    added ? 'Produk ditambahkan ke wishlist.' : 'Produk dihapus dari wishlist.',
+    'success',
+  );
+};
+
 const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50', '-0.25', '0.00', '+0.25', '+0.50', '+0.75', '+1.00', '+1.25', '+1.50', '+1.75', '+2.00'];
+
+const getProductPromos = (p: Product | null) => {
+  if (!p) return { buyPromos: [], discountPromos: [] };
+  
+  const buyPromos = [...(p.buy_promos || []), ...(p.buy_promos_many || [])];
+  const discountPromos = [...(p.discount_promos || []), ...(p.discount_promos_many || [])];
+
+  // Add brand-based promos from store
+  if (p.brand && cartStore.activePromos.length > 0) {
+    cartStore.activePromos.forEach(promo => {
+      // Check if already in list to avoid duplicates
+      const isDuplicate = [...buyPromos, ...discountPromos].some(item => item.id === promo.id);
+      if (isDuplicate) return;
+
+      if (promo.type === 'buy_x_get_y' && promo.buy_brands?.includes(p.brand)) {
+        buyPromos.push(promo);
+      } else if (promo.type === 'product_discount' && promo.discount_brands?.includes(p.brand)) {
+        discountPromos.push(promo);
+      }
+    });
+  }
+
+  return { buyPromos, discountPromos };
+};
+
+const formatPromoDescription = (desc: string) => {
+  if (!desc) return '';
+  // Match patterns like "15.00%" and turn them into "15%"
+  return desc.replace(/(\d+)\.00%/g, '$1%');
+};
 </script>
 
 <template>
@@ -141,7 +198,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
             <span class="material-symbols-outlined text-sm">chevron_right</span>
             <router-link to="/products" class="hover:text-white transition-colors">Koleksi</router-link>
             <span class="material-symbols-outlined text-sm">chevron_right</span>
-            <span class="text-white">{{ product.name }}</span>
+            <span class="text-white">{{ product.brand || 'Optik Medio' }}</span>
           </nav>
           <button @click="router.back()" class="flex items-center gap-2 text-sm font-bold transition-all group w-fit" style="color: rgba(193,154,81,0.9);">
             <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
@@ -208,31 +265,85 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
         <!-- ── Right: Product Info ── -->
         <div class="lg:col-span-5 flex flex-col gap-7">
 
-          <!-- Brand + Best Seller -->
-          <div class="flex items-center justify-between">
-            <p class="text-[10px] font-black uppercase tracking-[0.3em]" style="color: #c19a51;">
-              {{ product.brand || 'Optik Medio' }}
-            </p>
-            <div
-              v-if="product.is_best_seller"
-              class="flex items-center gap-1.5 px-3 py-1 rounded-md text-[9px] font-bold uppercase tracking-[0.1em] text-white"
-              style="background: rgba(26,18,9,0.8); backdrop-filter: blur(4px); border: 1px solid rgba(193,154,81,0.3);"
-            >
-              <span class="material-symbols-outlined text-[10px]" style="color: #c19a51;">trending_up</span>
-              Terlaris
+          <!-- Category + Badges -->
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+              <p class="text-[10px] font-black uppercase tracking-[0.3em]" style="color: #c19a51;">
+                Koleksi {{ (product as any).category?.name || 'Optik' }}
+              </p>
+              <div
+                v-if="product.is_best_seller"
+                class="flex items-center gap-1.5 px-3 py-1 rounded-md text-[9px] font-bold uppercase tracking-[0.1em] text-white"
+                style="background: rgba(26,18,9,0.8); backdrop-filter: blur(4px); border: 1px solid rgba(193,154,81,0.3);"
+              >
+                <span class="material-symbols-outlined text-[10px]" style="color: #c19a51;">trending_up</span>
+                Terlaris
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-4">
+              <!-- Promo Badge (Buy X Get Y) -->
+              <div
+                v-if="getProductPromos(product).buyPromos.length > 0"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-[0.1em] text-white shadow-md"
+                style="background: #c19a51; border: 1px solid rgba(255,255,255,0.2);"
+              >
+                <span class="material-symbols-outlined text-[10px]">redeem</span>
+                {{ 
+                  getProductPromos(product).buyPromos[0]
+                    ? `Beli ${getProductPromos(product).buyPromos[0].buy_quantity} Gratis ${getProductPromos(product).buyPromos[0].get_quantity}` 
+                    : 'Promo Spesial' 
+                }}
+                <div v-if="getProductPromos(product).buyPromos[0]?.description" class="mt-1 normal-case font-medium opacity-90">
+                  {{ formatPromoDescription(getProductPromos(product).buyPromos[0]?.description) }}
+                </div>
+              </div>
+
+              <!-- Promo Badge (Product Discount) -->
+              <div
+                v-if="getProductPromos(product).discountPromos.length > 0"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-[0.1em] text-white shadow-md"
+                style="background: #ef4444; border: 1px solid rgba(255,255,255,0.2);"
+              >
+                <span class="material-symbols-outlined text-[10px]">percent</span>
+                {{ 
+                  getProductPromos(product).discountPromos[0] 
+                    ? `Diskon ${getProductPromos(product).discountPromos[0].discount_type === 'percentage' ? Math.round(Number(getProductPromos(product).discountPromos[0].discount_value)) + '%' : 'Rp ' + Number(getProductPromos(product).discountPromos[0].discount_value).toLocaleString('id-ID')}` 
+                    : 'Diskon Spesial' 
+                }}
+                <div v-if="getProductPromos(product).discountPromos[0]?.description" class="mt-1 normal-case font-medium opacity-90">
+                  {{ formatPromoDescription(getProductPromos(product).discountPromos[0]?.description) }}
+                </div>
+              </div>
             </div>
           </div>
 
           <!-- Name + Price -->
-          <div class="flex flex-col gap-3">
-            <h1 class="font-bold text-3xl md:text-4xl leading-tight tracking-tight" style="color: #1a1209; font-family: 'Outfit', sans-serif;">
+          <div class="flex flex-col gap-2">
+            <p class="text-xs font-black uppercase tracking-[0.2em]" style="color: #8a7a60;">
               {{ product.name }}
+            </p>
+            <h1 class="font-bold text-4xl md:text-5xl leading-tight tracking-tight" style="color: #1a1209; font-family: 'Outfit', sans-serif; letter-spacing: -0.02em;">
+              {{ product.brand || 'Optik Medio' }}
             </h1>
+            <div class="flex flex-wrap items-center gap-4 text-sm" style="color: #8a7a60;">
+              <span class="flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-base" style="color: #c19a51;">star</span>
+                {{ Number(reviewSummary.avg_rating || product.avg_rating || 0).toFixed(1) }} dari {{ reviewSummary.total_reviews || product.review_count || 0 }} ulasan
+              </span>
+              <span class="flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-base" style="color: #c19a51;">shopping_bag</span>
+                {{ Number(product.purchase_count || 0) }} terjual
+              </span>
+            </div>
             <div class="flex items-center justify-between">
-              <p class="text-2xl font-black" style="color: #7a6230;">
+              <p v-if="!product.is_not_for_sale" class="text-2xl font-black" style="color: #7a6230;">
                 Rp {{ product.price.toLocaleString('id-ID') }}
               </p>
-              <div class="flex items-center gap-2">
+              <p v-else class="text-xl font-bold uppercase tracking-widest" style="color: #c19a51;">
+                Katalog Informasi
+              </p>
+              <div v-if="!product.is_not_for_sale" class="flex items-center gap-2">
                 <span
                   class="w-2.5 h-2.5 rounded-none"
                   :style="product.stock > 0 ? 'background: #16a34a; box-shadow: 0 0 8px rgba(22,163,74,0.5);' : 'background: #dc2626;'"
@@ -244,6 +355,17 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
             </div>
           </div>
 
+          <button
+            @click="toggleWishlist"
+            class="w-full py-3 px-5 rounded-none border flex items-center justify-center gap-3 text-sm font-black uppercase tracking-[0.16em] transition-all"
+            :style="isWishlisted
+              ? 'background: rgba(193,154,81,0.12); color: #7a6230; border-color: rgba(193,154,81,0.3);'
+              : 'background: white; color: #5a5248; border-color: rgba(193,154,81,0.18);'"
+          >
+            <span class="material-symbols-outlined text-lg">{{ isWishlisted ? 'favorite' : 'favorite_border' }}</span>
+            {{ isWishlisted ? 'Tersimpan di Wishlist' : 'Tambah ke Wishlist' }}
+          </button>
+
           <!-- Divider -->
           <div class="h-px" style="background: linear-gradient(90deg, rgba(193,154,81,0.3), transparent);"></div>
 
@@ -254,7 +376,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
 
           <!-- Prescription Notice -->
           <div
-            v-if="product.is_prescription_required"
+            v-if="product.is_prescription_required && !product.is_not_for_sale"
             class="p-4 rounded-none flex items-start gap-3 border"
             style="background: rgba(193,154,81,0.07); border-color: rgba(193,154,81,0.25);"
           >
@@ -265,8 +387,27 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
             </div>
           </div>
 
+          <!-- Info Only Notice -->
+          <div
+            v-if="product.is_not_for_sale"
+            class="p-6 rounded-none flex flex-col gap-4 border"
+            style="background: rgba(26,18,9,0.03); border-color: rgba(193,154,81,0.2); border-left: 4px solid #c19a51;"
+          >
+            <div class="flex items-center gap-2 text-stone-800">
+              <span class="material-symbols-outlined text-xl" style="color: #c19a51;">menu_book</span>
+              <p class="text-base font-bold">Katalog Brand Lensa</p>
+            </div>
+            <p class="text-sm leading-relaxed text-stone-600">
+              Informasi produk ini merupakan bagian dari katalog brand lensa yang kami gunakan di Optik Medio. 
+              Produk ini tidak dijual secara terpisah. Untuk konsultasi lebih lanjut mengenai lensa terbaik untuk kebutuhan mata Anda, silakan hubungi tim ahli kami.
+            </p>
+            <button class="w-fit px-6 py-2 bg-[#1a1209] text-white text-xs font-bold uppercase tracking-widest hover:bg-stone-800 transition-colors">
+              Hubungi CS Optik Medio
+            </button>
+          </div>
+
           <!-- Color Selector -->
-          <div v-if="product.variants?.colors?.length" class="flex flex-col gap-3">
+          <div v-if="product.variants?.colors?.length && !product.is_not_for_sale" class="flex flex-col gap-3">
             <p class="text-xs font-bold uppercase tracking-wider" style="color: #5a5248;">
               Warna: <span class="font-medium" style="color: #1a1209;">{{ formState.color?.name }}</span>
             </p>
@@ -283,7 +424,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
           </div>
 
           <!-- Size Selector -->
-          <div v-if="product.variants?.sizes?.length" class="flex flex-col gap-3">
+          <div v-if="product.variants?.sizes?.length && !product.is_not_for_sale" class="flex flex-col gap-3">
             <p class="text-xs font-bold uppercase tracking-wider" style="color: #5a5248;">Ukuran</p>
             <div class="flex gap-2 flex-wrap">
               <button
@@ -301,7 +442,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
           </div>
 
           <!-- Prescription Form -->
-          <div v-if="product.is_prescription_required" class="flex flex-col gap-6 pt-6 border-t" style="border-color: rgba(193,154,81,0.15);">
+          <div v-if="product.is_prescription_required && !product.is_not_for_sale" class="flex flex-col gap-6 pt-6 border-t" style="border-color: rgba(193,154,81,0.15);">
             <h2 class="font-bold text-lg" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Resep Kacamata Anda</h2>
 
             <div class="p-5 rounded-none border" style="background: rgba(245,242,238,0.8); border-color: rgba(193,154,81,0.15);">
@@ -356,6 +497,7 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
 
           <!-- Add to Cart Button -->
           <button
+            v-if="!product.is_not_for_sale"
             @click="handleAddToCartClick"
             :disabled="product.stock <= 0"
             class="w-full py-4 px-6 font-black text-sm uppercase tracking-widest rounded-none transition-all flex items-center justify-center gap-3 shadow-lg"
@@ -387,6 +529,52 @@ const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50
         </div>
       </div>
     </div>
+
+    <section class="max-w-[1440px] mx-auto px-6 md:px-12 pb-16">
+      <div class="border rounded-none p-8" style="background: white; border-color: rgba(193,154,81,0.15); box-shadow: 0 2px 12px rgba(0,0,0,0.04);">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
+          <div>
+            <p class="text-xs font-black uppercase tracking-[0.25em] mb-2" style="color: #c19a51;">Customer Reviews</p>
+            <h2 class="text-3xl font-black" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Ulasan Produk</h2>
+          </div>
+          <div class="text-sm" style="color: #8a7a60;">
+            Rating rata-rata <span class="font-black" style="color: #1a1209;">{{ Number(reviewSummary.avg_rating || product.avg_rating || 0).toFixed(1) }}</span>
+            dari {{ reviewSummary.total_reviews || product.review_count || 0 }} ulasan
+          </div>
+        </div>
+
+        <div v-if="productReviews.length === 0" class="text-sm" style="color: #8a7a60;">
+          Belum ada ulasan untuk produk ini.
+        </div>
+
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <article
+            v-for="review in productReviews"
+            :key="review.id"
+            class="border rounded-none p-5"
+            style="background: rgba(245,242,238,0.75); border-color: rgba(193,154,81,0.12);"
+          >
+            <div class="flex items-center justify-between gap-4 mb-3">
+              <p class="font-black" style="color: #1a1209;">{{ review.user_name }}</p>
+              <span class="text-xs" style="color: #8a7a60;">{{ review.created_at }}</span>
+            </div>
+            <div class="flex items-center gap-1 mb-3">
+              <span
+                v-for="star in 5"
+                :key="star"
+                class="material-symbols-outlined text-base"
+                :style="star <= review.rating ? 'color: #c19a51;' : 'color: rgba(193,154,81,0.25);'"
+              >
+                star
+              </span>
+            </div>
+            <p class="text-sm leading-relaxed" style="color: #5a5248;">
+              {{ review.comment || 'Customer tidak menambahkan komentar tertulis.' }}
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
 
     <!-- ╔══════════════════════════════════════╗ -->
     <!-- ║          LENS SELECTOR MODAL         ║ -->

@@ -4,30 +4,44 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\ShippingAddress;
+use App\Models\Expedition;
 use App\Services\RajaOngkirService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ShippingController extends Controller
 {
-    public function __construct(private RajaOngkirService $rajaOngkir) {}
+    public function __construct(private RajaOngkirService $shippingService) {}
+
+    public function expeditions(): JsonResponse
+    {
+        $expeditions = Expedition::where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+        return response()->json($expeditions);
+    }
 
     public function provinces(): JsonResponse
     {
-        return response()->json($this->rajaOngkir->getProvinces());
+        return response()->json($this->shippingService->getProvinces());
     }
 
     public function cities(Request $request): JsonResponse
     {
         return response()->json(
-            $this->rajaOngkir->getCities($request->province_id ?? ""),
+            $this->shippingService->getCities(
+                $request->province_id ?? ''
+            )
         );
     }
 
     public function districts(Request $request): JsonResponse
     {
         return response()->json(
-            $this->rajaOngkir->getDistricts($request->city_id ?? ""),
+            $this->shippingService->getDistricts(
+                $request->city_id ?? ''
+            )
         );
     }
 
@@ -38,7 +52,7 @@ class ShippingController extends Controller
             "weight" => "required|integer|min:1",
         ]);
 
-        $costs = $this->rajaOngkir->calculateAllCouriers(
+        $costs = $this->shippingService->calculateAllCouriers(
             $request->destination_district_id,
             $request->weight,
         );

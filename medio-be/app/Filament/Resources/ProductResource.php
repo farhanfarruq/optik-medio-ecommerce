@@ -76,7 +76,10 @@ class ProductResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\ImageColumn::make('images')->stacked()->circular(),
+                Tables\Columns\ImageColumn::make('images')
+                    ->disk('public')
+                    ->stacked()
+                    ->circular(),
                 Tables\Columns\TextColumn::make('name')->searchable(),
                 Tables\Columns\TextColumn::make('category.name')->sortable(),
                 Tables\Columns\TextColumn::make('price')->money('IDR')->sortable(),

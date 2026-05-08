@@ -10,9 +10,32 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function login(credentials: any) {
     const response = await authRepository.login(credentials);
+
+    // Jika server minta verifikasi OTP dulu
+    if (response.requires_otp) {
+      throw { response: { data: response, status: 403 } };
+    }
+
     token.value = response.token;
     user.value = response.user;
     localStorage.setItem('auth_token', response.token);
+  }
+
+  async function register(userData: any) {
+    const response = await authRepository.register(userData);
+    return response; // Kembalikan response (berisi email untuk OTP step)
+  }
+
+  async function verifyOtp(email: string, code: string) {
+    const response = await authRepository.verifyOtp({ email, code });
+    token.value = response.token;
+    user.value = response.user;
+    localStorage.setItem('auth_token', response.token);
+    return response;
+  }
+
+  async function resendOtp(email: string) {
+    return await authRepository.resendOtp(email);
   }
 
   function logout() {
@@ -32,5 +55,5 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { user, token, isAuthenticated, login, logout, fetchUser };
+  return { user, token, isAuthenticated, login, register, verifyOtp, resendOtp, logout, fetchUser };
 });

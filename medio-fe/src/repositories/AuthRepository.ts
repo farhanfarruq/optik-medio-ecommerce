@@ -11,6 +11,16 @@ class AuthRepository {
     return data;
   }
 
+  async verifyOtp(payload: { email: string; code: string }) {
+    const { data } = await apiClient.post('/auth/verify-otp', payload);
+    return data;
+  }
+
+  async resendOtp(email: string) {
+    const { data } = await apiClient.post('/auth/resend-otp', { email });
+    return data;
+  }
+
   async logout() {
     await apiClient.post('/auth/logout');
   }

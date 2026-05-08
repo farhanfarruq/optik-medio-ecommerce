@@ -41,6 +41,8 @@ class WebhookController extends Controller
 
         [$paymentStatus, $orderStatus, $paidAt] = $this->resolveStatus($status, $order->status);
 
+        $wasAlreadyPaid = in_array(strtolower($order->status), ['paid', 'processing', 'shipped', 'delivered']);
+
         $payment->update([
             'payment_type'   => $payload['payment_channel'] ?? null,
             'payment_method' => $payload['payment_method'] ?? null,
@@ -50,9 +52,23 @@ class WebhookController extends Controller
         ]);
 
         $order->update([
-            'status'  => $orderStatus,
+            'status' => $orderStatus,
             'paid_at' => $paidAt,
+            'is_payment_verified' => $paymentStatus === 'success',
+            'payment_verified_at' => $paymentStatus === 'success' ? $paidAt : null,
         ]);
+
+        // Kirim email konfirmasi saat pertama kali payment berhasil
+        if ($paymentStatus === 'success' && !$wasAlreadyPaid) {
+            try {
+                $order->load('user');
+                \Illuminate\Support\Facades\Mail::to($order->user->email)
+                    ->send(new \App\Mail\OrderConfirmedMail($order->load(['items.product', 'payment'])));
+                Log::info('Order confirmation email sent to ' . $order->user->email);
+            } catch (\Exception $e) {
+                Log::error('Failed to send order confirmation email: ' . $e->getMessage());
+            }
+        }
 
         Log::info('Xendit Webhook Processed', [
             'order_number'   => $orderNumber,

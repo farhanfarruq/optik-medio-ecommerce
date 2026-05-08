@@ -48,23 +48,40 @@ class UserResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('name')->searchable(),
                 Tables\Columns\TextColumn::make('email')->searchable(),
                 Tables\Columns\TextColumn::make('role')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'user' => 'primary',
+                        'user'  => 'primary',
                         'admin' => 'danger',
                         default => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('loyalty_points')->sortable(),
-                Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Terdaftar Pada')
+                    ->dateTime('d M Y, H:i')
+                    ->sortable(),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('role')
+                    ->options([
+                        'user'  => 'User',
+                        'admin' => 'Admin',
+                    ]),
             ])
-            ->actions([ \Filament\Actions\EditAction::make(), \Filament\Actions\DeleteAction::make() ])
+            ->actions([
+                \Filament\Actions\Action::make('view_orders')
+                    ->label('Pesanan')
+                    ->icon('heroicon-o-shopping-bag')
+                    ->color('info')
+                    ->url(fn (User $record): string => route('filament.admin.resources.orders.index', ['tableFilters[user_id][value]' => $record->id]))
+                    ->visible(fn (User $record): bool => $record->role === 'user'),
+                \Filament\Actions\EditAction::make(),
+                \Filament\Actions\DeleteAction::make()
+            ])
             ->bulkActions([ \Filament\Actions\BulkActionGroup::make([ \Filament\Actions\DeleteBulkAction::make() ]) ]);
     }
 

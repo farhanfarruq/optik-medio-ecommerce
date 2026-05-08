@@ -2,16 +2,20 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Enums\UserAffiliatorStatus;
 use App\Http\Controllers\Controller;
 use App\Mail\OtpMail;
 use App\Models\OtpCode;
 use App\Models\User;
+use App\Models\UserAffiliator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -22,18 +26,41 @@ class AuthController extends Controller
     public function register(Request $request): JsonResponse
     {
         $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|string|email|max:255|unique:users',
-            'phone'    => 'nullable|string|max:20',
-            'password' => 'required|string|min:8|confirmed',
+            'name'                   => 'required|string|max:255',
+            'email'                  => 'required|string|email|max:255|unique:users',
+            'phone'                  => 'nullable|string|max:20',
+            'password'               => 'required|string|min:8|confirmed',
+            'register_as_affiliator' => 'nullable|boolean',
+            'referral_code'          => 'nullable|string|max:50|exists:user_affiliators,affiliate_code',
         ]);
 
-        $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'phone'    => $request->phone,
-            'password' => Hash::make($request->password),
-        ]);
+        $referringAffiliator = null;
+        if ($request->filled('referral_code')) {
+            $referringAffiliator = UserAffiliator::query()
+                ->where('affiliate_code', $request->string('referral_code')->trim()->toString())
+                ->first();
+        }
+
+        $user = DB::transaction(function () use ($request, $referringAffiliator) {
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'password' => Hash::make($request->password),
+                'referred_by_affiliator_id' => $referringAffiliator?->id,
+            ]);
+
+            if ($request->boolean('register_as_affiliator')) {
+                UserAffiliator::create([
+                    'user_id' => $user->id,
+                    'affiliate_code' => $this->generateAffiliateCode($user->name),
+                    'status' => UserAffiliatorStatus::Pending,
+                    'commission_rate_percentage' => 5,
+                ]);
+            }
+
+            return $user;
+        });
 
         // Generate & kirim OTP
         $this->generateAndSendOtp($user, 'email');
@@ -177,7 +204,14 @@ class AuthController extends Controller
      */
     public function me(Request $request): JsonResponse
     {
-        return response()->json($request->user()->load('addresses'));
+        return response()->json(
+            $request->user()->load([
+                'addresses',
+                'currentLevelMembership.levelMember',
+                'affiliateProfile',
+                'referredByAffiliator.user',
+            ])
+        );
     }
 
     // ─── Helper ───────────────────────────────────────────────
@@ -205,5 +239,25 @@ class AuthController extends Controller
                 Log::info("OTP untuk {$user->email}: {$code}");
             }
         }
+    }
+
+    private function generateAffiliateCode(string $name): string
+    {
+        $base = Str::of($name)
+            ->upper()
+            ->ascii()
+            ->replaceMatches('/[^A-Z0-9]+/', '')
+            ->substr(0, 6)
+            ->value();
+
+        if ($base === '') {
+            $base = 'MEDIO';
+        }
+
+        do {
+            $code = $base . str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
+        } while (UserAffiliator::query()->where('affiliate_code', $code)->exists());
+
+        return $code;
     }
 }

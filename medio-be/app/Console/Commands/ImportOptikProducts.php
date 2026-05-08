@@ -108,9 +108,14 @@ class ImportOptikProducts extends Command
         $batchSize   = 100;
         $batchInsert = [];
 
+        $categorySlugMap = array_flip($categories);
+        $categoryNames   = Category::whereIn('id', array_values($categories))->pluck('name', 'id');
+
         foreach ($data as $index => $item) {
             try {
-                $categoryId = $this->detectCategory($item, $categories);
+                $categoryId   = $this->detectCategory($item, $categories);
+                $categorySlug = $categorySlugMap[$categoryId] ?? 'unknown';
+                $categoryName = $categoryNames[$categoryId] ?? 'Unknown';
                 $imagePath  = $this->processImage(
                     $item['image_url'] ?? null,
                     $item['slug'] ?? Str::slug($item['name']),

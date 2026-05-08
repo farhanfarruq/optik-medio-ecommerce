@@ -75,8 +75,10 @@ class XenditService
             }
 
             $order->update([
-                'status'  => $orderStatus,
+                'status' => $orderStatus,
                 'paid_at' => $paidAt,
+                'is_payment_verified' => $paymentStatus === 'success',
+                'payment_verified_at' => $paymentStatus === 'success' ? $paidAt : null,
             ]);
 
             return $orderStatus;

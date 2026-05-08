@@ -116,7 +116,15 @@ class RajaOngkirService
         string $destinationDistrictId,
         int $weight,
     ): array {
-        $couriers = "jne:tiki:pos"; // Can be modified to include more couriers
+        $activeCouriers = \App\Models\Expedition::where('is_active', true)
+            ->pluck('code')
+            ->map(fn($code) => strtolower($code))
+            ->toArray();
+        
+        $couriers = implode(':', $activeCouriers);
+        if (empty($couriers)) {
+            $couriers = "jne:tiki:pos"; // fallback
+        }
 
         $response = Http::withHeaders(["key" => $this->apiKey])
             ->asForm()
@@ -132,31 +140,54 @@ class RajaOngkirService
         $results = [];
 
         foreach ($data as $item) {
+            $courierCode = strtolower($item["code"] ?? ($item["name"] ?? "UNKNOWN"));
+            
+            // Find the expedition ID for this courier to sync services
+            $expedition = \App\Models\Expedition::where('code', $courierCode)->first();
+
             if (isset($item["costs"]) && is_array($item["costs"])) {
                 foreach ($item["costs"] as $cost) {
+                    $serviceCode = $cost["service"] ?? "";
+                    
+                    // Auto-sync service and check if it's active
+                    if ($expedition && $serviceCode) {
+                        $expService = \App\Models\ExpeditionService::firstOrCreate(
+                            ['expedition_id' => $expedition->id, 'service_code' => $serviceCode],
+                            ['service_name' => $cost["description"] ?? "", 'is_active' => true]
+                        );
+                        
+                        // Skip if the admin disabled this service
+                        if (!$expService->is_active) {
+                            continue;
+                        }
+                    }
+
                     $results[] = [
-                        "courier" => strtoupper(
-                            $item["code"] ?? ($item["name"] ?? "UNKNOWN"),
-                        ),
-                        "service" => $cost["service"] ?? "",
+                        "courier" => strtoupper($courierCode),
+                        "service" => $serviceCode,
                         "description" => $cost["description"] ?? "",
-                        "cost" =>
-                            $cost["cost"][0]["value"] ?? ($cost["cost"] ?? 0),
-                        "etd" =>
-                            $cost["cost"][0]["etd"] ?? ($cost["etd"] ?? ""),
+                        "cost" => $cost["cost"][0]["value"] ?? ($cost["cost"] ?? 0),
+                        "etd" => $cost["cost"][0]["etd"] ?? ($cost["etd"] ?? ""),
                     ];
                 }
             } else {
+                // Fallback for flat structure
+                $serviceCode = $item["service"] ?? "";
+                if ($expedition && $serviceCode) {
+                    $expService = \App\Models\ExpeditionService::firstOrCreate(
+                        ['expedition_id' => $expedition->id, 'service_code' => $serviceCode],
+                        ['service_name' => $item["description"] ?? "", 'is_active' => true]
+                    );
+                    if (!$expService->is_active) {
+                        continue;
+                    }
+                }
+
                 $results[] = [
-                    "courier" => strtoupper(
-                        $item["code"] ??
-                            ($item["courier"] ?? ($item["name"] ?? "UNKNOWN")),
-                    ),
-                    "service" => $item["service"] ?? "",
+                    "courier" => strtoupper($courierCode),
+                    "service" => $serviceCode,
                     "description" => $item["description"] ?? "",
-                    "cost" =>
-                        $item["cost"] ??
-                        ($item["price"] ?? ($item["value"] ?? 0)),
+                    "cost" => $item["cost"] ?? ($item["price"] ?? ($item["value"] ?? 0)),
                     "etd" => $item["etd"] ?? ($item["estimation"] ?? ""),
                 ];
             }

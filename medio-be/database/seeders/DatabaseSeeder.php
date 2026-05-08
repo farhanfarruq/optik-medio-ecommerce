@@ -58,7 +58,11 @@ class DatabaseSeeder extends Seeder
             'loyalty_points' => 1500,
         ]);
 
-        $this->command->info('✅ Seeder selesai: Settings, Discounts, dan Users berhasil dibuat.');
+        $this->call(ArticleSeeder::class);
+        $this->call(BankSeeder::class);
+        $this->call(PaymentMethodSeeder::class);
+
+        $this->command->info('✅ Seeder selesai: Settings, Discounts, Users, Articles, Banks, dan Payment Methods berhasil dibuat.');
         $this->command->info('');
         $this->command->info('📦 Untuk import produk, jalankan:');
         $this->command->info('   php artisan import:optik-products');

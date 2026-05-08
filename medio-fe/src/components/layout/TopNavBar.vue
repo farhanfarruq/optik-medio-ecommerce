@@ -58,8 +58,12 @@ const handleUserClick = () => {
 
 <template>
   <nav
+    :style="{
+      top: cartStore.isPromoBannerVisible ? '40px' : '0',
+      transition: 'top 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.5s ease, height 0.5s ease, box-shadow 0.5s ease'
+    }"
     :class="[
-      'fixed top-0 w-full z-50 transition-all duration-500',
+      'fixed w-full z-50',
       isScrolled
         ? 'bg-white/95 backdrop-blur-xl shadow-lg h-20'
         : 'bg-transparent h-24'
@@ -85,6 +89,10 @@ const handleUserClick = () => {
           Optik Medio
         </span>
       </router-link>
+      
+      <!-- Center Links (Empty for now to maintain minimalist look) -->
+      <div class="hidden md:flex items-center gap-8 ml-10 flex-grow">
+      </div>
 
       <!-- Actions -->
       <div
@@ -127,7 +135,15 @@ const handleUserClick = () => {
         </div>
 
         <!-- User & Cart (Hidden when search is wide on mobile) -->
-        <div v-if="!isSearchOpen || windowWidth > 768" class="flex items-center gap-3 md:gap-6">
+        <div v-if="!isSearchOpen || windowWidth > 768" class="flex items-center gap-2 md:gap-4">
+          <router-link 
+            to="/blog" 
+            class="w-10 h-10 rounded-none flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+            :class="isScrolled ? 'hover:bg-stone-100 text-stone-800' : 'hover:bg-white/15 text-white'"
+            title="Blog & Artikel"
+          >
+            <span class="material-symbols-outlined text-2xl">menu_book</span>
+          </router-link>
           <button
             @click="handleUserClick"
             class="w-10 h-10 rounded-none flex items-center justify-center transition-all hover:scale-110 active:scale-95"
@@ -163,3 +179,6 @@ const handleUserClick = () => {
     ></div>
   </nav>
 </template>
+
+<style scoped>
+</style>

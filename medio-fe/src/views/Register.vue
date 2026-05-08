@@ -31,6 +31,8 @@ const form = ref({
   phone: '',
   password: '',
   password_confirmation: '',
+  register_as_affiliator: false,
+  referral_code: '',
 });
 
 // OTP
@@ -257,6 +259,26 @@ onUnmounted(() => {
                 style="background: #faf9f7; border-color: #e5e0d8; color: #1a1209;"
                 placeholder="Ulangi password"
               />
+            </div>
+
+
+            <!-- Referral Code Section -->
+            <div class="p-4 border" style="background: rgba(193,154,81,0.04); border-color: rgba(193,154,81,0.2);">
+              <div>
+                <label class="block text-[10px] font-black uppercase tracking-[0.2em] mb-2" style="color: #8a7a60;">Kode Referral (Opsional)</label>
+                <input v-model="form.referral_code" type="text" class="w-full border px-4 py-3 text-sm font-medium focus:outline-none uppercase" style="background: #faf9f7; border-color: #e5e0d8; color: #1a1209;" placeholder="Kode dari affiliator yang mengundang Anda" />
+              </div>
+            </div>
+
+            <!-- Affiliator Section -->
+            <div class="p-4 border" style="background: rgba(193,154,81,0.04); border-color: rgba(193,154,81,0.2);">
+              <label class="flex items-start gap-3 cursor-pointer">
+                <input v-model="form.register_as_affiliator" type="checkbox" class="w-4 h-4 mt-0.5 shrink-0 accent-amber-700" />
+                <div>
+                  <p class="font-black text-sm" style="color: #1a1209;">Daftar sebagai Affiliator</p>
+                  <p class="text-[11px] mt-0.5" style="color: #8a7a60;">Dapatkan komisi dari setiap penjualan. Pendaftaran memerlukan persetujuan admin.</p>
+                </div>
+              </label>
             </div>
 
             <button

@@ -40,11 +40,15 @@ class AdminPanelProvider extends PanelProvider
             ->brandName('Optik Medio')
             ->brandLogo(asset('images/medio.jpeg'))
             ->brandLogoHeight('3rem')
+            ->favicon(asset('images/medio.jpeg'))
             ->navigationGroups([
                 'Produk',
                 'Penjualan',
+                'Affiliate & Komisi',
                 'Promo & Loyalty',
                 'Pelanggan',
+                'Master Data',
+                'Content Management',
                 'Sistem',
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')

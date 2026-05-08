@@ -71,7 +71,7 @@ onMounted(async () => {
           <ul class="space-y-3">
             <li><a href="/" class="text-sm text-stone-400 hover:text-white transition-colors">Beranda</a></li>
             <li><a href="/products" class="text-sm text-stone-400 hover:text-white transition-colors">Koleksi Kacamata</a></li>
-            <li><a href="#" class="text-sm text-stone-400 hover:text-white transition-colors">Layanan Lensa</a></li>
+            <li><a href="/faq" class="text-sm text-stone-400 hover:text-white transition-colors">FAQ & Bantuan</a></li>
             <li><a :href="settings?.store_location_url" target="_blank" class="text-sm text-stone-400 hover:text-white transition-colors">Cek Lokasi (Maps)</a></li>
           </ul>
         </div>

@@ -49,6 +49,7 @@ Route::middleware('throttle:10,1')->post('/discounts/validate', [DiscountControl
 
 // Categories
 Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/level-members', [\App\Http\Controllers\API\LevelMemberController::class, 'index']);
 
 // Products
 Route::prefix('products')->group(function () {

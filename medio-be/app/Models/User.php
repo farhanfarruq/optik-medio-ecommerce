@@ -88,6 +88,8 @@ class User extends Authenticatable
             'type'        => 'earned',
             'description' => $description ?: "Poin dari pesanan",
         ]);
+
+        $this->updateMembershipLevel();
     }
 
     /**
@@ -109,6 +111,44 @@ class User extends Authenticatable
             'description' => $description ?: "Poin digunakan untuk diskon",
         ]);
 
+        $this->updateMembershipLevel();
+
         return true;
+    }
+
+    /**
+     * Perbarui level member berdasarkan jumlah poin saat ini.
+     */
+    public function updateMembershipLevel(): void
+    {
+        $newLevel = LevelMember::where('is_active', true)
+            ->where('min_points', '<=', $this->loyalty_points)
+            ->orderBy('min_points', 'desc')
+            ->first();
+
+        if (!$newLevel) {
+            return;
+        }
+
+        $currentMembership = $this->currentLevelMembership;
+
+        if (!$currentMembership || $currentMembership->level_member_id !== $newLevel->id) {
+            // Nonaktifkan membership saat ini jika ada
+            if ($currentMembership) {
+                $currentMembership->update([
+                    'effective_until'           => now(),
+                    'active_membership_user_id' => null,
+                ]);
+            }
+
+            // Buat membership baru
+            UserLevelMember::create([
+                'user_id'                   => $this->id,
+                'level_member_id'           => $newLevel->id,
+                'points_snapshot'           => $this->loyalty_points,
+                'assignment_type'           => \App\Enums\MembershipAssignmentType::Auto,
+                'effective_from'            => now(),
+            ]);
+        }
     }
 }

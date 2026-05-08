@@ -79,6 +79,34 @@ const fetchLoyaltyHistory = async () => {
   }
 };
 
+const levelMembers = ref<any[]>([]);
+const fetchLevelMembers = async () => {
+  try {
+    const response = await apiClient.get('/level-members');
+    levelMembers.value = response.data;
+  } catch (error) {
+    console.error('Failed to fetch level members', error);
+  }
+};
+
+const nextLevel = computed(() => {
+  if (!authStore.user || !levelMembers.value.length) return null;
+  const currentPoints = authStore.user.loyalty_points || 0;
+  return levelMembers.value.find((l: any) => l.min_points > currentPoints);
+});
+
+const currentLevel = computed(() => {
+  return authStore.user?.current_level_membership?.level_member;
+});
+
+const progressToNextLevel = computed(() => {
+  if (!nextLevel.value || !authStore.user) return 0;
+  const currentPoints = authStore.user.loyalty_points || 0;
+  const min = currentLevel.value?.min_points || 0;
+  const max = nextLevel.value.min_points;
+  return Math.min(100, Math.max(0, ((currentPoints - min) / (max - min)) * 100));
+});
+
 onMounted(async () => {
   if (!authStore.isAuthenticated) {
     router.push('/login');
@@ -88,6 +116,7 @@ onMounted(async () => {
   isLoadingOrders.value = true;
   try {
     await authStore.fetchUser();
+    await fetchLevelMembers();
     await loadOrders();
     if (authStore.isAuthenticated) {
       await wishlistStore.fetchWishlist();
@@ -400,15 +429,72 @@ const deleteAddress = async (id: number) => {
       <div class="flex-grow">
         
         <div v-if="currentSection === 'profile'" class="bg-surface-container-low p-8 rounded-none border border-outline-variant/15">
-          <div class="flex items-center justify-between mb-8">
-            <h2 class="font-headline text-2xl text-primary">Personal Information</h2>
-            <div class="flex items-center gap-3">
-              <div v-if="authStore.user?.currentLevelMembership?.levelMember" class="bg-amber-100 text-amber-800 px-4 py-1.5 rounded-none text-sm font-black uppercase tracking-widest border border-amber-200">
-                {{ authStore.user.currentLevelMembership.levelMember.name }}
-              </div>
+          <div class="flex flex-col gap-6 mb-8">
+            <div class="flex items-center justify-between">
+              <h2 class="font-headline text-2xl text-primary">Informasi Akun</h2>
               <div class="bg-secondary-fixed/30 text-secondary px-4 py-1.5 rounded-none text-sm font-semibold flex items-center gap-1">
                 <span class="material-symbols-outlined text-sm">stars</span>
                 {{ authStore.user?.loyalty_points || 0 }} Loyalty Points
+              </div>
+            </div>
+
+            <!-- Membership Card -->
+            <div class="relative overflow-hidden p-6 border border-outline-variant/15 bg-white shadow-sm group">
+              <!-- Background Decorative Elements -->
+              <div class="absolute -top-10 -right-10 w-40 h-40 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-all"></div>
+              
+              <div class="relative z-10 flex flex-col md:flex-row md:items-center gap-8">
+                <!-- Level Badge -->
+                <div class="flex flex-col items-center justify-center p-4 min-w-[140px] border-2 border-primary/20 bg-primary/5">
+                  <span class="material-symbols-outlined text-4xl mb-1" :style="{ color: currentLevel?.name === 'Platinum' ? '#1a1209' : (currentLevel?.name === 'Gold' ? '#c19a51' : '#5a5248') }">
+                    {{ currentLevel?.name === 'Platinum' ? 'workspace_premium' : 'stars' }}
+                  </span>
+                  <span class="text-xs font-black uppercase tracking-widest text-on-surface-variant">Level Anda</span>
+                  <span class="text-xl font-black text-primary uppercase tracking-tight">{{ currentLevel?.name || 'Bronze' }}</span>
+                </div>
+
+                <!-- Progress & Benefits -->
+                <div class="flex-grow space-y-4">
+                  <div v-if="nextLevel" class="space-y-2">
+                    <div class="flex justify-between items-end">
+                      <p class="text-sm font-bold text-primary">Progres ke {{ nextLevel.name }}</p>
+                      <p class="text-xs text-on-surface-variant font-medium">
+                        {{ (nextLevel.min_points - (authStore.user?.loyalty_points || 0)).toLocaleString('id-ID') }} poin lagi
+                      </p>
+                    </div>
+                    <div class="h-2 w-full bg-surface-container-highest overflow-hidden">
+                      <div class="h-full bg-primary transition-all duration-1000 ease-out" :style="{ width: `${progressToNextLevel}%` }"></div>
+                    </div>
+                  </div>
+                  <div v-else class="py-2">
+                    <p class="text-sm font-black text-primary flex items-center gap-2">
+                      <span class="material-symbols-outlined text-amber-500">verified</span>
+                      Selamat! Anda telah mencapai level tertinggi (Platinum)
+                    </p>
+                  </div>
+
+                  <div class="flex flex-wrap gap-x-6 gap-y-2">
+                    <div v-if="currentLevel?.discount_percentage > 0" class="flex items-center gap-2 text-xs font-bold text-secondary">
+                      <span class="material-symbols-outlined text-sm">percent</span>
+                      Potongan Harga {{ currentLevel.discount_percentage }}%
+                    </div>
+                    <div v-if="currentLevel?.name === 'Platinum'" class="flex items-center gap-2 text-xs font-bold text-secondary">
+                      <span class="material-symbols-outlined text-sm">local_shipping</span>
+                      Bebas Biaya Kirim
+                    </div>
+                    <div v-if="currentLevel?.name === 'Gold' || currentLevel?.name === 'Platinum'" class="flex items-center gap-2 text-xs font-bold text-secondary">
+                      <span class="material-symbols-outlined text-sm">priority</span>
+                      Prioritas Layanan
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Level Description Tooltip/Hint -->
+              <div class="mt-4 pt-4 border-t border-outline-variant/10">
+                <p class="text-[11px] text-on-surface-variant leading-relaxed">
+                  {{ currentLevel?.description || 'Terus kumpulkan poin untuk membuka level member yang lebih tinggi dan nikmati berbagai keuntungan eksklusif.' }}
+                </p>
               </div>
             </div>
           </div>

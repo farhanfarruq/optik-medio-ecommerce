@@ -18,6 +18,8 @@ class OrderResource extends Resource
     protected static ?string $model = Order::class;
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-shopping-cart';
     protected static string | \UnitEnum | null $navigationGroup = 'Penjualan';
+    protected static ?string $navigationLabel = 'Order';
+    protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {
@@ -224,20 +226,36 @@ class OrderResource extends Resource
                     ->icon('heroicon-o-truck')
                     ->color('info')
                     ->visible(fn (Order $record): bool => $record->status === 'processing')
-                    ->form([
-                        Forms\Components\TextInput::make('tracking_number')
-                            ->label('Nomor Resi')
-                            ->required()
-                            ->maxLength(255),
-                    ])
+                    ->form(function (Order $record) {
+                        // Load relasi jika belum ter-load
+                        $record->loadMissing('payment.paymentMethod');
+                        $isCod = strtolower($record->payment?->paymentMethod?->code ?? '') === 'cod';
+
+                        if ($isCod) {
+                            // COD: tampilkan field resi opsional
+                            return [
+                                Forms\Components\TextInput::make('tracking_number')
+                                    ->label('Nomor Resi (opsional untuk COD)')
+                                    ->maxLength(255)
+                                    ->placeholder('Kosongkan jika tidak ada resi'),
+                            ];
+                        }
+
+                        return [
+                            Forms\Components\TextInput::make('tracking_number')
+                                ->label('Nomor Resi')
+                                ->required()
+                                ->maxLength(255)
+                                ->placeholder('Contoh: JNE1234567890'),
+                        ];
+                    })
                     ->modalHeading('Input Nomor Resi & Kirim')
                     ->action(function (Order $record, array $data): void {
                         $record->update([
                             'status'          => 'shipped',
-                            'tracking_number' => $data['tracking_number'],
+                            'tracking_number' => $data['tracking_number'] ?? null,
                             'shipped_at'      => now(),
                         ]);
-                        // Kirim email notifikasi ke customer
                         try {
                             \Illuminate\Support\Facades\Mail::to($record->user->email)
                                 ->send(new \App\Mail\OrderShippedMail($record->load(['items.product', 'payment'])));

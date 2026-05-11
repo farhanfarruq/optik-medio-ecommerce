@@ -17,7 +17,8 @@ class BanksTable
         return $table
             ->columns([
                 \Filament\Tables\Columns\ImageColumn::make('logo')
-                    ->label('Logo'),
+                    ->label('Logo')
+                    ->disk('public'),
                 \Filament\Tables\Columns\TextColumn::make('name')
                     ->label('Nama Bank')
                     ->searchable()

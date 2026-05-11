@@ -11,6 +11,7 @@
         "laravel/framework": "^13.0",
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",
+        "symfony/html-sanitizer": "^7.4",
         "xendit/xendit-php": "^7.0"
     },
     "require-dev": {

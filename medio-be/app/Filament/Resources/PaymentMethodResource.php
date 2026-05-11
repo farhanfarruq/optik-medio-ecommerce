@@ -16,7 +16,9 @@ class PaymentMethodResource extends Resource
 {
     protected static ?string $model = PaymentMethod::class;
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-credit-card';
-    protected static string | \UnitEnum | null $navigationGroup = 'Master Data';
+    protected static string | \UnitEnum | null $navigationGroup = 'Pengaturan';
+    protected static ?string $navigationLabel = 'Metode Bayar';
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {

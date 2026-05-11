@@ -47,7 +47,7 @@ class ProductRepository implements ProductRepositoryInterface
         }
 
         if (!empty($filters['search'])) {
-            $search = $filters['search'];
+            $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], trim((string) $filters['search']));
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', '%' . $search . '%')
                   ->orWhere('brand', 'like', '%' . $search . '%')
@@ -96,11 +96,9 @@ class ProductRepository implements ProductRepositoryInterface
             });
         }
 
-        $perPage = $filters['per_page'] ?? 100;
-        if ($perPage === 'all') {
-            return $query->get();
-        }
-        return $query->paginate((int) $perPage);
+        $perPage = min(max((int) ($filters['per_page'] ?? 24), 1), 48);
+
+        return $query->paginate($perPage);
     }
 
     public function findById(int $id)

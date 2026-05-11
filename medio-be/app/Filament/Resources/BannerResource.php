@@ -16,7 +16,9 @@ class BannerResource extends Resource
 {
     protected static ?string $model = Banner::class;
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-photo';
-    protected static string | \UnitEnum | null $navigationGroup = 'Content Management';
+    protected static string | \UnitEnum | null $navigationGroup = 'Konten';
+    protected static ?string $navigationLabel = 'Banner';
+    protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {
@@ -46,7 +48,7 @@ class BannerResource extends Resource
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('title')->live(onBlur: true),
                     Forms\Components\TextInput::make('subtitle')->live(onBlur: true),
-                    Forms\Components\FileUpload::make('image_path')->image()->directory('banners')->required(),
+                    Forms\Components\FileUpload::make('image_path')->image()->disk('public')->directory('banners')->required(),
                     Forms\Components\TextInput::make('cta_label')->live(onBlur: true),
                     Forms\Components\Select::make('link_type')
                         ->options([

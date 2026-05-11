@@ -16,8 +16,9 @@ class CommissionResource extends Resource
 {
     protected static ?string $model = Commission::class;
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-banknotes';
-    protected static string | \UnitEnum | null $navigationGroup = 'Affiliate & Komisi';
-    protected static ?string $navigationLabel = 'Commission';
+    protected static string | \UnitEnum | null $navigationGroup = 'Afiliasi';
+    protected static ?string $navigationLabel = 'Komisi';
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {

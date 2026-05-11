@@ -15,32 +15,53 @@ class ComplainResource extends Resource
 {
     protected static ?string $model = Complain::class;
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-chat-bubble-left-right';
-    protected static string | \UnitEnum | null $navigationGroup = 'Content Management';
+    protected static string | \UnitEnum | null $navigationGroup = 'Penjualan';
+    protected static ?string $navigationLabel = 'Komplain';
+    protected static ?int $navigationSort = 4;
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            \Filament\Schemas\Components\Section::make('Tiket Komplain')
-                ->schema([
-                    Forms\Components\Select::make('user_id')->relationship('user', 'name')->disabled(),
-                    Forms\Components\Select::make('order_id')->relationship('order', 'order_number')->disabled(),
-                    Forms\Components\TextInput::make('subject')->disabled(),
-                    Forms\Components\TextInput::make('contact_phone'),
-                    Forms\Components\Select::make('status')
-                        ->options([
-                            'open' => 'Open',
-                            'in_progress' => 'In Progress',
-                            'resolved' => 'Resolved',
-                            'rejected' => 'Rejected',
-                        ])
-                        ->required(),
-                    Forms\Components\Select::make('handled_by')->relationship('handledBy', 'name')->searchable()->preload(),
-                    Forms\Components\DateTimePicker::make('resolved_at'),
-                    Forms\Components\Textarea::make('message')->disabled()->columnSpanFull(),
-                    Forms\Components\Textarea::make('admin_notes')->columnSpanFull(),
-                    Forms\Components\TextInput::make('attachment_path')->disabled()->columnSpanFull(),
-                ])
-                ->columns(2),
+            \Filament\Schemas\Components\Grid::make(2)->schema([
+
+                \Filament\Schemas\Components\Section::make('Detail Komplain')
+                    ->columns(2)
+                    ->schema([
+                        Forms\Components\Select::make('user_id')
+                            ->relationship('user', 'name')->disabled()->label('Pelanggan'),
+                        Forms\Components\Select::make('order_id')
+                            ->relationship('order', 'order_number')->disabled()->label('Pesanan'),
+                        Forms\Components\TextInput::make('subject')
+                            ->disabled()->label('Subjek')->columnSpanFull(),
+                        Forms\Components\TextInput::make('contact_phone')
+                            ->label('Kontak'),
+                        Forms\Components\DateTimePicker::make('resolved_at')
+                            ->label('Diselesaikan Pada'),
+                        Forms\Components\Textarea::make('message')
+                            ->disabled()->label('Pesan Customer')->rows(5)->columnSpanFull(),
+                        Forms\Components\TextInput::make('attachment_path')
+                            ->disabled()->label('Lampiran')->columnSpanFull(),
+                    ]),
+
+                \Filament\Schemas\Components\Section::make('Tindakan Admin')
+                    ->columns(2)
+                    ->schema([
+                        Forms\Components\Select::make('status')
+                            ->options([
+                                'open'        => 'Open',
+                                'in_progress' => 'In Progress',
+                                'resolved'    => 'Resolved',
+                                'rejected'    => 'Rejected',
+                            ])
+                            ->required()->label('Status'),
+                        Forms\Components\Select::make('handled_by')
+                            ->relationship('handledBy', 'name')
+                            ->searchable()->preload()->label('Ditangani Oleh'),
+                        Forms\Components\Textarea::make('admin_notes')
+                            ->label('Catatan / Respons Admin')
+                            ->rows(8)->columnSpanFull(),
+                    ]),
+            ]),
         ]);
     }
 

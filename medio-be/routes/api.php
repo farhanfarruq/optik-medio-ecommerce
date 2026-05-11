@@ -34,7 +34,7 @@ Route::get('/store-status', [MasterDataController::class, 'storeStatus']);
 Route::prefix('auth')->group(function () {
     Route::middleware('throttle:3,1')->post('/register', [AuthController::class, 'register']);
     Route::middleware('throttle:5,1')->post('/login', [AuthController::class, 'login']);
-    Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
+    Route::middleware('throttle:5,10')->post('/verify-otp', [AuthController::class, 'verifyOtp']);
     Route::middleware('throttle:3,10')->post('/resend-otp', [AuthController::class, 'resendOtp']);
 
     Route::middleware('auth:sanctum')->group(function () {
@@ -65,13 +65,13 @@ Route::prefix('shipping')->group(function () {
     Route::get('/provinces', [ShippingController::class, 'provinces']);
     Route::get('/cities', [ShippingController::class, 'cities']);
     Route::get('/districts', [ShippingController::class, 'districts']);
-    Route::post('/cost', [ShippingController::class, 'cost']);
+    Route::middleware('throttle:15,1')->post('/cost', [ShippingController::class, 'cost']);
 });
 
 // ─── Blog / Artikel (public) ─────────────────────────────────────────────────
 Route::prefix('articles')->group(function () {
     Route::get('/', [ArticleController::class, 'index']);
-    Route::get('/{slug}', [ArticleController::class, 'show']);
+    Route::get('/{slug}', [ArticleController::class, 'show'])->middleware('throttle:30,1');
 });
 
 // ─── Protected Endpoints (requires auth) ─────────────────────────────────────

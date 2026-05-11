@@ -8,9 +8,11 @@ import { useRouter } from 'vue-router';
 import { apiClient } from '../../core/api/axiosclient';
 import { useToast } from '../../composables/useToast';
 import { resolveImageUrl } from '../../core/utils/image';
+import { useAuthStore } from '../../stores/authStore';
 
 const { showToast } = useToast();
 const cartStore = useCartStore();
+const authStore = useAuthStore();
 const router = useRouter();
 
 // State Form Pengiriman
@@ -76,6 +78,24 @@ const needsBankSelection = computed(() =>
 const couponCode = ref('');
 const appliedDiscount = ref<any>(null);
 const isValidatingCoupon = ref(false);
+
+// State Loyalty Points
+const loyaltyPointsToUse = ref(0);
+const userLoyaltyPoints = computed(() => authStore.user?.loyalty_points || 0);
+const userLevelMember = computed(() => authStore.user?.current_level_membership?.level_member || null);
+const levelDiscountAmount = computed(() => {
+  if (!userLevelMember.value || !userLevelMember.value.discount_percentage) return 0;
+  return Math.round((cartStore.cartTotal * userLevelMember.value.discount_percentage) / 100);
+});
+const maxLoyaltyPoints = computed(() => {
+  // Maks 5% dari subtotal, 1 poin = Rp 1.000
+  const maxDiscount = Math.floor(cartStore.cartTotal * 0.05);
+  return Math.min(userLoyaltyPoints.value, Math.ceil(maxDiscount / 1000));
+});
+const loyaltyDiscountAmount = computed(() => {
+  const pts = Math.min(loyaltyPointsToUse.value, maxLoyaltyPoints.value);
+  return pts * 1000;
+});
 
 const applyCoupon = async () => {
   if (!couponCode.value) return;
@@ -385,7 +405,7 @@ const selectedShippingCost = computed(() => {
 
 const grandTotal = computed(() => {
   const subtotalAfterDiscount = Math.max(0, cartStore.cartTotal - discountAmount.value);
-  return subtotalAfterDiscount + selectedShippingCost.value;
+  return Math.max(0, subtotalAfterDiscount + selectedShippingCost.value - levelDiscountAmount.value - loyaltyDiscountAmount.value);
 });
 
 const submitOrder = async () => {
@@ -462,6 +482,7 @@ const submitOrder = async () => {
       bank_id: needsBankSelection.value ? selectedBankId.value : null,
       discount_id: appliedDiscount.value?.id || null,
       promo_id: cartStore.appliedPromoId || null,
+      loyalty_points_used: loyaltyPointsToUse.value > 0 ? Math.min(loyaltyPointsToUse.value, maxLoyaltyPoints.value) : 0,
       items: itemsPayload,
       notes: ''
     };
@@ -805,6 +826,44 @@ const submitOrder = async () => {
                 <span>Promo Eksklusif</span>
                 <span class="font-bold">-Rp {{ cartStore.calculatedData.promo_discount_amount.toLocaleString('id-ID') }}</span>
               </div>
+
+              <!-- Level Member Discount -->
+              <div v-if="levelDiscountAmount > 0" class="flex justify-between text-amber-600">
+                <span class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">stars</span>
+                  Diskon Member {{ userLevelMember?.name }} ({{ userLevelMember?.discount_percentage }}%)
+                </span>
+                <span class="font-bold">-Rp {{ levelDiscountAmount.toLocaleString('id-ID') }}</span>
+              </div>
+
+              <!-- Loyalty Points Redemption -->
+              <div v-if="userLoyaltyPoints > 0" class="border rounded-none p-3 mt-1" style="background: #fffdf7; border-color: rgba(193,154,81,0.25);">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-black uppercase tracking-wider" style="color: #8a7a60;">
+                    <span class="material-symbols-outlined text-sm align-middle" style="color: #c19a51;">toll</span>
+                    Gunakan Loyalty Points
+                  </span>
+                  <span class="text-xs font-bold" style="color: #c19a51;">{{ userLoyaltyPoints.toLocaleString('id-ID') }} poin tersedia</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <input
+                    v-model.number="loyaltyPointsToUse"
+                    type="number"
+                    :min="0"
+                    :max="maxLoyaltyPoints"
+                    class="w-24 border px-2 py-1.5 text-sm text-center font-bold"
+                    style="border-color: rgba(193,154,81,0.4); color: #1a1209;"
+                    placeholder="0"
+                  />
+                  <span class="text-xs" style="color: #8a7a60;">poin = Rp {{ loyaltyDiscountAmount.toLocaleString('id-ID') }}</span>
+                  <button v-if="loyaltyPointsToUse > 0" @click="loyaltyPointsToUse = 0" class="ml-auto text-xs font-bold underline" style="color: #dc2626;">Hapus</button>
+                </div>
+                <p class="text-[10px] mt-1.5" style="color: #b0a590;">Maks {{ maxLoyaltyPoints.toLocaleString('id-ID') }} poin (5% dari subtotal). 1 poin = Rp 1.000.</p>
+                <div v-if="loyaltyDiscountAmount > 0" class="flex justify-between mt-2 pt-2 border-t text-green-600" style="border-color: rgba(193,154,81,0.2);">
+                  <span class="text-xs">Potongan Loyalty Points</span>
+                  <span class="text-xs font-bold">-Rp {{ loyaltyDiscountAmount.toLocaleString('id-ID') }}</span>
+                </div>
+              </div>
               
               <!-- Free Items -->
               <div v-if="cartStore.calculatedData" class="mt-4 border-t border-stone-50 pt-4">
@@ -825,8 +884,11 @@ const submitOrder = async () => {
               <div class="h-px bg-stone-100 my-2"></div>
               <div class="flex justify-between items-center">
                 <span class="text-base font-bold text-stone-900">Total Pembayaran</span>
-                <span class="text-2xl font-black text-primary" style="color: #c19a51;">Rp {{ (cartStore.calculatedData ? cartStore.calculatedData.total_price : grandTotal).toLocaleString('id-ID') }}</span>
+                <span class="text-2xl font-black text-primary" style="color: #c19a51;">Rp {{ grandTotal.toLocaleString('id-ID') }}</span>
               </div>
+              <p v-if="loyaltyPointsToUse > 0 || levelDiscountAmount > 0" class="text-[10px] text-right" style="color: #8a7a60;">
+                Hemat Rp {{ (levelDiscountAmount + loyaltyDiscountAmount + (cartStore.calculatedData?.discount_amount || 0) + (cartStore.calculatedData?.promo_discount_amount || 0)).toLocaleString('id-ID') }} dari total belanja
+              </p>
             </div>
 
             <button 

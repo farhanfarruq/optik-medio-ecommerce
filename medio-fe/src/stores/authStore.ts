@@ -4,33 +4,30 @@ import { authRepository } from '../repositories/AuthRepository';
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<any>(null);
-  const token = ref<string | null>(localStorage.getItem('auth_token'));
+  const hasInitialized = ref(false);
 
-  const isAuthenticated = computed(() => !!token.value);
+  const isAuthenticated = computed(() => !!user.value);
 
   async function login(credentials: any) {
     const response = await authRepository.login(credentials);
 
-    // Jika server minta verifikasi OTP dulu
     if (response.requires_otp) {
       throw { response: { data: response, status: 403 } };
     }
 
-    token.value = response.token;
-    user.value = response.user;
-    localStorage.setItem('auth_token', response.token);
+    user.value = response.user ?? await authRepository.getUser();
+    hasInitialized.value = true;
   }
 
   async function register(userData: any) {
     const response = await authRepository.register(userData);
-    return response; // Kembalikan response (berisi email untuk OTP step)
+    return response;
   }
 
   async function verifyOtp(email: string, code: string) {
     const response = await authRepository.verifyOtp({ email, code });
-    token.value = response.token;
-    user.value = response.user;
-    localStorage.setItem('auth_token', response.token);
+    user.value = response.user ?? await authRepository.getUser();
+    hasInitialized.value = true;
     return response;
   }
 
@@ -38,22 +35,34 @@ export const useAuthStore = defineStore('auth', () => {
     return await authRepository.resendOtp(email);
   }
 
-  function logout() {
-    authRepository.logout();
-    token.value = null;
-    user.value = null;
-    localStorage.removeItem('auth_token');
-  }
-
-  async function fetchUser() {
-    if (!token.value) return;
+  async function logout(options: { silent?: boolean } = {}) {
     try {
-      user.value = await authRepository.getUser();
+      await authRepository.logout();
     } catch (error) {
-      console.error('Failed to fetch user', error);
-      logout();
+      if (!options.silent) {
+        throw error;
+      }
+    } finally {
+      user.value = null;
+      hasInitialized.value = true;
     }
   }
 
-  return { user, token, isAuthenticated, login, register, verifyOtp, resendOtp, logout, fetchUser };
+  async function fetchUser() {
+    try {
+      user.value = await authRepository.getUser();
+      return user.value;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        user.value = null;
+        return null;
+      }
+
+      throw error;
+    } finally {
+      hasInitialized.value = true;
+    }
+  }
+
+  return { user, hasInitialized, isAuthenticated, login, register, verifyOtp, resendOtp, logout, fetchUser };
 });

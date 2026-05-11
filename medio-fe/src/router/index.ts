@@ -23,30 +23,31 @@ const routes = [
     path: '/',
     component: DefaultLayout,
     children: [
-      { path: '', name: 'Home', component: Home },
-      { path: 'products', name: 'Products', component: Home },
-      { path: 'products/category/:slug', name: 'ProductsByCategory', component: Home },
-      { path: 'products/:slug', name: 'ProductDetail', component: ProductDetail },
-      { path: 'login', name: 'Login', component: Login },
-      { path: 'register', name: 'Register', component: Register },
-      { path: 'cart', name: 'Cart', component: CartView },
-      { path: 'profile', name: 'Profile', component: Profile },
-      { path: 'addresses', name: 'Addresses', component: Profile },
-      { path: 'orders', name: 'Orders', component: Profile },
-      { path: 'affiliate', name: 'AffiliateDashboard', component: Profile },
-      { path: 'wishlist', name: 'Wishlist', component: Profile },
-      { path: 'checkout', name: 'Checkout', component: CheckoutView },
-      { path: 'waiting-payment/:id', name: 'WaitingPayment', component: WaitingPayment },
-      { path: 'tracking/:id', name: 'Tracking', component: Tracking },
-      { path: 'complaints/new', name: 'Complaint', component: Complaint },
-      { path: 'orders/:id', name: 'OrderDetail', component: OrderDetail },
+      { path: '', name: 'Home', component: Home, meta: { title: 'Optik Medio | Curated Lens Experience' } },
+      { path: 'products', name: 'Products', component: Home, meta: { title: 'Produk | Optik Medio' } },
+      { path: 'products/category/:slug', name: 'ProductsByCategory', component: Home, meta: { title: 'Kategori Produk | Optik Medio' } },
+      { path: 'products/:slug', name: 'ProductDetail', component: ProductDetail, meta: { title: 'Detail Produk | Optik Medio' } },
+      { path: 'login', name: 'Login', component: Login, meta: { title: 'Masuk | Optik Medio' } },
+      { path: 'register', name: 'Register', component: Register, meta: { title: 'Daftar | Optik Medio' } },
+      { path: 'cart', name: 'Cart', component: CartView, meta: { title: 'Keranjang | Optik Medio' } },
+      { path: 'profile', name: 'Profile', component: Profile, meta: { title: 'Profil | Optik Medio' } },
+      { path: 'addresses', name: 'Addresses', component: Profile, meta: { title: 'Alamat | Optik Medio' } },
+      { path: 'orders', name: 'Orders', component: Profile, meta: { title: 'Pesanan | Optik Medio' } },
+      { path: 'affiliate', name: 'AffiliateDashboard', component: Profile, meta: { title: 'Affiliate | Optik Medio' } },
+      { path: 'wishlist', name: 'Wishlist', component: Profile, meta: { title: 'Wishlist | Optik Medio' } },
+      { path: 'checkout', name: 'Checkout', component: CheckoutView, meta: { title: 'Checkout | Optik Medio' } },
+      { path: 'waiting-payment/:id', name: 'WaitingPayment', component: WaitingPayment, meta: { title: 'Menunggu Pembayaran | Optik Medio' } },
+      { path: 'tracking/:id', name: 'Tracking', component: Tracking, meta: { title: 'Pelacakan Pesanan | Optik Medio' } },
+      { path: 'complaints/new', name: 'Complaint', component: Complaint, meta: { title: 'Komplain | Optik Medio' } },
+      { path: 'complaints/:id', name: 'ComplaintDetail', component: () => import('../views/ComplaintDetail.vue'), meta: { title: 'Detail Komplain | Optik Medio' } },
+      { path: 'orders/:id', name: 'OrderDetail', component: OrderDetail, meta: { title: 'Detail Pesanan | Optik Medio' } },
       // Blog routes
-      { path: 'blog', name: 'Blog', component: () => import('../views/blog/ArticleList.vue') },
-      { path: 'blog/:slug', name: 'ArticleDetail', component: () => import('../views/blog/ArticleDetail.vue') },
+      { path: 'blog', name: 'Blog', component: () => import('../views/blog/ArticleList.vue'), meta: { title: 'Blog & Artikel | Optik Medio' } },
+      { path: 'blog/:slug', name: 'ArticleDetail', component: () => import('../views/blog/ArticleDetail.vue'), meta: { title: 'Artikel | Optik Medio' } },
       // Halaman Legal statis
-      { path: 'privacy', name: 'Privacy', component: () => import('../views/legal/PrivacyView.vue') },
-      { path: 'terms', name: 'Terms', component: () => import('../views/legal/TermsView.vue') },
-      { path: 'faq', name: 'FAQ', component: () => import('../views/legal/FAQView.vue') },
+      { path: 'privacy', name: 'Privacy', component: () => import('../views/legal/PrivacyView.vue'), meta: { title: 'Kebijakan Privasi | Optik Medio' } },
+      { path: 'terms', name: 'Terms', component: () => import('../views/legal/TermsView.vue'), meta: { title: 'Syarat & Ketentuan | Optik Medio' } },
+      { path: 'faq', name: 'FAQ', component: () => import('../views/legal/FAQView.vue'), meta: { title: 'FAQ | Optik Medio' } },
     ]
   },
 ];
@@ -64,16 +65,15 @@ router.beforeEach(async (to, _from, next) => {
   const { useAuthStore } = await import('../stores/authStore');
   const authStore = useAuthStore();
 
-  // Fetch user jika ada token tapi belum ada data user
-  if (authStore.token && !authStore.user) {
+  if (!authStore.hasInitialized) {
     try {
       await authStore.fetchUser();
     } catch {
-      authStore.logout();
+      await authStore.logout({ silent: true });
     }
   }
 
-  const isAuthenticated = !!authStore.token && !!authStore.user;
+  const isAuthenticated = !!authStore.user;
 
   // Redirect ke /login jika halaman butuh autentikasi
   if (AUTH_REQUIRED_ROUTES.includes(to.name as string) && !isAuthenticated) {
@@ -86,6 +86,10 @@ router.beforeEach(async (to, _from, next) => {
   }
 
   next();
+});
+
+router.afterEach((to) => {
+  document.title = (to.meta.title as string | undefined) || 'Optik Medio | Curated Lens Experience';
 });
 
 export default router;

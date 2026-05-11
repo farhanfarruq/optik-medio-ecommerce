@@ -32,6 +32,7 @@ class BankForm
                         \Filament\Forms\Components\FileUpload::make('logo')
                             ->label('Logo Bank')
                             ->image()
+                            ->disk('public')
                             ->directory('banks'),
                         \Filament\Forms\Components\Toggle::make('is_active')
                             ->label('Aktif')

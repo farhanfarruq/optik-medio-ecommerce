@@ -16,8 +16,9 @@ class ShippingRateResource extends Resource
 {
     protected static ?string $model = ShippingRate::class;
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-map';
-    protected static string | \UnitEnum | null $navigationGroup = 'Master Data';
-    protected static bool $shouldRegisterNavigation = false;
+    protected static string | \UnitEnum | null $navigationGroup = 'Pengaturan';
+    protected static ?string $navigationLabel = 'Tarif Ongkir';
+    protected static ?int $navigationSort = 4;
 
     public static function form(Schema $schema): Schema
     {

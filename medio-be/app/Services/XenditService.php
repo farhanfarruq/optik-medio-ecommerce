@@ -30,8 +30,8 @@ class XenditService
                 'payer_email'      => $order->user->email,
                 'description'      => 'Payment for Order #' . $order->order_number,
                 'invoice_duration' => 86400, // 24 hours
-                'success_redirect_url' => config('app.frontend_url') . '/profile',
-                'failure_redirect_url' => config('app.frontend_url') . '/profile',
+                'success_redirect_url' => config('app.frontend_url') . '/orders/' . $order->id,
+                'failure_redirect_url' => config('app.frontend_url') . '/waiting-payment/' . $order->id,
                 'currency'         => 'IDR',
             ]);
 
@@ -67,19 +67,19 @@ class XenditService
             [$paymentStatus, $orderStatus, $paidAt] = $this->resolveStatus($xenditStatus, $order->status);
 
             if ($order->payment) {
-                $order->payment->update([
+                $order->payment->forceFill([
                     'status'       => $paymentStatus,
                     'paid_at'      => $paidAt,
                     'raw_response' => json_decode((string) $invoice, true),
-                ]);
+                ])->saveQuietly();
             }
 
-            $order->update([
+            $order->forceFill([
                 'status' => $orderStatus,
                 'paid_at' => $paidAt,
                 'is_payment_verified' => $paymentStatus === 'success',
                 'payment_verified_at' => $paymentStatus === 'success' ? $paidAt : null,
-            ]);
+            ])->saveQuietly();
 
             return $orderStatus;
         } catch (\Exception $e) {

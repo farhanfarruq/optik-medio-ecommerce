@@ -2,6 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\Complain;
+use App\Observers\ComplainObserver;
+use App\Models\ReturnRequest;
+use App\Observers\ReturnObserver;
+use App\Models\Order;
+use App\Observers\OrderObserver;
 use App\Repositories\Interfaces\OrderRepositoryInterface;
 use App\Repositories\Interfaces\ProductRepositoryInterface;
 use App\Repositories\OrderRepository;
@@ -20,6 +26,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Register observers
+        Complain::observe(ComplainObserver::class);
+        ReturnRequest::observe(ReturnObserver::class);
+        Order::observe(OrderObserver::class);
+
         // Force HTTPS in production
         if ($this->app->environment('production')) {
             URL::forceScheme('https');

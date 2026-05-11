@@ -15,32 +15,48 @@ class ReturnRequestResource extends Resource
     protected static ?string $model = ReturnRequest::class;
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-arrow-uturn-left';
     protected static string | \UnitEnum | null $navigationGroup = 'Penjualan';
-    protected static ?string $navigationLabel = 'Return Requests';
+    protected static ?string $navigationLabel = 'Return';
+    protected static ?int $navigationSort = 3;
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Forms\Components\Placeholder::make('order.order_number')
-                ->label('Order Number')
-                ->content(fn (?ReturnRequest $record) => $record?->order?->order_number ?? '-'),
-            Forms\Components\Placeholder::make('user.name')
-                ->label('Customer')
-                ->content(fn (?ReturnRequest $record) => $record?->user?->name ?? '-'),
-            Forms\Components\Placeholder::make('reason')
-                ->content(fn (?ReturnRequest $record) => $record?->reason ?? '-'),
-            Forms\Components\Placeholder::make('description')
-                ->content(fn (?ReturnRequest $record) => $record?->description ?? '-'),
-            Forms\Components\Select::make('status')
-                ->options([
-                    'pending' => 'Pending',
-                    'approved' => 'Approved',
-                    'rejected' => 'Rejected',
-                ])
-                ->required(),
-            Forms\Components\Textarea::make('admin_notes')
-                ->label('Admin Notes')
-                ->rows(4)
-                ->columnSpanFull(),
+            \Filament\Schemas\Components\Grid::make(2)->schema([
+
+                \Filament\Schemas\Components\Section::make('Detail Pengajuan Return')
+                    ->columns(2)
+                    ->schema([
+                        Forms\Components\Placeholder::make('order.order_number')
+                            ->label('Nomor Order')
+                            ->content(fn (?ReturnRequest $record) => $record?->order?->order_number ?? '-'),
+                        Forms\Components\Placeholder::make('user.name')
+                            ->label('Customer')
+                            ->content(fn (?ReturnRequest $record) => $record?->user?->name ?? '-'),
+                        Forms\Components\Placeholder::make('reason')
+                            ->label('Alasan Return')
+                            ->content(fn (?ReturnRequest $record) => $record?->reason ?? '-')
+                            ->columnSpanFull(),
+                        Forms\Components\Placeholder::make('description')
+                            ->label('Deskripsi')
+                            ->content(fn (?ReturnRequest $record) => $record?->description ?? '-')
+                            ->columnSpanFull(),
+                    ]),
+
+                \Filament\Schemas\Components\Section::make('Keputusan Admin')
+                    ->columns(1)
+                    ->schema([
+                        Forms\Components\Select::make('status')
+                            ->options([
+                                'pending'  => 'Pending',
+                                'approved' => 'Approved',
+                                'rejected' => 'Rejected',
+                            ])
+                            ->required()->label('Status'),
+                        Forms\Components\Textarea::make('admin_notes')
+                            ->label('Catatan Admin')
+                            ->rows(8),
+                    ]),
+            ]),
         ]);
     }
 

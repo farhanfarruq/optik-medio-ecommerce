@@ -1,30 +1,9 @@
 <template>
   <div class="bg-[#F5F2EE] min-h-screen">
-    <!-- Mini Hero with gradient bleed -->
-    <div class="relative w-full" style="margin-bottom: -20px;">
-      <div class="relative overflow-hidden" style="height: 320px;">
-        <img src="/gambar/hero-bg.jpeg" alt="" class="absolute inset-0 w-full h-full object-cover object-center" style="transform: scale(1.08); object-position: center 40%;" />
-        <div class="absolute inset-0" style="background: linear-gradient(135deg, rgba(10,8,5,0.65) 0%, rgba(30,20,10,0.45) 100%);"></div>
-        <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, #F5F2EE 100%);"></div>
-        <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(193,154,81,0.6), transparent);"></div>
-        <div class="relative z-10 h-full max-w-[1000px] mx-auto px-6 flex flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 24px)', paddingBottom: '48px' }">
-          <!-- Breadcrumb + Back -->
-          <div>
-            <nav class="flex items-center gap-2 text-xs font-medium mb-2" style="color: rgba(255,255,255,0.55);">
-              <router-link to="/" class="hover:text-white transition-colors">Beranda</router-link>
-              <span class="material-symbols-outlined text-sm">chevron_right</span>
-              <span class="text-white">Blog & Artikel</span>
-            </nav>
-            <router-link to="/" class="flex items-center gap-2 text-sm font-bold group w-fit transition-all" style="color: rgba(193,154,81,0.9);">
-              <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
-              Kembali ke Beranda
-            </router-link>
-          </div>
-          <!-- Page Title -->
-          <h1 class="text-4xl font-black tracking-tight text-white" style="font-family: 'Outfit', sans-serif;">Blog & Artikel</h1>
-        </div>
-      </div>
-    </div>
+    <PageHero
+      title="Blog & Artikel"
+      :breadcrumbs="[{ label: 'Blog & Artikel' }]"
+    />
 
     <!-- Main Content -->
     <main class="max-w-[1000px] mx-auto w-full px-6 pb-20 relative z-20">
@@ -34,6 +13,20 @@
           <p class="text-base leading-relaxed max-w-2xl text-on-surface-variant">
             Temukan tips kesehatan mata, panduan memilih frame kacamata, hingga update terbaru seputar layanan Optik Medio.
           </p>
+        </div>
+
+        <div class="mb-10">
+          <label for="article-search" class="sr-only">Cari artikel</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline-variant">search</span>
+            <input
+              id="article-search"
+              v-model="searchQuery"
+              type="search"
+              placeholder="Cari artikel..."
+              class="w-full border border-outline-variant/30 bg-white py-4 pl-12 pr-4 text-sm text-on-surface outline-none transition-all focus:border-primary"
+            />
+          </div>
         </div>
 
         <!-- Loading State -->
@@ -134,7 +127,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import PageHero from '../../components/layout/PageHero.vue';
 import { apiClient } from '../../core/api/axiosclient';
 import { resolveImageUrl } from '../../core/utils/image';
 
@@ -143,10 +137,20 @@ const loading = ref(true);
 const error = ref('');
 const currentPage = ref(1);
 const totalPages = ref(1);
+const searchQuery = ref('');
+let searchTimeout: ReturnType<typeof setTimeout> | undefined;
 
 onMounted(() => {
-  document.title = 'Blog & Artikel | Optik Medio';
   fetchArticles();
+});
+
+onBeforeUnmount(() => {
+  if (searchTimeout) clearTimeout(searchTimeout);
+});
+
+watch(searchQuery, () => {
+  if (searchTimeout) clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => fetchArticles(1), 400);
 });
 
 const fetchArticles = async (page = 1) => {
@@ -154,7 +158,14 @@ const fetchArticles = async (page = 1) => {
   error.value = '';
   
   try {
-    const response = await apiClient.get(`/articles?page=${page}`);
+    const params = new URLSearchParams({ page: String(page) });
+    const search = searchQuery.value.trim();
+
+    if (search) {
+      params.set('search', search);
+    }
+
+    const response = await apiClient.get(`/articles?${params.toString()}`);
     articles.value = response.data.data || [];
     currentPage.value = response.data.current_page || 1;
     totalPages.value = response.data.last_page || 1;

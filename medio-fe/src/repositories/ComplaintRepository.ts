@@ -14,6 +14,17 @@ class ComplaintRepository {
     return data.data;
   }
 
+  async getComplaint(id: number): Promise<any> {
+    const { data } = await apiClient.get(`/complaints/${id}`);
+    return data.data;
+  }
+
+  async getComplaintByOrder(orderId: number): Promise<any | null> {
+    const result = await this.getComplaints(1);
+    const items: any[] = result?.data ?? [];
+    return items.find((c: any) => c.order_id === orderId) ?? null;
+  }
+
   async createComplaint(payload: ComplaintPayload): Promise<any> {
     const formData = new FormData();
     formData.append('subject', payload.subject);

@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -81,9 +82,22 @@ class AuthController extends Controller
             'code'  => 'required|string|size:6',
         ]);
 
+        $limiterKey = $this->otpAttemptLimiterKey($request);
+
+        if (RateLimiter::tooManyAttempts($limiterKey, 5)) {
+            $seconds = RateLimiter::availableIn($limiterKey);
+
+            return response()->json([
+                'message' => 'Terlalu banyak percobaan OTP. Silakan coba lagi nanti.',
+                'retry_after' => $seconds,
+            ], 429);
+        }
+
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
+            RateLimiter::hit($limiterKey, 600);
+
             return response()->json(['message' => 'Email tidak ditemukan.'], 404);
         }
 
@@ -97,6 +111,8 @@ class AuthController extends Controller
             ->first();
 
         if (!$otp) {
+            RateLimiter::hit($limiterKey, 600);
+
             return response()->json([
                 'message' => 'Kode OTP tidak valid atau sudah kadaluarsa.',
             ], 422);
@@ -108,14 +124,18 @@ class AuthController extends Controller
         // Tandai email user sebagai terverifikasi
         $user->update(['email_verified_at' => now()]);
 
-        // Berikan token (auto-login)
+        RateLimiter::clear($limiterKey);
+
+        Auth::login($user);
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
+
         $user->load('addresses');
-        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'Email berhasil diverifikasi!',
             'user'    => $user,
-            'token'   => $token,
         ]);
     }
 
@@ -163,7 +183,9 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        $credentials = $request->only('email', 'password');
+
+        if (!Auth::validate($credentials)) {
             throw ValidationException::withMessages([
                 'email' => ['Kredensial tidak valid.'],
             ]);
@@ -171,22 +193,25 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->firstOrFail();
 
-        // Cek apakah email sudah diverifikasi
+        // Cek apakah email sudah diverifikasi (registrasi pertama kali)
         if (!$user->email_verified_at) {
-            // Kirim ulang OTP otomatis
             $this->generateAndSendOtp($user, 'email');
 
             return response()->json([
-                'message'          => 'Email belum diverifikasi. Kode OTP baru telah dikirim.',
-                'requires_otp'     => true,
-                'email'            => $user->email,
+                'message'      => 'Email belum diverifikasi. Kode OTP telah dikirim.',
+                'requires_otp' => true,
+                'email'        => $user->email,
             ], 403);
         }
 
-        $user->load('addresses');
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // Setiap login selalu wajib verifikasi OTP
+        $this->generateAndSendOtp($user, 'email');
 
-        return response()->json(['user' => $user, 'token' => $token]);
+        return response()->json([
+            'message'      => 'Kode OTP telah dikirim ke email Anda.',
+            'requires_otp' => true,
+            'email'        => $user->email,
+        ], 403);
     }
 
     /**
@@ -194,7 +219,11 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        Auth::guard('web')->logout();
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         return response()->json(['message' => 'Berhasil logout']);
     }
@@ -235,10 +264,23 @@ class AuthController extends Controller
                 Mail::to($user->email)->send(new OtpMail($code, $user->name));
             } catch (\Exception $e) {
                 Log::error('Failed to send OTP email: ' . $e->getMessage());
-                // Fallback: log OTP ke file log agar tetap bisa diverifikasi saat development
-                Log::info("OTP untuk {$user->email}: {$code}");
+                if (app()->isLocal()) {
+                    Log::warning('OTP email delivery failed in local environment.', [
+                        'email' => $user->email,
+                        'otp_preview' => str_repeat('*', 4) . substr($code, -2),
+                    ]);
+                }
             }
         }
+    }
+
+    private function otpAttemptLimiterKey(Request $request): string
+    {
+        return sprintf(
+            'auth:verify-otp:%s|%s',
+            Str::lower($request->string('email')->trim()->toString()),
+            $request->ip(),
+        );
     }
 
     private function generateAffiliateCode(string $name): string

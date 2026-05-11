@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { orderRepository } from '../repositories/OrderRepository';
 import { RETURN_REASONS, returnRepository } from '../repositories/ReturnRepository';
 import { reviewRepository } from '../repositories/ReviewRepository';
+import { complaintRepository } from '../repositories/ComplaintRepository';
 import { useToast } from '../composables/useToast';
 import { apiClient } from '../core/api/axiosclient';
 import { resolveImageUrl } from '../core/utils/image';
@@ -27,6 +28,7 @@ const isReturnFormOpen = ref(false);
 const isSubmittingReturn = ref(false);
 const hasSubmittedReturn = ref(false);
 const reviewDrafts = ref<Record<number, ReviewDraft>>({});
+const existingComplain = ref<any>(null);
 
 const returnForm = ref({
   reason: RETURN_REASONS[0]?.value || '',
@@ -65,7 +67,16 @@ const loadOrder = async () => {
   }
 };
 
-onMounted(loadOrder);
+onMounted(async () => {
+  await loadOrder();
+  // Load komplain terkait pesanan ini (jika ada)
+  try {
+    const id = Number(route.params.id);
+    existingComplain.value = await complaintRepository.getComplaintByOrder(id);
+  } catch {
+    // tidak ada komplain, biarkan null
+  }
+});
 
 const normalizedStatus = computed(() => String(order.value?.status || '').toUpperCase());
 const isOrderClosed = computed(() => ['CANCELLED', 'REFUNDED', 'EXPIRED'].includes(normalizedStatus.value));
@@ -770,16 +781,52 @@ const submitReview = async (item: any) => {
               <span class="material-symbols-outlined text-lg" style="color: #c19a51;">support_agent</span>
               <h3 class="font-black text-base" style="color: #1a1209;">Komplain Pesanan</h3>
             </div>
-            <p class="text-sm leading-relaxed mb-4" style="color: #5a5248;">
-              Ada barang yang rusak, kurang, atau tidak sesuai pesanan? Laporkan keluhan Anda kepada kami.
-            </p>
-            <button
-              @click="router.push({ name: 'Complaint', query: { order_id: order.id } })"
-              class="w-full py-3 rounded-none text-xs font-black uppercase tracking-[0.16em] transition-all"
-              style="background: white; color: #dc2626; border: 1px solid rgba(220,38,38,0.3); hover:bg-red-50;"
-            >
-              Ajukan Komplain
-            </button>
+
+            <!-- Sudah ada komplain -->
+            <template v-if="existingComplain">
+              <div class="mb-4 p-4 border" :style="`background: ${existingComplain.status === 'resolved' ? 'rgba(22,163,74,0.05)' : existingComplain.status === 'rejected' ? 'rgba(220,38,38,0.05)' : 'rgba(193,154,81,0.05)'}; border-color: rgba(193,154,81,0.2);`">
+                <div class="flex items-start justify-between gap-3 flex-wrap mb-3">
+                  <div>
+                    <p class="text-[10px] font-black uppercase tracking-[0.18em] mb-1" style="color: #8a7a60;">Komplain #{{ existingComplain.id }}</p>
+                    <p class="text-sm font-bold" style="color: #1a1209;">{{ existingComplain.subject }}</p>
+                  </div>
+                  <span class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1"
+                    :style="`background: ${existingComplain.status === 'resolved' ? 'rgba(22,163,74,0.1)' : existingComplain.status === 'rejected' ? 'rgba(220,38,38,0.1)' : existingComplain.status === 'in_progress' ? 'rgba(37,99,235,0.1)' : 'rgba(217,119,6,0.1)'}; color: ${existingComplain.status === 'resolved' ? '#16a34a' : existingComplain.status === 'rejected' ? '#dc2626' : existingComplain.status === 'in_progress' ? '#2563eb' : '#d97706'};`">
+                    {{ existingComplain.status === 'open' ? 'Menunggu' : existingComplain.status === 'in_progress' ? 'Diproses' : existingComplain.status === 'resolved' ? 'Selesai' : 'Ditolak' }}
+                  </span>
+                </div>
+
+                <!-- Respons admin jika ada -->
+                <div v-if="existingComplain.admin_notes" class="border-t pt-3 mt-3" style="border-color: rgba(193,154,81,0.2);">
+                  <p class="text-[10px] font-black uppercase tracking-[0.18em] mb-2" style="color: #8a7a60;">Respons Tim Kami</p>
+                  <p class="text-sm leading-relaxed" style="color: #1a1209;">{{ existingComplain.admin_notes }}</p>
+                </div>
+                <div v-else class="flex items-center gap-1.5 mt-2">
+                  <span class="material-symbols-outlined text-sm" style="color: #c19a51;">schedule</span>
+                  <p class="text-xs" style="color: #8a7a60;">Menunggu respons dari tim kami. Anda akan dikirim email saat ada pembaruan.</p>
+                </div>
+              </div>
+
+              <button
+                @click="router.push({ name: 'ComplaintDetail', params: { id: existingComplain.id } })"
+                class="w-full py-3 rounded-none text-xs font-black uppercase tracking-[0.16em] transition-all"
+                style="background: white; color: #1a1209; border: 1px solid rgba(26,18,9,0.2);">
+                Lihat Detail Komplain
+              </button>
+            </template>
+
+            <!-- Belum ada komplain -->
+            <template v-else>
+              <p class="text-sm leading-relaxed mb-4" style="color: #5a5248;">
+                Ada barang yang rusak, kurang, atau tidak sesuai pesanan? Laporkan keluhan Anda kepada kami.
+              </p>
+              <button
+                @click="router.push({ name: 'Complaint', query: { order_id: order.id } })"
+                class="w-full py-3 rounded-none text-xs font-black uppercase tracking-[0.16em] transition-all"
+                style="background: white; color: #dc2626; border: 1px solid rgba(220,38,38,0.3);">
+                Ajukan Komplain
+              </button>
+            </template>
           </div>
 
           <div v-if="order.shipping_address" class="rounded-none border p-6" style="background: white; border-color: rgba(193,154,81,0.15); box-shadow: 0 2px 12px rgba(0,0,0,0.04);">

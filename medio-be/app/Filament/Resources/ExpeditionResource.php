@@ -16,7 +16,9 @@ class ExpeditionResource extends Resource
 {
     protected static ?string $model = Expedition::class;
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-truck';
-    protected static string | \UnitEnum | null $navigationGroup = 'Master Data';
+    protected static string | \UnitEnum | null $navigationGroup = 'Pengaturan';
+    protected static ?string $navigationLabel = 'Ekspedisi';
+    protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {

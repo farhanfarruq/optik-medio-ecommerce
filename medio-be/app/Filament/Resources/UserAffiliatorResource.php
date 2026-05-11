@@ -17,8 +17,9 @@ class UserAffiliatorResource extends Resource
 {
     protected static ?string $model = UserAffiliator::class;
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-user-group';
-    protected static string | \UnitEnum | null $navigationGroup = 'Affiliate & Komisi';
+    protected static string | \UnitEnum | null $navigationGroup = 'Afiliasi';
     protected static ?string $navigationLabel = 'Affiliator';
+    protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {

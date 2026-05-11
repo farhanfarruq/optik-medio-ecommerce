@@ -1,30 +1,9 @@
 <template>
   <div class="bg-[#F5F2EE] min-h-screen">
-    <!-- Mini Hero with gradient bleed -->
-    <div class="relative w-full" style="margin-bottom: -20px;">
-      <div class="relative overflow-hidden" style="height: 320px;">
-        <img src="/gambar/hero-bg.jpeg" alt="" class="absolute inset-0 w-full h-full object-cover object-center" style="transform: scale(1.08); object-position: center 40%;" />
-        <div class="absolute inset-0" style="background: linear-gradient(135deg, rgba(10,8,5,0.65) 0%, rgba(30,20,10,0.45) 100%);"></div>
-        <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, #F5F2EE 100%);"></div>
-        <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(193,154,81,0.6), transparent);"></div>
-        <div class="relative z-10 h-full max-w-[1000px] mx-auto px-6 flex flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 24px)', paddingBottom: '48px' }">
-          <!-- Breadcrumb + Back -->
-          <div>
-            <nav class="flex items-center gap-2 text-xs font-medium mb-2" style="color: rgba(255,255,255,0.55);">
-              <router-link to="/" class="hover:text-white transition-colors">Beranda</router-link>
-              <span class="material-symbols-outlined text-sm">chevron_right</span>
-              <span class="text-white">FAQ</span>
-            </nav>
-            <router-link to="/" class="flex items-center gap-2 text-sm font-bold group w-fit transition-all" style="color: rgba(193,154,81,0.9);">
-              <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
-              Kembali ke Beranda
-            </router-link>
-          </div>
-          <!-- Page Title -->
-          <h1 class="text-4xl font-black tracking-tight text-white" style="font-family: 'Outfit', sans-serif;">Pertanyaan Umum (FAQ)</h1>
-        </div>
-      </div>
-    </div>
+    <PageHero
+      title="Pertanyaan Umum (FAQ)"
+      :breadcrumbs="[{ label: 'FAQ' }]"
+    />
 
     <!-- Main Content -->
     <main class="max-w-[1000px] mx-auto w-full px-6 pb-20 relative z-20">
@@ -71,21 +50,21 @@
           </div>
           
           <div 
-            v-for="(faq, index) in filteredFaqs" 
+            v-for="faq in filteredFaqs" 
             :key="faq.id"
             class="border border-outline-variant/10 overflow-hidden bg-white hover:border-primary/20 transition-all duration-300"
           >
             <button 
-              @click="toggleFaq(index)"
+              @click="toggleFaq(faq.id)"
               class="w-full flex items-center justify-between p-6 text-left group transition-colors"
-              :class="{ 'bg-surface-container-lowest': openIndices.includes(index) }"
+              :class="{ 'bg-surface-container-low': openFaqId === faq.id }"
             >
               <span class="text-base md:text-lg font-bold text-on-surface group-hover:text-primary transition-colors pr-8">
                 {{ faq.question }}
               </span>
               <span 
                 class="material-symbols-outlined transition-transform duration-300 text-primary"
-                :class="{ 'rotate-180': openIndices.includes(index) }"
+                :class="{ 'rotate-180': openFaqId === faq.id }"
               >
                 expand_more
               </span>
@@ -93,17 +72,9 @@
             
             <div 
               class="overflow-hidden transition-all duration-300 ease-in-out"
-              :style="{ maxHeight: openIndices.includes(index) ? '500px' : '0' }"
+              :style="{ maxHeight: openFaqId === faq.id ? '500px' : '0' }"
             >
-              <div class="px-6 pb-8 text-on-surface-variant leading-relaxed border-t border-outline-variant/5 pt-6 text-sm md:text-base">
-                {{ faq.answer }}
-                
-                <div v-if="faq.category" class="mt-4">
-                  <span class="text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary px-3 py-1.5 inline-block">
-                    Kategori: {{ faq.category }}
-                  </span>
-                </div>
-              </div>
+              <div class="px-6 pb-8 text-on-surface-variant leading-relaxed border-t border-outline-variant/5 pt-6 text-sm md:text-base" v-html="sanitizeHtml(faq.answer)"></div>
             </div>
           </div>
 
@@ -118,8 +89,9 @@
           <h3 class="text-xl md:text-2xl font-black mb-3 text-on-surface">Masih punya pertanyaan lain?</h3>
           <p class="mb-8 text-on-surface-variant max-w-lg mx-auto text-sm md:text-base">Tim CS kami siap membantu Anda setiap hari pukul 09.00 - 20.00 WIB.</p>
           <a 
-            href="https://wa.me/628972173420" 
+            :href="whatsappHref" 
             target="_blank"
+            rel="noopener noreferrer"
             class="inline-flex items-center gap-2 px-8 py-4 bg-primary text-white font-black uppercase tracking-widest hover:shadow-lg hover:-translate-y-0.5 transition-all"
           >
             <span class="material-symbols-outlined text-xl">chat</span>
@@ -132,8 +104,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
+import PageHero from '../../components/layout/PageHero.vue';
 import { apiClient } from '../../core/api/axiosclient';
+import { settingRepository, type AppSettings } from '../../repositories/SettingRepository';
+import { sanitizeHtml } from '../../core/utils/sanitize';
 
 interface Faq {
   id: number;
@@ -144,8 +119,9 @@ interface Faq {
 }
 
 const faqs = ref<Faq[]>([]);
+const settings = ref<AppSettings | null>(null);
 const isLoading = ref(true);
-const openIndices = ref<number[]>([]);
+const openFaqId = ref<number | null>(null);
 const selectedCategory = ref('Semua');
 
 const categories = computed(() => {
@@ -156,6 +132,11 @@ const categories = computed(() => {
 const filteredFaqs = computed(() => {
   if (selectedCategory.value === 'Semua') return faqs.value;
   return faqs.value.filter(f => f.category === selectedCategory.value);
+});
+
+const whatsappHref = computed(() => {
+  const phone = settings.value?.store_phone?.replace(/\D/g, '') || '628972173420';
+  return `https://wa.me/${phone}`;
 });
 
 const fetchFaqs = async () => {
@@ -170,15 +151,28 @@ const fetchFaqs = async () => {
   }
 };
 
-const toggleFaq = (index: number) => {
-  if (openIndices.value.includes(index)) {
-    openIndices.value = openIndices.value.filter(i => i !== index);
-  } else {
-    openIndices.value = [index]; // Solo accordion
+const fetchSettings = async () => {
+  try {
+    settings.value = await settingRepository.getSettings();
+  } catch (error) {
+    console.error('Failed to load settings', error);
   }
 };
 
+const toggleFaq = (id: number) => {
+  if (openFaqId.value === id) {
+    openFaqId.value = null;
+  } else {
+    openFaqId.value = id;
+  }
+};
+
+watch(selectedCategory, () => {
+  openFaqId.value = null;
+});
+
 onMounted(() => {
   fetchFaqs();
+  fetchSettings();
 });
 </script>

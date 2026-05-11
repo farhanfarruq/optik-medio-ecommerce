@@ -22,7 +22,11 @@ class BankResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-building-library';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'Master Data';
+    protected static string | \UnitEnum | null $navigationGroup = 'Pengaturan';
+
+    protected static ?string $navigationLabel = 'Bank';
+
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $recordTitleAttribute = 'name';
 

@@ -1,32 +1,15 @@
 <template>
   <div class="bg-[#F5F2EE] min-h-screen">
-    <!-- Mini Hero with gradient bleed -->
-    <div class="relative w-full" style="margin-bottom: -20px;">
-      <div class="relative overflow-hidden" style="height: 320px;">
-        <img src="/gambar/hero-bg.jpeg" alt="" class="absolute inset-0 w-full h-full object-cover object-center" style="transform: scale(1.08); object-position: center 40%;" />
-        <div class="absolute inset-0" style="background: linear-gradient(135deg, rgba(10,8,5,0.65) 0%, rgba(30,20,10,0.45) 100%);"></div>
-        <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, #F5F2EE 100%);"></div>
-        <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(193,154,81,0.6), transparent);"></div>
-        <div class="relative z-10 h-full max-w-[1000px] mx-auto px-6 flex flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 24px)', paddingBottom: '48px' }">
-          <!-- Breadcrumb + Back -->
-          <div>
-            <nav class="flex items-center gap-2 text-xs font-medium mb-2" style="color: rgba(255,255,255,0.55);">
-              <router-link to="/" class="hover:text-white transition-colors">Beranda</router-link>
-              <span class="material-symbols-outlined text-sm">chevron_right</span>
-              <router-link to="/blog" class="hover:text-white transition-colors">Blog</router-link>
-              <span class="material-symbols-outlined text-sm">chevron_right</span>
-              <span class="text-white truncate max-w-[200px]">{{ article?.title || 'Detail Artikel' }}</span>
-            </nav>
-            <router-link to="/blog" class="flex items-center gap-2 text-sm font-bold group w-fit transition-all" style="color: rgba(193,154,81,0.9);">
-              <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
-              Kembali ke Blog
-            </router-link>
-          </div>
-          <!-- Page Title -->
-          <h1 class="text-3xl md:text-4xl font-black tracking-tight text-white line-clamp-1" style="font-family: 'Outfit', sans-serif;">{{ article?.title || 'Baca Artikel' }}</h1>
-        </div>
-      </div>
-    </div>
+    <PageHero
+      :title="article?.title || 'Baca Artikel'"
+      :breadcrumbs="[
+        { label: 'Blog', to: '/blog' },
+        { label: article?.title || 'Detail Artikel' }
+      ]"
+      back-to="/blog"
+      back-label="Kembali ke Blog"
+      title-class="text-3xl md:text-4xl font-black tracking-tight text-white line-clamp-1"
+    />
 
     <!-- Main Content -->
     <main class="max-w-[1000px] mx-auto w-full px-6 pb-20 relative z-20">
@@ -86,27 +69,44 @@
           </header>
 
           <!-- Article Body -->
-          <div class="prose prose-lg prose-primary max-w-none mb-16" v-html="article.content"></div>
+          <div class="prose prose-lg prose-primary max-w-none mb-16" v-html="sanitizedContent"></div>
 
-          <!-- Social Share (Static) -->
           <div class="pt-10 border-t border-outline-variant/10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <span class="text-xs font-black uppercase tracking-[0.2em] text-on-surface">Bagikan Artikel</span>
             <div class="flex gap-4">
-              <button class="w-10 h-10 flex items-center justify-center border border-outline-variant/20 rounded-full hover:bg-primary hover:text-white transition-all">
-                <i class="fa-brands fa-facebook-f"></i>
-              </button>
-              <button class="w-10 h-10 flex items-center justify-center border border-outline-variant/20 rounded-full hover:bg-primary hover:text-white transition-all">
-                <i class="fa-brands fa-x-twitter"></i>
-              </button>
-              <button class="w-10 h-10 flex items-center justify-center border border-outline-variant/20 rounded-full hover:bg-primary hover:text-white transition-all">
-                <i class="fa-brands fa-whatsapp"></i>
-              </button>
+              <a
+                :href="facebookShareUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Bagikan artikel ke Facebook"
+                class="w-10 h-10 flex items-center justify-center border border-outline-variant/20 rounded-full hover:bg-primary hover:text-white transition-all"
+              >
+                <span class="material-symbols-outlined text-lg">share</span>
+              </a>
+              <a
+                :href="xShareUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Bagikan artikel ke X"
+                class="w-10 h-10 flex items-center justify-center border border-outline-variant/20 rounded-full hover:bg-primary hover:text-white transition-all"
+              >
+                <span class="text-xs font-black">X</span>
+              </a>
+              <a
+                :href="whatsappShareUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Bagikan artikel ke WhatsApp"
+                class="w-10 h-10 flex items-center justify-center border border-outline-variant/20 rounded-full hover:bg-primary hover:text-white transition-all"
+              >
+                <span class="material-symbols-outlined text-lg">chat</span>
+              </a>
             </div>
           </div>
         </div>
 
         <!-- Related Articles -->
-        <div v-if="relatedArticles.length > 0" class="bg-surface-container-lowest p-8 md:p-16 border-t border-outline-variant/10">
+        <div v-if="relatedArticles.length > 0" class="bg-surface-container-low p-8 md:p-16 border-t border-outline-variant/10">
           <h3 class="text-2xl font-black text-on-surface mb-10" style="font-family: 'Outfit', sans-serif;">Artikel Terkait</h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <router-link v-for="related in relatedArticles" :key="related.id" :to="`/blog/${related.slug}`" class="group">
@@ -131,16 +131,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import PageHero from '../../components/layout/PageHero.vue';
 import { apiClient } from '../../core/api/axiosclient';
 import { resolveImageUrl } from '../../core/utils/image';
+import { sanitizeHtml } from '../../core/utils/sanitize';
 
 const route = useRoute();
 const article = ref<any>(null);
 const relatedArticles = ref<any[]>([]);
 const loading = ref(true);
 const error = ref('');
+
+const sanitizedContent = computed(() => sanitizeHtml(article.value?.content));
+
+const currentUrl = computed(() => {
+  if (typeof window === 'undefined') return '';
+  return window.location.href;
+});
+
+const shareText = computed(() => article.value?.title || 'Artikel Optik Medio');
+const facebookShareUrl = computed(() => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl.value)}`);
+const xShareUrl = computed(() => `https://twitter.com/intent/tweet?url=${encodeURIComponent(currentUrl.value)}&text=${encodeURIComponent(shareText.value)}`);
+const whatsappShareUrl = computed(() => `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText.value} ${currentUrl.value}`)}`);
 
 const fetchArticle = async (slug: string) => {
   loading.value = true;
@@ -181,6 +195,7 @@ watch(() => route.params.slug, (newSlug) => {
 
 onMounted(() => {
   if (route.params.slug) {
+    window.scrollTo(0, 0);
     fetchArticle(route.params.slug as string);
   }
 });
@@ -205,6 +220,6 @@ onMounted(() => {
   @apply text-on-surface-variant text-lg;
 }
 .prose blockquote {
-  @apply border-l-4 border-primary pl-8 italic text-on-surface my-12 bg-surface-container-lowest py-8 pr-8;
+  @apply border-l-4 border-primary pl-8 italic text-on-surface my-12 bg-surface-container-low py-8 pr-8;
 }
 </style>

@@ -189,7 +189,34 @@ class OrderController extends Controller
         $bank = $this->resolveBank($request, $paymentMethod);
         $shippingSelection = $this->resolveShippingSelection($request);
         $shipping = $shippingSelection['shipping_cost'];
-        $totalPrice = max(0, $subtotal + $shipping - $discountAmount - $promoDiscountAmount);
+
+        // ── Level Member Discount ──────────────────────────────────────────────
+        $levelDiscountAmount = 0;
+        $levelMembership = $request->user()
+            ->levelMemberships()
+            ->with('levelMember')
+            ->whereNull('effective_until')
+            ->latest()
+            ->first();
+        $levelMember = $levelMembership?->levelMember;
+        if ($levelMember && $levelMember->discount_percentage > 0) {
+            $levelDiscountAmount = round(($subtotal * $levelMember->discount_percentage) / 100, 2);
+            $levelDiscountAmount = min($levelDiscountAmount, $subtotal);
+        }
+
+        // ── Loyalty Points Redemption ──────────────────────────────────────────
+        // 1 poin = Rp 1.000. User bisa redeem maks 5% dari subtotal.
+        $loyaltyPointsToUse = max(0, (int) $request->input('loyalty_points_used', 0));
+        $loyaltyDiscountAmount = 0;
+        if ($loyaltyPointsToUse > 0) {
+            $userPoints = $request->user()->loyalty_points;
+            $loyaltyPointsToUse = min($loyaltyPointsToUse, $userPoints);
+            $maxLoyaltyDiscount = (int) floor($subtotal * 0.05); // maks 5% subtotal
+            $loyaltyDiscountAmount = min($loyaltyPointsToUse * 1000, $maxLoyaltyDiscount);
+            $loyaltyPointsToUse = (int) ceil($loyaltyDiscountAmount / 1000);
+        }
+
+        $totalPrice = max(0, $subtotal + $shipping - $discountAmount - $promoDiscountAmount - $levelDiscountAmount - $loyaltyDiscountAmount);
 
         // Add individual item discount info for the UI
         if ($appliedPromo && $appliedPromo->type === 'product_discount') {
@@ -218,16 +245,21 @@ class OrderController extends Controller
         }
 
         return response()->json([
-            'subtotal'              => $subtotal,
-            'shipping_cost'         => $shipping,
-            'discount_amount'       => $discountAmount,
-            'promo_discount_amount' => $promoDiscountAmount,
-            'total_price'           => $totalPrice,
-            'items'                 => $items,
-            'applied_promo'         => $appliedPromo,
-            'payment_method'        => $paymentMethod,
-            'selected_bank'         => $bank,
-            'shipping_selection'    => $shippingSelection,
+            'subtotal'                => $subtotal,
+            'shipping_cost'           => $shipping,
+            'discount_amount'         => $discountAmount,
+            'promo_discount_amount'   => $promoDiscountAmount,
+            'level_discount_amount'   => $levelDiscountAmount,
+            'level_member'            => $levelMember ? ['name' => $levelMember->name, 'discount_percentage' => $levelMember->discount_percentage] : null,
+            'loyalty_points_balance'  => $request->user()->loyalty_points,
+            'loyalty_points_used'     => $loyaltyPointsToUse,
+            'loyalty_discount_amount' => $loyaltyDiscountAmount,
+            'total_price'             => $totalPrice,
+            'items'                   => $items,
+            'applied_promo'           => $appliedPromo,
+            'payment_method'          => $paymentMethod,
+            'selected_bank'           => $bank,
+            'shipping_selection'      => $shippingSelection,
         ]);
     }
 
@@ -250,6 +282,7 @@ class OrderController extends Controller
             'notes'                        => 'nullable|string|max:500',
             'discount_id'                  => 'nullable|exists:discounts,id',
             'promo_id'                     => 'nullable|exists:promos,id',
+            'loyalty_points_used'          => 'nullable|integer|min:0',
         ]);
 
         if ($request->discount_id && $request->promo_id) {
@@ -409,22 +442,50 @@ class OrderController extends Controller
             }
         }
 
+        // ── Level Member Discount (store) ─────────────────────────────────────
+        $levelDiscountAmount = 0;
+        $storeLevelMembership = $request->user()
+            ->levelMemberships()
+            ->with('levelMember')
+            ->whereNull('effective_until')
+            ->latest()
+            ->first();
+        $storeLevelMember = $storeLevelMembership?->levelMember;
+        if ($storeLevelMember && $storeLevelMember->discount_percentage > 0) {
+            $levelDiscountAmount = round(($subtotal * $storeLevelMember->discount_percentage) / 100, 2);
+            $levelDiscountAmount = min($levelDiscountAmount, $subtotal);
+        }
+
+        // ── Loyalty Points Redemption (store) ─────────────────────────────────
+        $loyaltyPointsToUse = max(0, (int) $request->input('loyalty_points_used', 0));
+        $loyaltyDiscountAmount = 0;
+        if ($loyaltyPointsToUse > 0) {
+            $userPoints = $request->user()->loyalty_points;
+            $loyaltyPointsToUse = min($loyaltyPointsToUse, $userPoints);
+            $maxLoyaltyDiscount = (int) floor($subtotal * 0.05); // maks 5% subtotal
+            $loyaltyDiscountAmount = min($loyaltyPointsToUse * 1000, $maxLoyaltyDiscount);
+            $loyaltyPointsToUse = (int) ceil($loyaltyDiscountAmount / 1000);
+        }
+
         $orderData = [
-            'user_id'             => $request->user()->id,
-            'shipping_address_id' => $request->shipping_address_id,
-            'status'              => 'unpaid',
-            'subtotal'            => $subtotal,
-            'shipping_cost'       => $shippingSelection['shipping_cost'],
-            'discount_id'         => $request->discount_id,
-            'discount_amount'     => $discountAmount,
-            'promo_id'            => $promoId,
-            'promo_discount_amount' => $promoDiscountAmount,
-            'total_price'         => max(0, $subtotal + $shippingSelection['shipping_cost'] - $discountAmount - $promoDiscountAmount),
-            'courier'             => $shippingSelection['courier'],
-            'courier_service'     => $shippingSelection['courier_service'],
-            'notes'               => $request->notes,
-            'bank_id'             => $bank?->id,
-            'payment_method_model' => $paymentMethod,
+            'user_id'                 => $request->user()->id,
+            'shipping_address_id'     => $request->shipping_address_id,
+            'status'                  => 'unpaid',
+            'subtotal'                => $subtotal,
+            'shipping_cost'           => $shippingSelection['shipping_cost'],
+            'discount_id'             => $request->discount_id,
+            'discount_amount'         => $discountAmount,
+            'promo_id'                => $promoId,
+            'promo_discount_amount'   => $promoDiscountAmount,
+            'level_discount_amount'   => $levelDiscountAmount,
+            'loyalty_points_used'     => $loyaltyPointsToUse,
+            'loyalty_discount_amount' => $loyaltyDiscountAmount,
+            'total_price'             => max(0, $subtotal + $shippingSelection['shipping_cost'] - $discountAmount - $promoDiscountAmount - $levelDiscountAmount - $loyaltyDiscountAmount),
+            'courier'                 => $shippingSelection['courier'],
+            'courier_service'         => $shippingSelection['courier_service'],
+            'notes'                   => $request->notes,
+            'bank_id'                 => $bank?->id,
+            'payment_method_model'    => $paymentMethod,
         ];
 
         $order = $this->orderRepo->create($orderData, $items);
@@ -436,6 +497,15 @@ class OrderController extends Controller
                 'promo_id' => $promoId,
                 'order_id' => $order->id,
             ]);
+        }
+
+        // Redeem loyalty points jika digunakan
+        if ($loyaltyPointsToUse > 0) {
+            $request->user()->redeemLoyaltyPoints(
+                $loyaltyPointsToUse,
+                $order->id,
+                "Poin digunakan untuk diskon pesanan #{$order->order_number}"
+            );
         }
 
         foreach ($request->items as $item) {
@@ -590,14 +660,32 @@ class OrderController extends Controller
             ], 422);
         }
 
-        $pointsToEarn = max(1, (int) round($order->total_price * 0.01));
+        // Poin yang didapat: 1 poin per Rp 10.000 dari total_price (dibulatkan ke bawah, min 1)
+        $pointsToEarn = max(1, (int) floor($order->total_price / 10000));
 
         DB::transaction(function () use ($order, $pointsToEarn) {
-            $order->update([
-                'status'                 => 'delivered',
-                'delivered_at'           => now(),
-                'loyalty_points_earned'  => $pointsToEarn,
-            ]);
+            $updateData = [
+                'status'                => 'delivered',
+                'delivered_at'          => now(),
+                'loyalty_points_earned' => $pointsToEarn,
+            ];
+
+            // COD: otomatis verifikasi pembayaran saat barang diterima
+            $isCod = strtolower($order->payment?->paymentMethod?->code ?? '') === 'cod';
+            if ($isCod && !$order->is_payment_verified) {
+                $updateData['is_payment_verified']  = true;
+                $updateData['payment_verified_at']  = now();
+                $updateData['paid_at']              = $order->paid_at ?? now();
+
+                if ($order->payment) {
+                    $order->payment->update([
+                        'status'  => 'success',
+                        'paid_at' => now(),
+                    ]);
+                }
+            }
+
+            $order->update($updateData);
 
             $order->user->addLoyaltyPoints(
                 $pointsToEarn,

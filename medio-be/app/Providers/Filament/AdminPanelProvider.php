@@ -42,14 +42,13 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogoHeight('3rem')
             ->favicon(asset('images/medio.jpeg'))
             ->navigationGroups([
-                'Produk',
                 'Penjualan',
-                'Affiliate & Komisi',
-                'Promo & Loyalty',
+                'Produk',
                 'Pelanggan',
-                'Master Data',
-                'Content Management',
-                'Sistem',
+                'Promo & Diskon',
+                'Konten',
+                'Afiliasi',
+                'Pengaturan',
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')

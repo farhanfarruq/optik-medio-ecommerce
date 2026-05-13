@@ -16,6 +16,8 @@ class WarrantyController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $this->syncExpiredWarranties($request->user()->id);
+
         $warranties = Warranty::with('serviceClaims')
             ->where('user_id', $request->user()->id)
             ->latest('purchase_date')
@@ -33,6 +35,8 @@ class WarrantyController extends Controller
         $warranty = Warranty::with(['serviceClaims' => fn ($q) => $q->latest()])
             ->where('user_id', $request->user()->id)
             ->findOrFail($id);
+
+        $this->syncExpiredWarranty($warranty);
 
         return response()->json([
             'warranty'       => $warranty,
@@ -69,7 +73,9 @@ class WarrantyController extends Controller
             'images.*'    => 'file|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        // Ownership check untuk warranty
+        $warranty = null;
+
+        // Ownership and eligibility check untuk warranty
         if ($request->warranty_id) {
             $warranty = Warranty::where('id', $request->warranty_id)
                 ->where('user_id', $request->user()->id)
@@ -77,6 +83,20 @@ class WarrantyController extends Controller
 
             if (! $warranty) {
                 return response()->json(['message' => 'Garansi tidak ditemukan.'], 404);
+            }
+
+            $this->syncExpiredWarranty($warranty);
+
+            if (! $warranty->isActive()) {
+                return response()->json(['message' => 'Garansi sudah tidak aktif atau sudah kadaluarsa.'], 422);
+            }
+
+            $hasOpenClaim = $warranty->serviceClaims()
+                ->whereIn('status', ['submitted', 'reviewing', 'approved', 'in_progress', 'completed'])
+                ->exists();
+
+            if ($hasOpenClaim) {
+                return response()->json(['message' => 'Garansi ini sudah pernah diklaim.'], 422);
             }
         }
 
@@ -99,9 +119,33 @@ class WarrantyController extends Controller
             'is_covered_by_warranty' => (bool) $request->warranty_id,
         ]);
 
+        if ($warranty) {
+            $warranty->update(['status' => 'claimed']);
+        }
+
         return response()->json([
             'message' => 'Klaim servis berhasil diajukan. Tim kami akan menghubungi Anda segera.',
             'claim'   => $claim->load('warranty:id,product_name,warranty_number'),
         ], 201);
+    }
+
+    private function syncExpiredWarranties(int $userId): void
+    {
+        Warranty::query()
+            ->where('user_id', $userId)
+            ->where('status', 'active')
+            ->whereDate('warranty_expires_at', '<', now()->toDateString())
+            ->update(['status' => 'expired']);
+    }
+
+    private function syncExpiredWarranty(Warranty $warranty): void
+    {
+        if (
+            $warranty->status === 'active'
+            && $warranty->warranty_expires_at->copy()->endOfDay()->isPast()
+        ) {
+            $warranty->update(['status' => 'expired']);
+            $warranty->refresh();
+        }
     }
 }

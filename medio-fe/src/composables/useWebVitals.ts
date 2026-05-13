@@ -46,8 +46,8 @@ function sendVital(entry: VitalEntry): void {
   }).catch(() => {/* silent */});
 
   if (import.meta.env.DEV) {
-    const icon = entry.rating === 'good' ? '🟢' : entry.rating === 'needs-improvement' ? '🟡' : '🔴';
-    console.log(`${icon} [WebVital] ${entry.name}: ${Math.round(entry.value)}${entry.name === 'CLS' ? '' : 'ms'} (${entry.rating})`);
+    const status = entry.rating.toUpperCase();
+    console.log(`[WebVital:${status}] ${entry.name}: ${Math.round(entry.value)}${entry.name === 'CLS' ? '' : 'ms'} (${entry.rating})`);
   }
 }
 

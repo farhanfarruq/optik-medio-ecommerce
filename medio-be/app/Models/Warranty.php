@@ -49,7 +49,7 @@ class Warranty extends Model
 
     public function isActive(): bool
     {
-        return $this->status === 'active' && $this->warranty_expires_at->isFuture();
+        return $this->status === 'active' && $this->warranty_expires_at->copy()->endOfDay()->isFuture();
     }
 
     public function daysRemaining(): int

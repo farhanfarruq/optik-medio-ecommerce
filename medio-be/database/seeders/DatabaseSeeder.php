@@ -66,6 +66,9 @@ class DatabaseSeeder extends Seeder
         $this->call(LevelMemberSeeder::class);
         $this->call(PaymentMethodSeeder::class);
         $this->call(AdminShowcaseSeeder::class);
+        $this->call(ProductCatalogSeeder::class);
+        $this->call(OpticalConfigurationSeeder::class);
+        $this->call(ShippingRateSeeder::class);
 
         $this->command->info('✅ Seeder selesai: data master, katalog demo, order workflow, inventori, appointment, warranty, referral, dan data admin showcase berhasil dibuat.');
         $this->command->info('');

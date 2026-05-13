@@ -1,4 +1,11 @@
 {
+    "css.validate": false,
+    "scss.validate": false,
+    "less.validate": false,
+    "tailwindCSS.includeLanguages": {
+        "vue": "html",
+        "blade": "html"
+    },
     "chat.tools.terminal.autoApprove": {
         "/^cd \"/home/farhan/Documents/VsCode Project/optik-medio-ecommerce/medio-be\" && php artisan tinker --execute=\"echo 'APP_URL: ' \\. config\\('app\\.url'\\) \\. PHP_EOL \\. 'FRONTEND_URL: ' \\. config\\('app\\.frontend_url'\\);\"$/": {
             "approve": true,

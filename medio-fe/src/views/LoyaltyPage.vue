@@ -149,7 +149,10 @@ onMounted(() => {
               Butuh {{ (nextLevel.min_points - userPoints).toLocaleString('id-ID') }} poin lagi untuk naik ke {{ nextLevel.name }}
             </p>
           </div>
-          <div v-else class="text-sm font-bold" style="color: #c19a51;">🏆 Anda sudah di level tertinggi!</div>
+          <div v-else class="flex items-center gap-2 text-sm font-bold" style="color: #c19a51;">
+            <span class="material-symbols-outlined text-lg">stars</span>
+            Anda sudah di level tertinggi!
+          </div>
         </section>
 
         <!-- Riwayat Poin -->

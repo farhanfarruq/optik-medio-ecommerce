@@ -83,6 +83,8 @@ const currentSection = computed(() => {
       return 'orders';
     case 'Wishlist':
       return 'wishlist';
+    case 'Warranty':
+      return 'warranty';
     case 'AffiliateDashboard':
       return 'affiliate';
     default:
@@ -585,6 +587,16 @@ const deleteAddress = async (id: number) => {
             Wishlist
           </button>
           <button
+            @click="router.push('/warranty')"
+            class="flex items-center gap-3 text-left px-4 py-3 rounded-none text-sm font-bold transition-all"
+            :style="currentSection === 'warranty'
+              ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white;'
+              : 'color: #5a5248; background: transparent;'"
+          >
+            <span class="material-symbols-outlined text-base">shield</span>
+            Garansi &amp; Servis
+          </button>
+          <button
             @click="router.push('/affiliate')"
             class="flex items-center gap-3 text-left px-4 py-3 rounded-none text-sm font-bold transition-all"
             :style="currentSection === 'affiliate'
@@ -905,8 +917,8 @@ const deleteAddress = async (id: number) => {
                     <p class="font-bold text-primary">
                       {{ profile.label }}
                       <span v-if="profile.is_default" class="ml-2 text-[10px] bg-secondary-fixed/30 text-secondary px-2 py-0.5 rounded-none uppercase">Default</span>
-                      <span v-if="profile.verification_status === 'approved'" class="ml-2 text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-none uppercase">✓ Disetujui</span>
-                      <span v-else-if="profile.verification_status === 'rejected'" class="ml-2 text-[10px] bg-red-100 text-red-800 px-2 py-0.5 rounded-none uppercase">✗ Ditolak</span>
+                      <span v-if="profile.verification_status === 'approved'" class="ml-2 text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-none uppercase">Disetujui</span>
+                      <span v-else-if="profile.verification_status === 'rejected'" class="ml-2 text-[10px] bg-red-100 text-red-800 px-2 py-0.5 rounded-none uppercase">Ditolak</span>
                       <span v-else-if="profile.verified_at" class="ml-2 text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-none uppercase">Verified</span>
                     </p>
                     <p class="text-sm text-on-surface-variant mt-1">{{ profile.lens_type || 'single_vision' }}</p>

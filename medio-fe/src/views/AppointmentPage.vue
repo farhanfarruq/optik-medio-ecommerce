@@ -18,6 +18,9 @@ const branches = ref<any[]>([]);
 const myAppointments = ref<any[]>([]);
 const availability = ref<any>(null);
 const isCheckingAvailability = ref(false);
+const bookingFormRef = ref<HTMLElement | null>(null);
+const selectedAppointment = ref<any>(null);
+const isLoadingAppointmentDetail = ref(false);
 
 const form = ref({
   branch_id: null as number | null,
@@ -32,11 +35,11 @@ const form = ref({
 const isLoggedIn = computed(() => authStore.isAuthenticated);
 
 const serviceOptions = [
-  { value: 'eye_test', label: '👁️ Tes Mata', desc: 'Pemeriksaan mata oleh optometris kami' },
-  { value: 'fitting', label: '🕶️ Fitting Frame', desc: 'Coba dan sesuaikan frame pilihan Anda' },
-  { value: 'pickup', label: '📦 Ambil Pesanan', desc: 'Ambil pesanan online di toko' },
-  { value: 'consultation', label: '💬 Konsultasi', desc: 'Konsultasi kebutuhan optik Anda' },
-  { value: 'lens_replacement', label: '🔄 Ganti Lensa', desc: 'Ganti lensa frame yang sudah ada' },
+  { value: 'eye_test', icon: 'visibility', label: 'Tes Mata', desc: 'Pemeriksaan mata oleh optometris kami' },
+  { value: 'fitting', icon: 'star', label: 'Fitting Frame', desc: 'Coba dan sesuaikan frame pilihan Anda' },
+  { value: 'pickup', icon: 'shopping_bag', label: 'Ambil Pesanan', desc: 'Ambil pesanan online di toko' },
+  { value: 'consultation', icon: 'chat', label: 'Konsultasi', desc: 'Konsultasi kebutuhan optik Anda' },
+  { value: 'lens_replacement', icon: 'sync', label: 'Ganti Lensa', desc: 'Ganti lensa frame yang sudah ada' },
 ];
 
 const breadcrumbs = [
@@ -68,7 +71,52 @@ const loadMyAppointments = async () => {
   try {
     const { data } = await apiClient.get('/appointments');
     myAppointments.value = data.data || data;
+    if (selectedAppointment.value) {
+      const latest = myAppointments.value.find((apt: any) => apt.id === selectedAppointment.value.id);
+      if (latest) selectedAppointment.value = { ...selectedAppointment.value, ...latest };
+    }
   } catch { /* silent */ }
+};
+
+const serviceLabel = (value: string) => serviceOptions.find((svc) => svc.value === value)?.label || value;
+
+const statusLabel = (status: string) => ({
+  pending: 'Menunggu',
+  confirmed: 'Dikonfirmasi',
+  completed: 'Selesai',
+  cancelled: 'Dibatalkan',
+  no_show: 'Tidak Hadir',
+}[status] || status);
+
+const statusStyle = (status: string) => status === 'confirmed'
+  ? 'background: rgba(59,130,246,0.1); color: #2563eb;'
+  : status === 'completed'
+    ? 'background: rgba(22,163,74,0.1); color: #16a34a;'
+    : status === 'cancelled' || status === 'no_show'
+      ? 'background: rgba(239,68,68,0.1); color: #dc2626;'
+      : 'background: rgba(245,158,11,0.1); color: #d97706;';
+
+const scrollToBookingForm = () => {
+  if (!isLoggedIn.value) {
+    router.push('/login?redirect=/appointment');
+    return;
+  }
+
+  bookingFormRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+const viewAppointmentDetail = async (appointment: any) => {
+  selectedAppointment.value = appointment;
+  isLoadingAppointmentDetail.value = true;
+
+  try {
+    const { data } = await apiClient.get(`/appointments/${appointment.id}`);
+    selectedAppointment.value = data;
+  } catch {
+    showToast('Gagal memuat detail appointment.', 'error');
+  } finally {
+    isLoadingAppointmentDetail.value = false;
+  }
 };
 
 const checkAvailability = async () => {
@@ -106,6 +154,7 @@ const submitAppointment = async () => {
     const { data } = await apiClient.post('/appointments', form.value);
     showToast(data.message, 'success');
     await loadMyAppointments();
+    if (data.appointment) selectedAppointment.value = data.appointment;
     // Reset form
     form.value.appointment_date = '';
     form.value.appointment_time = '';
@@ -123,6 +172,9 @@ const cancelAppointment = async (id: number) => {
   try {
     await apiClient.delete(`/appointments/${id}`);
     showToast('Appointment dibatalkan.', 'success');
+    if (selectedAppointment.value?.id === id) {
+      selectedAppointment.value = { ...selectedAppointment.value, status: 'cancelled' };
+    }
     await loadMyAppointments();
   } catch (err: any) {
     showToast(err?.response?.data?.message || 'Gagal membatalkan.', 'error');
@@ -154,10 +206,29 @@ onMounted(() => {
       </div>
 
       <template v-else>
+        <section class="mb-8 border p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4" style="background: #1a1209; border-color: rgba(193,154,81,0.35);">
+          <div class="flex items-center gap-4">
+            <span class="material-symbols-outlined text-4xl shrink-0" style="color: #c19a51;">calendar_today</span>
+            <div>
+              <p class="text-lg font-black text-white" style="font-family: 'Outfit', sans-serif;">Siap booking kunjungan?</p>
+              <p class="text-sm text-stone-300">Pilih cabang, layanan, tanggal, lalu tekan tombol buat appointment.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            @click="scrollToBookingForm"
+            class="inline-flex items-center justify-center gap-2 px-6 py-3 text-xs font-black uppercase tracking-widest text-white transition-all hover:translate-y-[-1px]"
+            style="background: #c19a51;"
+          >
+            Booking Sekarang
+            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+          </button>
+        </section>
+
         <div class="grid gap-8 lg:grid-cols-[1.2fr,0.8fr]">
 
           <!-- Form Booking -->
-          <div class="space-y-6">
+          <div ref="bookingFormRef" class="space-y-6 scroll-mt-28">
             <h2 class="text-xl font-black" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Buat Appointment Baru</h2>
 
             <!-- Pilih Cabang -->
@@ -174,7 +245,10 @@ onMounted(() => {
                   <div>
                     <p class="font-bold text-sm" style="color: #1a1209;">{{ branch.name }}</p>
                     <p class="text-xs mt-0.5" style="color: #8a7a60;">{{ branch.address }}, {{ branch.city }}</p>
-                    <p v-if="branch.phone" class="text-xs mt-0.5" style="color: #8a7a60;">📞 {{ branch.phone }}</p>
+                    <p v-if="branch.phone" class="flex items-center gap-1.5 text-xs mt-0.5" style="color: #8a7a60;">
+                      <span class="material-symbols-outlined text-sm">call</span>
+                      {{ branch.phone }}
+                    </p>
                   </div>
                 </label>
               </div>
@@ -191,6 +265,7 @@ onMounted(() => {
                   :style="form.service_type === svc.value ? 'border-color: #c19a51; background: rgba(193,154,81,0.05);' : 'border-color: #e5e0d8;'"
                 >
                   <input type="radio" v-model="form.service_type" :value="svc.value" />
+                  <span class="material-symbols-outlined text-xl" style="color: #c19a51;">{{ svc.icon }}</span>
                   <div>
                     <p class="font-bold text-sm" style="color: #1a1209;">{{ svc.label }}</p>
                     <p class="text-xs" style="color: #8a7a60;">{{ svc.desc }}</p>
@@ -287,24 +362,92 @@ onMounted(() => {
                   <p class="font-bold text-xs" style="color: #1a1209;">{{ apt.appointment_number }}</p>
                   <span
                     class="text-[10px] px-2 py-0.5 font-bold"
-                    :style="apt.status === 'confirmed' ? 'background: rgba(59,130,246,0.1); color: #2563eb;'
-                          : apt.status === 'completed' ? 'background: rgba(22,163,74,0.1); color: #16a34a;'
-                          : apt.status === 'cancelled' ? 'background: rgba(239,68,68,0.1); color: #dc2626;'
-                          : 'background: rgba(245,158,11,0.1); color: #d97706;'"
+                    :style="statusStyle(apt.status)"
                   >
-                    {{ apt.status === 'pending' ? 'Menunggu' : apt.status === 'confirmed' ? 'Dikonfirmasi' : apt.status === 'completed' ? 'Selesai' : 'Dibatalkan' }}
+                    {{ statusLabel(apt.status) }}
                   </span>
                 </div>
                 <p class="text-xs" style="color: #5a5248;">{{ apt.branch?.name }}</p>
                 <p class="text-xs" style="color: #8a7a60;">{{ apt.appointment_date }} · {{ apt.appointment_time?.substring(0,5) }}</p>
-                <button
-                  v-if="['pending', 'confirmed'].includes(apt.status)"
-                  @click="cancelAppointment(apt.id)"
-                  class="mt-2 text-xs font-bold hover:underline"
-                  style="color: #dc2626;"
-                >
-                  Batalkan
-                </button>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    @click="viewAppointmentDetail(apt)"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider border"
+                    style="border-color: rgba(193,154,81,0.35); color: #8a5f13;"
+                  >
+                    <span class="material-symbols-outlined text-xs">visibility</span>
+                    Detail
+                  </button>
+                  <button
+                    v-if="['pending', 'confirmed'].includes(apt.status)"
+                    type="button"
+                    @click="cancelAppointment(apt.id)"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider border"
+                    style="border-color: rgba(220,38,38,0.25); color: #dc2626;"
+                  >
+                    <span class="material-symbols-outlined text-xs">close</span>
+                    Batalkan
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="selectedAppointment" class="mt-5 border p-5" style="background: #fffdf7; border-color: rgba(193,154,81,0.25);">
+              <div class="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: #8a7a60;">Detail Appointment</p>
+                  <h3 class="text-base font-black mt-1" style="color: #1a1209; font-family: 'Outfit', sans-serif;">
+                    {{ selectedAppointment.appointment_number }}
+                  </h3>
+                </div>
+                <span class="text-[10px] px-2 py-0.5 font-bold" :style="statusStyle(selectedAppointment.status)">
+                  {{ statusLabel(selectedAppointment.status) }}
+                </span>
+              </div>
+
+              <div v-if="isLoadingAppointmentDetail" class="flex items-center gap-2 text-xs" style="color: #8a7a60;">
+                <span class="material-symbols-outlined animate-spin text-sm">sync</span>
+                Memuat detail...
+              </div>
+
+              <div v-else class="grid gap-3 text-xs">
+                <div class="flex items-start gap-3">
+                  <span class="material-symbols-outlined text-lg" style="color: #c19a51;">calendar_today</span>
+                  <div>
+                    <p class="font-bold" style="color: #1a1209;">{{ selectedAppointment.appointment_date }} · {{ selectedAppointment.appointment_time?.substring(0,5) }}</p>
+                    <p style="color: #8a7a60;">{{ serviceLabel(selectedAppointment.service_type) }}</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-3">
+                  <span class="material-symbols-outlined text-lg" style="color: #c19a51;">store</span>
+                  <div>
+                    <p class="font-bold" style="color: #1a1209;">{{ selectedAppointment.branch?.name }}</p>
+                    <p style="color: #8a7a60;">{{ selectedAppointment.branch?.address }}, {{ selectedAppointment.branch?.city }}</p>
+                    <a
+                      v-if="selectedAppointment.branch?.maps_url"
+                      :href="selectedAppointment.branch.maps_url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="inline-flex items-center gap-1 mt-1 font-bold"
+                      style="color: #c19a51;"
+                    >
+                      Buka Maps
+                      <span class="material-symbols-outlined text-xs">open_in_new</span>
+                    </a>
+                  </div>
+                </div>
+                <div class="flex items-start gap-3">
+                  <span class="material-symbols-outlined text-lg" style="color: #c19a51;">person</span>
+                  <div>
+                    <p class="font-bold" style="color: #1a1209;">{{ selectedAppointment.customer_name }}</p>
+                    <p style="color: #8a7a60;">{{ selectedAppointment.customer_phone }}</p>
+                  </div>
+                </div>
+                <div v-if="selectedAppointment.notes" class="flex items-start gap-3">
+                  <span class="material-symbols-outlined text-lg" style="color: #c19a51;">notes</span>
+                  <p style="color: #5a5248;">{{ selectedAppointment.notes }}</p>
+                </div>
               </div>
             </div>
           </div>

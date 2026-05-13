@@ -306,6 +306,14 @@ const handleUserClick = () => {
 
         <!-- User & Cart (Hidden when search is wide on mobile) -->
         <div v-if="!isSearchOpen || windowWidth > 768" class="flex items-center gap-2 md:gap-4">
+          <router-link
+            to="/appointment"
+            class="w-10 h-10 rounded-none inline-flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+            :class="isScrolled ? 'hover:bg-stone-100 text-stone-800' : 'hover:bg-white/15 text-white'"
+            title="Booking Appointment"
+          >
+            <span class="material-symbols-outlined text-2xl">calendar_today</span>
+          </router-link>
           <router-link 
             to="/blog" 
             class="w-10 h-10 rounded-none flex items-center justify-center transition-all hover:scale-110 active:scale-95"

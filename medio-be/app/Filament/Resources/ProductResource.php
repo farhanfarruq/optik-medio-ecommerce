@@ -24,150 +24,239 @@ class ProductResource extends Resource
     {
         return $schema
             ->components([
-                Forms\Components\Select::make('category_id')
-                    ->relationship('category', 'name')
-                    ->required(),
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255)
-                    ->live(onBlur: true)
-                    ->afterStateUpdated(fn (string $operation, $state, $set) => $operation === 'create' ? $set('slug', Str::slug($state) . '-' . Str::random(5)) : null),
-                Forms\Components\TextInput::make('slug')
-                    ->disabled()
-                    ->dehydrated()
-                    ->required()
-                    ->maxLength(255)
-                    ->unique(Product::class, 'slug', ignoreRecord: true),
-                Forms\Components\TextInput::make('sku')
-                    ->label('SKU')
-                    ->maxLength(255)
-                    ->unique(Product::class, 'sku', ignoreRecord: true),
-                Forms\Components\TextInput::make('brand')
-                    ->maxLength(255),
-                Forms\Components\Select::make('gender')
-                    ->options([
-                        'men' => 'Men',
-                        'women' => 'Women',
-                        'unisex' => 'Unisex',
-                        'kids' => 'Kids',
+                \Filament\Schemas\Components\Section::make('Identitas Produk')
+                    ->schema([
+                        Forms\Components\Select::make('category_id')
+                            ->label('Kategori')
+                            ->relationship('category', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+                        Forms\Components\TextInput::make('name')
+                            ->label('Nama Produk')
+                            ->required()
+                            ->maxLength(255)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(fn (string $operation, $state, $set) => $operation === 'create' ? $set('slug', Str::slug($state) . '-' . Str::random(5)) : null),
+                        Forms\Components\TextInput::make('slug')
+                            ->disabled()
+                            ->dehydrated()
+                            ->required()
+                            ->maxLength(255)
+                            ->unique(Product::class, 'slug', ignoreRecord: true),
+                        Forms\Components\TextInput::make('sku')
+                            ->label('SKU')
+                            ->required()
+                            ->maxLength(80)
+                            ->unique(Product::class, 'sku', ignoreRecord: true),
+                        Forms\Components\TextInput::make('brand')
+                            ->label('Brand')
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\Select::make('condition')
+                            ->label('Kondisi')
+                            ->options([
+                                'new' => 'Baru',
+                                'refurbished' => 'Refurbished',
+                                'used' => 'Bekas',
+                            ])
+                            ->required()
+                            ->default('new')
+                            ->native(false),
                     ])
-                    ->searchable()
-                    ->native(false),
-                Forms\Components\TextInput::make('frame_shape')
-                    ->label('Frame Shape')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('frame_material')
-                    ->label('Frame Material')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('frame_color')
-                    ->label('Frame Color')
-                    ->maxLength(255),
-                Forms\Components\Select::make('face_size_fit')
-                    ->label('Face Size Fit')
-                    ->options([
-                        'small' => 'Small',
-                        'medium' => 'Medium',
-                        'large' => 'Large',
+                    ->columns(2),
+
+                \Filament\Schemas\Components\Section::make('Konten & Media')
+                    ->schema([
+                        Forms\Components\Textarea::make('description')
+                            ->label('Deskripsi Lengkap')
+                            ->required()
+                            ->minLength(80)
+                            ->maxLength(65535)
+                            ->rows(5)
+                            ->helperText('Isi bahan, kegunaan, target pengguna, dan keunggulan produk.')
+                            ->columnSpanFull(),
+                        Forms\Components\FileUpload::make('images')
+                            ->label('Gambar Produk')
+                            ->required(fn (Get $get): bool => (bool) $get('is_active'))
+                            ->multiple()
+                            ->image()
+                            ->disk('public')
+                            ->visibility('public')
+                            ->directory('products')
+                            ->helperText('Upload minimal satu foto produk yang jelas.')
+                            ->columnSpanFull(),
+                    ]),
+
+                \Filament\Schemas\Components\Section::make('Harga, Stok & Pengiriman')
+                    ->schema([
+                        Forms\Components\TextInput::make('price')
+                            ->label('Harga')
+                            ->required()
+                            ->numeric()
+                            ->minValue(0)
+                            ->prefix('Rp'),
+                        Forms\Components\TextInput::make('stock')
+                            ->label('Stok')
+                            ->required()
+                            ->numeric()
+                            ->minValue(0)
+                            ->default(0),
+                        Forms\Components\TextInput::make('low_stock_threshold')
+                            ->label('Batas Stok Rendah')
+                            ->required()
+                            ->numeric()
+                            ->minValue(0)
+                            ->default(3),
+                        Forms\Components\TextInput::make('weight')
+                            ->label('Berat')
+                            ->required()
+                            ->numeric()
+                            ->minValue(1)
+                            ->default(250)
+                            ->suffix('gram'),
+                        Forms\Components\KeyValue::make('dimensions')
+                            ->label('Dimensi Paket')
+                            ->keyLabel('Sisi')
+                            ->valueLabel('Ukuran cm')
+                            ->helperText('Contoh key: panjang, lebar, tinggi.')
+                            ->columnSpanFull(),
                     ])
-                    ->native(false),
-                Forms\Components\TextInput::make('price')
-                    ->required()
-                    ->numeric()
-                    ->prefix('Rp'),
-                Forms\Components\TextInput::make('stock')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
-                Forms\Components\TextInput::make('weight')
-                    ->required()
-                    ->numeric()
-                    ->default(1000)
-                    ->suffix('gram'),
-                Forms\Components\TextInput::make('lens_width')
-                    ->label('Lens Width')
-                    ->required(fn (Get $get): bool => self::requiresFrameDimensions($get))
-                    ->numeric()
-                    ->suffix('mm'),
-                Forms\Components\TextInput::make('bridge_width')
-                    ->label('Bridge Width')
-                    ->required(fn (Get $get): bool => self::requiresFrameDimensions($get))
-                    ->numeric()
-                    ->suffix('mm'),
-                Forms\Components\TextInput::make('temple_length')
-                    ->label('Temple Length')
-                    ->required(fn (Get $get): bool => self::requiresFrameDimensions($get))
-                    ->numeric()
-                    ->suffix('mm'),
-                Forms\Components\TextInput::make('frame_width')
-                    ->label('Frame Width')
-                    ->required(fn (Get $get): bool => self::requiresFrameDimensions($get))
-                    ->numeric()
-                    ->suffix('mm'),
-                Forms\Components\TextInput::make('google_product_category')
-                    ->label('Google Product Category')
-                    ->maxLength(255),
-                Forms\Components\TagsInput::make('tags')
-                    ->label('Product Tags')
-                    ->placeholder('blue-light, daily, premium')
-                    ->columnSpanFull(),
-                Forms\Components\TagsInput::make('campaign_tags')
-                    ->label('Campaign Landing Tags')
-                    ->placeholder('lebaran, back-to-school, office')
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('gtin')
-                    ->label('GTIN')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('mpn')
-                    ->label('MPN')
-                    ->maxLength(255),
-                Forms\Components\Select::make('condition')
-                    ->options([
-                        'new' => 'New',
-                        'refurbished' => 'Refurbished',
-                        'used' => 'Used',
+                    ->columns(2),
+
+                \Filament\Schemas\Components\Section::make('Atribut Optik')
+                    ->schema([
+                        Forms\Components\Select::make('gender')
+                            ->label('Target Pengguna')
+                            ->options([
+                                'men' => 'Pria',
+                                'women' => 'Wanita',
+                                'unisex' => 'Unisex',
+                                'kids' => 'Anak',
+                            ])
+                            ->searchable()
+                            ->native(false),
+                        Forms\Components\Select::make('frame_shape')
+                            ->label('Bentuk Frame')
+                            ->options([
+                                'aviator' => 'Aviator',
+                                'browline' => 'Browline',
+                                'cat_eye' => 'Cat Eye',
+                                'geometric' => 'Geometric',
+                                'oval' => 'Oval',
+                                'rectangle' => 'Rectangle',
+                                'round' => 'Round',
+                                'square' => 'Square',
+                                'wayfarer' => 'Wayfarer',
+                            ])
+                            ->searchable()
+                            ->native(false),
+                        Forms\Components\Select::make('frame_material')
+                            ->label('Material Frame')
+                            ->options([
+                                'acetate' => 'Acetate',
+                                'metal' => 'Metal',
+                                'stainless_steel' => 'Stainless Steel',
+                                'titanium' => 'Titanium',
+                                'tr90' => 'TR90',
+                                'ultem' => 'Ultem',
+                            ])
+                            ->searchable()
+                            ->native(false),
+                        Forms\Components\TextInput::make('frame_color')
+                            ->label('Warna Frame')
+                            ->maxLength(255),
+                        Forms\Components\Select::make('face_size_fit')
+                            ->label('Ukuran Wajah')
+                            ->options([
+                                'small' => 'Small',
+                                'medium' => 'Medium',
+                                'large' => 'Large',
+                            ])
+                            ->native(false),
+                        Forms\Components\TextInput::make('lens_width')
+                            ->label('Lebar Lensa')
+                            ->required(fn (Get $get): bool => self::requiresFrameDimensions($get))
+                            ->numeric()
+                            ->suffix('mm'),
+                        Forms\Components\TextInput::make('bridge_width')
+                            ->label('Bridge')
+                            ->required(fn (Get $get): bool => self::requiresFrameDimensions($get))
+                            ->numeric()
+                            ->suffix('mm'),
+                        Forms\Components\TextInput::make('temple_length')
+                            ->label('Panjang Temple')
+                            ->required(fn (Get $get): bool => self::requiresFrameDimensions($get))
+                            ->numeric()
+                            ->suffix('mm'),
+                        Forms\Components\TextInput::make('frame_width')
+                            ->label('Lebar Frame')
+                            ->required(fn (Get $get): bool => self::requiresFrameDimensions($get))
+                            ->numeric()
+                            ->suffix('mm'),
                     ])
-                    ->default('new')
-                    ->native(false),
-                Forms\Components\Toggle::make('is_active')
-                    ->required()
-                    ->default(true),
-                Forms\Components\Toggle::make('is_best_seller')
-                    ->required()
-                    ->default(false),
-                Forms\Components\Toggle::make('is_featured')
-                    ->label('Featured Product')
-                    ->default(false),
-                Forms\Components\TextInput::make('recommendation_priority')
-                    ->label('Recommendation Priority')
-                    ->numeric()
-                    ->minValue(0)
-                    ->maxValue(1000)
-                    ->default(0)
-                    ->helperText('Lebih tinggi berarti lebih diprioritaskan pada rekomendasi dan campaign.'),
-                Forms\Components\Toggle::make('is_prescription_required')
-                    ->required()
-                    ->default(false),
-                Forms\Components\KeyValue::make('prescription_rules')
-                    ->label('Prescription Rules')
-                    ->keyLabel('Rule')
-                    ->valueLabel('Value')
-                    ->required(fn (Get $get): bool => (bool) $get('is_prescription_required'))
-                    ->columnSpanFull(),
-                Forms\Components\Textarea::make('description')
-                    ->maxLength(65535)
-                    ->columnSpanFull(),
-                Forms\Components\FileUpload::make('images')
-                    ->required(fn (Get $get): bool => (bool) $get('is_active'))
-                    ->multiple()
-                    ->image()
-                    ->disk('public')
-                    ->visibility('public')
-                    ->directory('products')
-                    ->columnSpanFull(),
+                    ->columns(2),
+
+                \Filament\Schemas\Components\Section::make('Discovery, Garansi & Resep')
+                    ->schema([
+                        Forms\Components\TagsInput::make('tags')
+                            ->label('Product Tags')
+                            ->required()
+                            ->placeholder('blue-light, daily, premium')
+                            ->columnSpanFull(),
+                        Forms\Components\TagsInput::make('campaign_tags')
+                            ->label('Campaign Landing Tags')
+                            ->placeholder('office, premium, kids')
+                            ->columnSpanFull(),
+                        Forms\Components\Toggle::make('is_active')
+                            ->label('Aktif Ditampilkan')
+                            ->required()
+                            ->default(true),
+                        Forms\Components\Toggle::make('is_not_for_sale')
+                            ->label('Tidak Dijual Online')
+                            ->default(false),
+                        Forms\Components\Toggle::make('is_best_seller')
+                            ->label('Best Seller')
+                            ->required()
+                            ->default(false),
+                        Forms\Components\Toggle::make('is_featured')
+                            ->label('Featured Product')
+                            ->default(false),
+                        Forms\Components\Toggle::make('is_new')
+                            ->label('Produk Baru')
+                            ->default(false),
+                        Forms\Components\TextInput::make('recommendation_priority')
+                            ->label('Recommendation Priority')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(1000)
+                            ->default(0)
+                            ->helperText('Lebih tinggi berarti lebih diprioritaskan pada rekomendasi dan campaign.'),
+                        Forms\Components\Toggle::make('is_prescription_required')
+                            ->label('Butuh Resep')
+                            ->required()
+                            ->default(false),
+                        Forms\Components\KeyValue::make('prescription_rules')
+                            ->label('Prescription Rules')
+                            ->keyLabel('Rule')
+                            ->valueLabel('Value')
+                            ->required(fn (Get $get): bool => (bool) $get('is_prescription_required'))
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(3),
 
                 \Filament\Schemas\Components\Section::make('SEO & Metadata')
                     ->collapsed()
                     ->schema([
+                        Forms\Components\TextInput::make('google_product_category')
+                            ->label('Google Product Category')
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('gtin')
+                            ->label('GTIN')
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('mpn')
+                            ->label('MPN')
+                            ->maxLength(255),
                         Forms\Components\TextInput::make('meta_title')
                             ->label('Meta Title')
                             ->maxLength(70)

@@ -229,7 +229,7 @@ onMounted(loadTracking);
                 <div class="flex justify-between">
                   <span style="color: #8a7a60;">Pembayaran</span>
                   <span class="font-bold text-xs" :style="tracking.is_payment_verified ? 'color: #16a34a;' : 'color: #d97706;'">
-                    {{ tracking.is_payment_verified ? '✓ Terverifikasi' : 'Menunggu' }}
+                    {{ tracking.is_payment_verified ? 'Terverifikasi' : 'Menunggu' }}
                   </span>
                 </div>
               </div>
@@ -251,7 +251,7 @@ onMounted(loadTracking);
                 style="background: linear-gradient(135deg, #16a34a, #15803d);"
               >
                 <span v-if="isConfirming" class="material-symbols-outlined animate-spin text-sm align-middle mr-1">sync</span>
-                {{ isConfirming ? 'Memproses...' : '✓ Konfirmasi Sudah Diterima' }}
+                {{ isConfirming ? 'Memproses...' : 'Konfirmasi Sudah Diterima' }}
               </button>
             </div>
 

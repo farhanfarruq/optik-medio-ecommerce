@@ -33,6 +33,8 @@ const currentSection = computed(() => {
       return 'orders';
     case 'Wishlist':
       return 'wishlist';
+    case 'Warranty':
+      return 'warranty';
     case 'Affiliate':
       return 'affiliate';
     default:
@@ -394,6 +396,16 @@ const deleteAddress = async (id: number) => {
           >
             <span class="material-symbols-outlined text-base">favorite</span>
             Wishlist
+          </button>
+          <button
+            @click="router.push('/warranty')"
+            class="flex items-center gap-3 text-left px-4 py-3 rounded-none text-sm font-bold transition-all"
+            :style="currentSection === 'warranty'
+              ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white;'
+              : 'color: #5a5248; background: transparent;'"
+          >
+            <span class="material-symbols-outlined text-base">shield</span>
+            Garansi &amp; Servis
           </button>
           <button
             @click="router.push('/affiliate')"

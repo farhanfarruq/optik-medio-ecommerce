@@ -85,6 +85,21 @@ class AffiliateController extends Controller
             ]);
         }
 
+        // ── AFIL-005: Hanya afiliator approved yang bisa lihat komisi ─────────
+        if ($affiliator->status !== UserAffiliatorStatus::Approved) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun affiliator Anda belum disetujui. Komisi hanya tersedia setelah akun diaktifkan oleh admin.',
+                'data' => [
+                    'data' => [],
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => 10,
+                    'total' => 0,
+                ],
+            ]);
+        }
+
         $commissions = Commission::query()
             ->with('details')
             ->where('user_affiliator_id', $affiliator->id)
@@ -161,6 +176,12 @@ class AffiliateController extends Controller
             ->where('user_affiliator_id', $affiliator->id)
             ->get();
 
+        // ── AFIL-004: Hitung komisi hanya dari order yang sudah selesai ───────
+        $eligibleCommissionIds = \App\Models\CommissionDetail::query()
+            ->whereHas('order', fn ($q) => $q->whereIn('status', ['delivered', 'completed']))
+            ->pluck('commission_id')
+            ->unique();
+
         return [
             'referrals_count' => $affiliator->referrals_count ?? $affiliator->referrals()->count(),
             'total_requests' => (float) $commissions->sum('requested_amount'),
@@ -176,6 +197,7 @@ class AffiliateController extends Controller
             'total_cancelled' => (float) $commissions
                 ->where('status', CommissionStatus::Cancelled)
                 ->sum('requested_amount'),
+            'eligible_commission_ids' => $eligibleCommissionIds->values(),
         ];
     }
 

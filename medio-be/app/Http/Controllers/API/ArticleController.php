@@ -24,9 +24,8 @@ class ArticleController extends Controller
             ->when($request->tag, fn ($q) => $q->whereJsonContains('tags', $request->tag))
             ->when($search !== '', fn ($q) => $q->where(function ($query) use ($escapedSearch) {
                 $pattern = "%{$escapedSearch}%";
-
-                $query->whereRaw("title like ? escape '\\'", [$pattern])
-                    ->orWhereRaw("excerpt like ? escape '\\'", [$pattern]);
+                $query->whereRaw('title LIKE ? ESCAPE ?', [$pattern, '\\'])
+                    ->orWhereRaw('excerpt LIKE ? ESCAPE ?', [$pattern, '\\']);
             }))
             ->orderByDesc('published_at')
             ->paginate(12);

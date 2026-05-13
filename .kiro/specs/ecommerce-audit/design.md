@@ -487,4 +487,4 @@ Laporan audit dihasilkan dalam format Markdown dengan struktur berikut:
 
 Setiap domain diverifikasi menggunakan checklist yang dipetakan langsung ke acceptance criteria di `requirements.md`. Setiap item checklist menghasilkan satu `AuditFinding` dengan status PASS, WARNING, atau FAIL.
 
-Total checklist items: **87 items** (jumlah acceptance criteria di requirements.md).
+Total checklist items: **103 items** (jumlah acceptance criteria aktual di `requirements.md`).

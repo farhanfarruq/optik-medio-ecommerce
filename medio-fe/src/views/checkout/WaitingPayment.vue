@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { orderRepository } from '../../repositories/OrderRepository';
 import { useToast } from '../../composables/useToast';
@@ -14,6 +14,15 @@ const isUploading = ref(false);
 const order = ref<any>(null);
 const proofFile = ref<File | null>(null);
 
+// Polling state untuk Xendit
+const isPolling = ref(false);
+const pollCount = ref(0);
+const MAX_POLL = 60; // maks 60x polling = 5 menit (interval 5 detik)
+const POLL_INTERVAL_MS = 5000;
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+const isExpired = ref(false);
+const paymentStatusMsg = ref('');
+
 const bank = computed(() => order.value?.bank || null);
 
 const paymentMethodName = computed(() => {
@@ -27,6 +36,11 @@ const isCod = computed(() => {
   const pm = order.value?.payment?.paymentMethod || order.value?.payment?.payment_method;
   const code = typeof pm === 'object' ? pm?.code : pm;
   return String(code || '').toLowerCase() === 'cod';
+});
+
+// Xendit: provider = xendit
+const isXendit = computed(() => {
+  return order.value?.payment?.provider === 'xendit';
 });
 
 // Transfer manual: bukan COD dan bukan xendit
@@ -46,11 +60,95 @@ const loadOrder = async () => {
   isLoading.value = true;
   try {
     order.value = await orderRepository.getOrderDetails(Number(route.params.id));
+
+    // Jika sudah paid/processing/dll, langsung redirect
+    if (['paid', 'processing', 'shipped', 'delivered', 'completed'].includes(order.value?.status)) {
+      showToast('Pembayaran berhasil dikonfirmasi!', 'success');
+      router.push(`/orders/${order.value.id}`);
+      return;
+    }
+
+    // Mulai polling hanya untuk Xendit
+    if (isXendit.value && order.value?.status === 'unpaid') {
+      startPolling();
+    }
   } catch {
     showToast('Gagal memuat detail pembayaran.', 'error');
     router.push('/orders');
   } finally {
     isLoading.value = false;
+  }
+};
+
+/**
+ * Polling ringan ke /api/orders/{id}/payment-status
+ * Hanya untuk Xendit — cek apakah webhook sudah masuk.
+ */
+const startPolling = () => {
+  if (pollTimer) return;
+  isPolling.value = true;
+  paymentStatusMsg.value = 'Menunggu konfirmasi pembayaran...';
+
+  pollTimer = setInterval(async () => {
+    pollCount.value++;
+
+    if (pollCount.value > MAX_POLL) {
+      stopPolling();
+      paymentStatusMsg.value = 'Waktu polling habis. Klik "Cek Status" untuk memperbarui manual.';
+      return;
+    }
+
+    try {
+      const status = await orderRepository.getPaymentStatus(Number(route.params.id));
+
+      if (status.should_redirect) {
+        stopPolling();
+        showToast('Pembayaran berhasil dikonfirmasi!', 'success');
+        router.push(`/orders/${status.order_id}`);
+        return;
+      }
+
+      if (status.is_expired) {
+        stopPolling();
+        isExpired.value = true;
+        paymentStatusMsg.value = 'Pembayaran telah kedaluwarsa atau dibatalkan.';
+        return;
+      }
+
+      paymentStatusMsg.value = `Menunggu konfirmasi pembayaran... (${pollCount.value}/${MAX_POLL})`;
+    } catch {
+      // Abaikan error polling, coba lagi di interval berikutnya
+    }
+  }, POLL_INTERVAL_MS);
+};
+
+const stopPolling = () => {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+  isPolling.value = false;
+};
+
+/**
+ * Manual sync untuk Xendit — panggil syncPayment endpoint.
+ */
+const syncPaymentManual = async () => {
+  if (!order.value) return;
+  try {
+    paymentStatusMsg.value = 'Menyinkronkan status pembayaran...';
+    const result = await orderRepository.syncPayment(order.value.id);
+    if (['paid', 'processing', 'shipped', 'delivered'].includes(result.status)) {
+      showToast('Pembayaran berhasil dikonfirmasi!', 'success');
+      router.push(`/orders/${order.value.id}`);
+    } else if (result.status === 'cancelled') {
+      isExpired.value = true;
+      paymentStatusMsg.value = 'Pembayaran telah kedaluwarsa atau dibatalkan.';
+    } else {
+      paymentStatusMsg.value = 'Status belum berubah. Coba lagi beberapa saat.';
+    }
+  } catch {
+    paymentStatusMsg.value = 'Gagal menyinkronkan. Coba lagi.';
   }
 };
 
@@ -86,6 +184,7 @@ const copyText = async (value: string, label: string) => {
 };
 
 onMounted(loadOrder);
+onUnmounted(stopPolling);
 </script>
 
 <template>
@@ -105,6 +204,47 @@ onMounted(loadOrder);
       />
 
       <main class="max-w-4xl mx-auto px-6 py-10">
+
+        <!-- Banner Expired -->
+        <div v-if="isExpired" class="mb-6 p-5 border flex items-start gap-4" style="background: rgba(239,68,68,0.05); border-color: rgba(239,68,68,0.3);">
+          <span class="material-symbols-outlined text-2xl flex-shrink-0" style="color: #dc2626;">error</span>
+          <div>
+            <p class="font-bold text-sm" style="color: #dc2626;">Pembayaran Kedaluwarsa atau Dibatalkan</p>
+            <p class="text-xs mt-1" style="color: #5a5248;">Pesanan ini tidak dapat diproses. Silakan buat pesanan baru jika masih ingin melanjutkan.</p>
+            <button
+              @click="router.push('/cart')"
+              class="mt-3 px-4 py-2 text-xs font-black uppercase tracking-wider text-white"
+              style="background: #dc2626;"
+            >
+              Kembali ke Keranjang
+            </button>
+          </div>
+        </div>
+
+        <!-- Banner Polling Xendit -->
+        <div v-if="isXendit && isPolling && !isExpired" class="mb-6 p-5 border flex items-center gap-4" style="background: rgba(193,154,81,0.06); border-color: rgba(193,154,81,0.3);">
+          <span class="material-symbols-outlined animate-spin text-2xl flex-shrink-0" style="color: #c19a51;">sync</span>
+          <div class="flex-1">
+            <p class="font-bold text-sm" style="color: #1a1209;">{{ paymentStatusMsg }}</p>
+            <p class="text-xs mt-0.5" style="color: #8a7a60;">Halaman ini otomatis memperbarui status setiap 5 detik.</p>
+          </div>
+        </div>
+
+        <!-- Banner Polling Selesai (timeout) -->
+        <div v-if="isXendit && !isPolling && !isExpired && paymentStatusMsg && order?.status === 'unpaid'" class="mb-6 p-5 border flex items-start gap-4" style="background: rgba(245,158,11,0.06); border-color: rgba(245,158,11,0.3);">
+          <span class="material-symbols-outlined text-2xl flex-shrink-0" style="color: #d97706;">warning</span>
+          <div class="flex-1">
+            <p class="font-bold text-sm" style="color: #92400e;">{{ paymentStatusMsg }}</p>
+            <button
+              @click="syncPaymentManual"
+              class="mt-2 px-4 py-2 text-xs font-black uppercase tracking-wider text-white"
+              style="background: #d97706;"
+            >
+              Cek Status Sekarang
+            </button>
+          </div>
+        </div>
+
         <div class="grid gap-6 lg:grid-cols-[1.4fr,0.9fr]">
 
           <!-- Kiri: Info Pembayaran -->
@@ -113,19 +253,45 @@ onMounted(loadOrder);
             <!-- Header status -->
             <div class="border p-6" style="background: white; border-color: rgba(193,154,81,0.2); box-shadow: 0 2px 12px rgba(0,0,0,0.04);">
               <p class="text-[10px] font-black uppercase tracking-[0.24em] mb-2" style="color: #c19a51;">
-                {{ isCod ? 'Cash On Delivery' : 'Transfer Manual' }}
+                {{ isCod ? 'Cash On Delivery' : isXendit ? 'Pembayaran Online' : 'Transfer Manual' }}
               </p>
               <h2 class="text-xl font-black mb-2" style="color: #1a1209; font-family: 'Outfit', sans-serif;">
-                {{ isCod ? 'Pesanan Sedang Diproses' : 'Selesaikan Transfer Anda' }}
+                {{ isCod ? 'Pesanan Sedang Diproses' : isXendit ? 'Selesaikan Pembayaran Online' : 'Selesaikan Transfer Anda' }}
               </h2>
               <p class="text-sm leading-relaxed" style="color: #5a5248;">
                 <template v-if="isCod">
                   Pesanan <strong>{{ order.order_number }}</strong> sudah dikonfirmasi. Siapkan uang tunai sesuai total dan bayar kepada kurir saat barang tiba.
                 </template>
+                <template v-else-if="isXendit">
+                  Pesanan <strong>{{ order.order_number }}</strong> sudah dibuat. Selesaikan pembayaran melalui halaman Xendit. Halaman ini akan otomatis memperbarui status setelah pembayaran dikonfirmasi.
+                </template>
                 <template v-else>
                   Pesanan <strong>{{ order.order_number }}</strong> sudah dibuat. Transfer ke rekening toko di bawah ini, lalu unggah bukti pembayaran untuk verifikasi admin.
                 </template>
               </p>
+            </div>
+
+            <!-- Xendit: tombol lanjutkan pembayaran -->
+            <div v-if="isXendit && order?.payment?.checkout_url && order?.status === 'unpaid'" class="border p-6" style="background: #fffdf7; border-color: rgba(193,154,81,0.35);">
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-3" style="color: #8a7a60;">Lanjutkan Pembayaran</p>
+              <p class="text-sm mb-4" style="color: #5a5248;">Klik tombol di bawah untuk membuka halaman pembayaran Xendit. Setelah selesai, halaman ini akan otomatis diperbarui.</p>
+              <a
+                :href="order.payment.checkout_url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-2 px-6 py-3 text-xs font-black uppercase tracking-wider text-white transition-all hover:opacity-90"
+                style="background: linear-gradient(135deg, #1a1209 0%, #3d2c0e 100%);"
+              >
+                <span class="material-symbols-outlined text-sm">open_in_new</span>
+                Buka Halaman Pembayaran
+              </a>
+              <button
+                @click="syncPaymentManual"
+                class="ml-3 px-4 py-3 border text-xs font-black uppercase tracking-wider transition-all hover:bg-stone-50"
+                style="border-color: #e5e0d8; color: #8a7a60;"
+              >
+                Cek Status Manual
+              </button>
             </div>
 
             <!-- Rekening tujuan — hanya untuk transfer manual -->
@@ -234,6 +400,24 @@ onMounted(loadOrder);
                   <li class="flex gap-3 text-sm" style="color: rgba(255,255,255,0.75);">
                     <span class="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black" style="background: rgba(193,154,81,0.3); color: #c19a51;">4</span>
                     Pantau status pesanan dari halaman tracking.
+                  </li>
+                </template>
+                <template v-else-if="isXendit">
+                  <li class="flex gap-3 text-sm" style="color: rgba(255,255,255,0.75);">
+                    <span class="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black" style="background: rgba(193,154,81,0.3); color: #c19a51;">1</span>
+                    Klik "Buka Halaman Pembayaran" dan selesaikan di Xendit.
+                  </li>
+                  <li class="flex gap-3 text-sm" style="color: rgba(255,255,255,0.75);">
+                    <span class="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black" style="background: rgba(193,154,81,0.3); color: #c19a51;">2</span>
+                    Halaman ini otomatis memperbarui status setelah pembayaran.
+                  </li>
+                  <li class="flex gap-3 text-sm" style="color: rgba(255,255,255,0.75);">
+                    <span class="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black" style="background: rgba(193,154,81,0.3); color: #c19a51;">3</span>
+                    Jika tidak otomatis, klik "Cek Status Manual".
+                  </li>
+                  <li class="flex gap-3 text-sm" style="color: rgba(255,255,255,0.75);">
+                    <span class="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black" style="background: rgba(193,154,81,0.3); color: #c19a51;">4</span>
+                    Pantau perubahan status dari halaman tracking.
                   </li>
                 </template>
                 <template v-else>

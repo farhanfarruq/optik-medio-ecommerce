@@ -1,7 +1,10 @@
 {
   "mcpServers": {
     "context-mode": {
-      "command": "context-mode"
+      "command": "context-mode",
+      "autoApprove": [
+        "ctx_execute"
+      ]
     }
   }
 }

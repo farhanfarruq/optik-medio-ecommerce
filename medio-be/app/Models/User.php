@@ -8,11 +8,31 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
+
+    // Role constants
+    const ROLE_OWNER           = 'owner';
+    const ROLE_ADMIN           = 'admin';
+    const ROLE_FINANCE         = 'finance';
+    const ROLE_WAREHOUSE       = 'warehouse';
+    const ROLE_CUSTOMER_SERVICE = 'customer_service';
+    const ROLE_CONTENT_MANAGER = 'content_manager';
+    const ROLE_USER            = 'user';
+
+    /** Semua role yang dianggap staff (bisa login ke admin panel). */
+    const STAFF_ROLES = [
+        self::ROLE_OWNER,
+        self::ROLE_ADMIN,
+        self::ROLE_FINANCE,
+        self::ROLE_WAREHOUSE,
+        self::ROLE_CUSTOMER_SERVICE,
+        self::ROLE_CONTENT_MANAGER,
+    ];
 
     protected $fillable = ['name', 'email', 'phone', 'password', 'role', 'loyalty_points', 'referred_by_affiliator_id'];
 
@@ -23,6 +43,24 @@ class User extends Authenticatable
         'password'          => 'hashed',
         'loyalty_points'    => 'integer',
     ];
+
+    /** Cek apakah user adalah staff (bisa akses admin panel). */
+    public function isStaff(): bool
+    {
+        return in_array($this->role, self::STAFF_ROLES, true);
+    }
+
+    /** Cek apakah user punya role tertentu. */
+    public function hasRole(string ...$roles): bool
+    {
+        return in_array($this->role, $roles, true);
+    }
+
+    /** Cek apakah user adalah owner atau admin penuh. */
+    public function isOwnerOrAdmin(): bool
+    {
+        return $this->hasRole(self::ROLE_OWNER, self::ROLE_ADMIN);
+    }
 
     public function orders(): HasMany
     {
@@ -74,46 +112,74 @@ class User extends Authenticatable
         return $this->hasMany(Complain::class);
     }
 
+    public function prescriptionProfiles(): HasMany
+    {
+        return $this->hasMany(PrescriptionProfile::class);
+    }
+
     /**
-     * Tambah poin loyalty dan catat log-nya.
+     * Tambah poin loyalty dan catat log-nya (atomic).
      */
     public function addLoyaltyPoints(int $points, ?int $orderId = null, string $description = ''): void
     {
-        $this->increment('loyalty_points', $points);
+        if ($points <= 0) {
+            return;
+        }
 
-        LoyaltyPointLog::create([
-            'user_id'     => $this->id,
-            'order_id'    => $orderId,
-            'points'      => $points,
-            'type'        => 'earned',
-            'description' => $description ?: "Poin dari pesanan",
-        ]);
+        DB::transaction(function () use ($points, $orderId, $description) {
+            $this->increment('loyalty_points', $points);
+
+            LoyaltyPointLog::create([
+                'user_id'     => $this->id,
+                'order_id'    => $orderId,
+                'points'      => $points,
+                'type'        => 'earned',
+                'description' => $description ?: "Poin dari pesanan",
+            ]);
+        });
 
         $this->updateMembershipLevel();
     }
 
     /**
-     * Kurangi poin loyalty (redeem) dan catat log-nya.
+     * Kurangi poin loyalty (redeem) dan catat log-nya (atomic).
      */
     public function redeemLoyaltyPoints(int $points, ?int $orderId = null, string $description = ''): bool
     {
-        if ($this->loyalty_points < $points) {
+        if ($points <= 0) {
             return false;
         }
 
-        $this->decrement('loyalty_points', $points);
+        $redeemed = DB::transaction(function () use ($points, $orderId, $description): bool {
+            $user = self::query()
+                ->whereKey($this->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        LoyaltyPointLog::create([
-            'user_id'     => $this->id,
-            'order_id'    => $orderId,
-            'points'      => -$points,
-            'type'        => 'redeemed',
-            'description' => $description ?: "Poin digunakan untuk diskon",
-        ]);
+            if ($user->loyalty_points < $points) {
+                return false;
+            }
 
-        $this->updateMembershipLevel();
+            $user->decrement('loyalty_points', $points);
 
-        return true;
+            LoyaltyPointLog::create([
+                'user_id'     => $user->id,
+                'order_id'    => $orderId,
+                'points'      => -$points,
+                'type'        => 'redeemed',
+                'description' => $description ?: "Poin digunakan untuk diskon",
+            ]);
+
+            $this->setAttribute('loyalty_points', $user->fresh()->loyalty_points);
+
+            return true;
+        });
+
+        if ($redeemed) {
+            $this->updateMembershipLevel();
+        }
+
+        return $redeemed;
     }
 
     /**
@@ -150,5 +216,13 @@ class User extends Authenticatable
                 'effective_from'            => now(),
             ]);
         }
+    }
+
+    /**
+     * Filament: izinkan akses admin panel hanya untuk staff roles.
+     */
+    public function canAccessPanel(\Filament\Panel $panel): bool
+    {
+        return $this->isStaff();
     }
 }

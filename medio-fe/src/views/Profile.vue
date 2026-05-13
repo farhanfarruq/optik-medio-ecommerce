@@ -9,6 +9,7 @@ import { useToast } from '../composables/useToast';
 import { resolveImageUrl } from '../core/utils/image';
 import { useWishlistStore } from '../stores/wishlistStore';
 import { affiliateRepository, type AffiliateProfile, type AffiliateSummary, type AffiliateCommission } from '../repositories/AffiliateRepository';
+import { prescriptionRepository, type PrescriptionPayload, type PrescriptionProfile } from '../repositories/PrescriptionRepository';
 
 const { showToast } = useToast();
 
@@ -45,10 +46,39 @@ const isLoadingAffiliate = ref(false);
 const isApplyingAffiliate = ref(false);
 const isRequestingPayout = ref(false);
 const payoutAmount = ref<number>(0);
+const prescriptions = ref<PrescriptionProfile[]>([]);
+const isLoadingPrescriptions = ref(false);
+const editingPrescriptionId = ref<number | null>(null);
+const prescriptionEditForm = ref({ label: '', notes: '' });
+
+// Form tambah resep baru
+const showCreatePrescriptionForm = ref(false);
+const isCreatingPrescription = ref(false);
+const newPrescriptionFile = ref<File | null>(null);
+const newPrescriptionForm = ref({
+  label: '',
+  lens_type: 'single_vision',
+  right_sphere: null as number | null,
+  right_cylinder: null as number | null,
+  right_axis: null as number | null,
+  right_add: null as number | null,
+  left_sphere: null as number | null,
+  left_cylinder: null as number | null,
+  left_axis: null as number | null,
+  left_add: null as number | null,
+  pd_single: null as number | null,
+  pd_right: null as number | null,
+  pd_left: null as number | null,
+  notes: '',
+  is_default: false,
+});
+const isSharingWishlist = ref(false);
 const currentSection = computed(() => {
   switch (route.name) {
     case 'Addresses':
       return 'addresses';
+    case 'Prescriptions':
+      return 'prescriptions';
     case 'Orders':
       return 'orders';
     case 'Wishlist':
@@ -121,6 +151,7 @@ onMounted(async () => {
     if (authStore.isAuthenticated) {
       await wishlistStore.fetchWishlist();
       await fetchLoyaltyHistory();
+      await fetchPrescriptions();
       fetchAffiliateData();
     }
   } catch (error) {
@@ -133,6 +164,145 @@ onMounted(async () => {
 const handleLogout = () => {
   authStore.logout();
   router.push('/');
+};
+
+const shareWishlist = async () => {
+  try {
+    isSharingWishlist.value = true;
+    const link = await wishlistStore.createShareLink();
+    await navigator.clipboard.writeText(link);
+    showToast('Link wishlist berhasil disalin.', 'success');
+  } catch (error: any) {
+    const message = error.response?.data?.message || 'Gagal membuat link wishlist.';
+    showToast(message, 'error');
+  } finally {
+    isSharingWishlist.value = false;
+  }
+};
+
+const fetchPrescriptions = async () => {
+  try {
+    isLoadingPrescriptions.value = true;
+    prescriptions.value = await prescriptionRepository.list();
+  } catch (error) {
+    console.error('Failed to fetch prescriptions', error);
+  } finally {
+    isLoadingPrescriptions.value = false;
+  }
+};
+
+const handleNewPrescriptionFile = (e: Event) => {
+  const input = e.target as HTMLInputElement;
+  newPrescriptionFile.value = input.files?.[0] || null;
+};
+
+const appendPrescriptionValue = (formData: FormData, key: string, value: unknown) => {
+  if (value === null || value === undefined || value === '') return;
+  formData.append(key, typeof value === 'boolean' ? (value ? '1' : '0') : String(value));
+};
+
+const createNewPrescription = async () => {
+  if (!newPrescriptionForm.value.label.trim()) {
+    showToast('Nama resep wajib diisi.', 'error');
+    return;
+  }
+
+  isCreatingPrescription.value = true;
+  try {
+    const formData = new FormData();
+    const formValues = newPrescriptionForm.value as Record<string, unknown>;
+    Object.entries(formValues).forEach(([key, value]) => {
+      appendPrescriptionValue(formData, key, value);
+    });
+    if (newPrescriptionFile.value) {
+      formData.append('attachment', newPrescriptionFile.value, newPrescriptionFile.value.name);
+    }
+
+    await prescriptionRepository.create(formData as any);
+    await fetchPrescriptions();
+    showToast('Resep berhasil disimpan!', 'success');
+
+    // Reset form
+    showCreatePrescriptionForm.value = false;
+    newPrescriptionFile.value = null;
+    newPrescriptionForm.value = {
+      label: '', lens_type: 'single_vision',
+      right_sphere: null, right_cylinder: null, right_axis: null, right_add: null,
+      left_sphere: null, left_cylinder: null, left_axis: null, left_add: null,
+      pd_single: null, pd_right: null, pd_left: null,
+      notes: '', is_default: false,
+    };
+  } catch (error: any) {
+    const errors = error?.response?.data?.errors as Record<string, string[]> | undefined;
+    const msg = (errors ? Object.values(errors)[0]?.[0] : null)
+      || error?.response?.data?.message
+      || 'Gagal menyimpan resep.';
+    showToast(String(msg), 'error');
+  } finally {
+    isCreatingPrescription.value = false;
+  }
+};
+
+const prescriptionPayloadFromProfile = (profile: PrescriptionProfile): PrescriptionPayload => ({
+  label: prescriptionEditForm.value.label || profile.label,
+  lens_type: profile.lens_type || 'single_vision',
+  right_sphere: profile.right_sphere ?? null,
+  right_cylinder: profile.right_cylinder ?? null,
+  right_axis: profile.right_axis ?? null,
+  right_add: profile.right_add ?? null,
+  left_sphere: profile.left_sphere ?? null,
+  left_cylinder: profile.left_cylinder ?? null,
+  left_axis: profile.left_axis ?? null,
+  left_add: profile.left_add ?? null,
+  pd_single: profile.pd_single ?? null,
+  pd_right: profile.pd_right ?? null,
+  pd_left: profile.pd_left ?? null,
+  notes: prescriptionEditForm.value.notes || null,
+  is_default: profile.is_default,
+});
+
+const startEditPrescription = (profile: PrescriptionProfile) => {
+  editingPrescriptionId.value = profile.id;
+  prescriptionEditForm.value = {
+    label: profile.label,
+    notes: profile.notes || '',
+  };
+};
+
+const savePrescriptionEdit = async (profile: PrescriptionProfile) => {
+  try {
+    await prescriptionRepository.update(profile.id, prescriptionPayloadFromProfile(profile));
+    editingPrescriptionId.value = null;
+    await fetchPrescriptions();
+    showToast('Resep berhasil diperbarui.', 'success');
+  } catch (error) {
+    console.error('Failed to update prescription', error);
+    showToast('Gagal memperbarui resep.', 'error');
+  }
+};
+
+const setDefaultPrescription = async (id: number) => {
+  try {
+    await prescriptionRepository.setDefault(id);
+    await fetchPrescriptions();
+    showToast('Resep default diperbarui.', 'success');
+  } catch (error) {
+    console.error('Failed to set default prescription', error);
+    showToast('Gagal mengubah resep default.', 'error');
+  }
+};
+
+const deletePrescription = async (id: number) => {
+  if (!confirm('Hapus resep ini?')) return;
+
+  try {
+    await prescriptionRepository.delete(id);
+    await fetchPrescriptions();
+    showToast('Resep berhasil dihapus.', 'success');
+  } catch (error) {
+    console.error('Failed to delete prescription', error);
+    showToast('Gagal menghapus resep.', 'error');
+  }
 };
 
 const fetchAffiliateData = async () => {
@@ -385,6 +555,16 @@ const deleteAddress = async (id: number) => {
             Alamat Saya
           </button>
           <button
+            @click="router.push('/prescriptions')"
+            class="flex items-center gap-3 text-left px-4 py-3 rounded-none text-sm font-bold transition-all"
+            :style="currentSection === 'prescriptions'
+              ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white;'
+              : 'color: #5a5248; background: transparent;'"
+          >
+            <span class="material-symbols-outlined text-base">visibility</span>
+            Resep Optik
+          </button>
+          <button
             @click="router.push('/orders')"
             class="flex items-center gap-3 text-left px-4 py-3 rounded-none text-sm font-bold transition-all"
             :style="currentSection === 'orders'
@@ -576,6 +756,190 @@ const deleteAddress = async (id: number) => {
            </div>
         </div>
 
+        <div v-if="currentSection === 'prescriptions'">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="font-headline text-2xl text-primary">Resep Optik</h2>
+            <button
+              @click="showCreatePrescriptionForm = !showCreatePrescriptionForm"
+              class="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-wider text-white transition-all"
+              style="background: linear-gradient(135deg, #1a1209 0%, #3d2c0e 100%);"
+            >
+              <span class="material-symbols-outlined text-sm">{{ showCreatePrescriptionForm ? 'close' : 'add' }}</span>
+              {{ showCreatePrescriptionForm ? 'Batal' : 'Tambah Resep' }}
+            </button>
+          </div>
+
+          <!-- Form Tambah Resep Baru -->
+          <div v-if="showCreatePrescriptionForm" class="mb-6 border p-6" style="background: #fffdf7; border-color: rgba(193,154,81,0.3);">
+            <h3 class="font-bold text-sm mb-4" style="color: #1a1209;">Tambah Resep Baru</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">Nama Resep *</label>
+                <input v-model="newPrescriptionForm.label" type="text" placeholder="Contoh: Resep Utama 2026" class="w-full border px-3 py-2 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">Tipe Lensa</label>
+                <select v-model="newPrescriptionForm.lens_type" class="w-full border px-3 py-2 text-sm focus:outline-none" style="border-color: #e5e0d8;">
+                  <option value="single_vision">Single Vision</option>
+                  <option value="progressive">Progressive</option>
+                  <option value="reading">Reading</option>
+                  <option value="blue_light">Blue Light</option>
+                  <option value="photochromic">Photochromic</option>
+                  <option value="high_index">High Index</option>
+                  <option value="anti_radiation">Anti Radiasi</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Tabel Resep -->
+            <div class="mt-4 overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr>
+                    <th class="text-left py-2 pr-4 text-xs font-black uppercase tracking-wider" style="color: #8a7a60; width: 60px;"></th>
+                    <th class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider" style="color: #8a7a60;">SPH</th>
+                    <th class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider" style="color: #8a7a60;">CYL</th>
+                    <th class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider" style="color: #8a7a60;">Axis</th>
+                    <th class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider" style="color: #8a7a60;">ADD</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="py-2 pr-4 font-black text-xs" style="color: #1a1209;">OD (Kanan)</td>
+                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.right_sphere" type="number" step="0.25" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
+                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.right_cylinder" type="number" step="0.25" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
+                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.right_axis" type="number" min="0" max="180" placeholder="0" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
+                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.right_add" type="number" step="0.25" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
+                  </tr>
+                  <tr>
+                    <td class="py-2 pr-4 font-black text-xs" style="color: #1a1209;">OS (Kiri)</td>
+                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.left_sphere" type="number" step="0.25" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
+                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.left_cylinder" type="number" step="0.25" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
+                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.left_axis" type="number" min="0" max="180" placeholder="0" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
+                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.left_add" type="number" step="0.25" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- PD -->
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">PD Tunggal (mm)</label>
+                <input v-model="newPrescriptionForm.pd_single" type="number" step="0.5" placeholder="64" class="w-full border px-3 py-2 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">PD Kanan (mm)</label>
+                <input v-model="newPrescriptionForm.pd_right" type="number" step="0.5" placeholder="32" class="w-full border px-3 py-2 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">PD Kiri (mm)</label>
+                <input v-model="newPrescriptionForm.pd_left" type="number" step="0.5" placeholder="32" class="w-full border px-3 py-2 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+              </div>
+            </div>
+
+            <!-- Notes + Attachment -->
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">Catatan</label>
+                <textarea v-model="newPrescriptionForm.notes" rows="2" placeholder="Catatan tambahan..." class="w-full border px-3 py-2 text-sm focus:outline-none resize-none" style="border-color: #e5e0d8;"></textarea>
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">Upload Resep (Opsional)</label>
+                <input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" @change="handleNewPrescriptionFile" class="block w-full text-sm" />
+                <p class="text-[10px] mt-1" style="color: #b0a590;">JPG, PNG, WEBP, atau PDF. Maks 4 MB.</p>
+              </div>
+            </div>
+
+            <div class="mt-4 flex items-center gap-3">
+              <label class="flex items-center gap-2 cursor-pointer text-sm" style="color: #5a5248;">
+                <input type="checkbox" v-model="newPrescriptionForm.is_default" class="accent-amber-700" />
+                Jadikan resep default
+              </label>
+            </div>
+
+            <div class="mt-5 flex gap-3">
+              <button
+                @click="createNewPrescription"
+                :disabled="isCreatingPrescription"
+                class="px-6 py-3 text-xs font-black uppercase tracking-wider text-white disabled:opacity-50 transition-all"
+                style="background: linear-gradient(135deg, #1a1209 0%, #3d2c0e 100%);"
+              >
+                <span v-if="isCreatingPrescription" class="material-symbols-outlined animate-spin text-sm align-middle mr-1">sync</span>
+                {{ isCreatingPrescription ? 'Menyimpan...' : 'Simpan Resep' }}
+              </button>
+              <button @click="showCreatePrescriptionForm = false" class="px-4 py-3 border text-xs font-black uppercase tracking-wider" style="border-color: #e5e0d8; color: #8a7a60;">
+                Batal
+              </button>
+            </div>
+          </div>
+
+          <div v-if="isLoadingPrescriptions" class="py-12 text-center text-on-surface-variant">
+            Memuat resep...
+          </div>
+
+          <div v-else-if="prescriptions.length === 0" class="text-center py-12 bg-surface-container-low rounded-none">
+            <p class="text-on-surface-variant">Belum ada resep tersimpan.</p>
+          </div>
+
+          <div v-else class="grid grid-cols-1 gap-4">
+            <div
+              v-for="profile in prescriptions"
+              :key="profile.id"
+              class="p-6 bg-surface-container-low border border-outline-variant/15 rounded-none"
+            >
+              <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                <div class="flex-1">
+                  <div v-if="editingPrescriptionId === profile.id" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                    <label class="block">
+                      <span class="block text-xs text-on-surface-variant mb-1 uppercase tracking-wider">Nama Resep</span>
+                      <input v-model="prescriptionEditForm.label" class="w-full border border-outline-variant/30 rounded-none px-3 py-2 bg-white" />
+                    </label>
+                    <label class="block md:col-span-2">
+                      <span class="block text-xs text-on-surface-variant mb-1 uppercase tracking-wider">Catatan</span>
+                      <textarea v-model="prescriptionEditForm.notes" rows="2" class="w-full border border-outline-variant/30 rounded-none px-3 py-2 bg-white"></textarea>
+                    </label>
+                  </div>
+
+                  <div v-else>
+                    <p class="font-bold text-primary">
+                      {{ profile.label }}
+                      <span v-if="profile.is_default" class="ml-2 text-[10px] bg-secondary-fixed/30 text-secondary px-2 py-0.5 rounded-none uppercase">Default</span>
+                      <span v-if="profile.verification_status === 'approved'" class="ml-2 text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-none uppercase">✓ Disetujui</span>
+                      <span v-else-if="profile.verification_status === 'rejected'" class="ml-2 text-[10px] bg-red-100 text-red-800 px-2 py-0.5 rounded-none uppercase">✗ Ditolak</span>
+                      <span v-else-if="profile.verified_at" class="ml-2 text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-none uppercase">Verified</span>
+                    </p>
+                    <p class="text-sm text-on-surface-variant mt-1">{{ profile.lens_type || 'single_vision' }}</p>
+                    <!-- Admin notes jika ada -->
+                    <div v-if="profile.admin_notes" class="mt-2 p-2 text-xs rounded" :style="profile.verification_status === 'rejected' ? 'background: rgba(239,68,68,0.06); color: #dc2626;' : 'background: rgba(22,163,74,0.06); color: #16a34a;'">
+                      <strong>Catatan Admin:</strong> {{ profile.admin_notes }}
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 text-sm">
+                    <div><span class="text-on-surface-variant">OD SPH</span><p class="font-medium text-primary">{{ profile.right_sphere ?? '-' }}</p></div>
+                    <div><span class="text-on-surface-variant">OD CYL</span><p class="font-medium text-primary">{{ profile.right_cylinder ?? '-' }}</p></div>
+                    <div><span class="text-on-surface-variant">OS SPH</span><p class="font-medium text-primary">{{ profile.left_sphere ?? '-' }}</p></div>
+                    <div><span class="text-on-surface-variant">PD</span><p class="font-medium text-primary">{{ profile.pd_single ?? `${profile.pd_right ?? '-'} / ${profile.pd_left ?? '-'}` }}</p></div>
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap md:flex-col gap-2 md:items-end">
+                  <template v-if="editingPrescriptionId === profile.id">
+                    <button @click="savePrescriptionEdit(profile)" class="px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wide bg-primary text-white">Simpan</button>
+                    <button @click="editingPrescriptionId = null" class="px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wide border border-outline-variant/30 text-on-surface">Batal</button>
+                  </template>
+                  <template v-else>
+                    <button @click="startEditPrescription(profile)" class="px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wide border border-outline-variant/30 text-on-surface">Edit</button>
+                    <button v-if="!profile.is_default" @click="setDefaultPrescription(profile.id)" class="px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wide bg-primary text-white">Set Default</button>
+                    <button @click="deletePrescription(profile.id)" class="px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wide text-error border border-error/20">Hapus</button>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div v-if="currentSection === 'orders'">
           <h2 class="font-headline text-2xl text-primary mb-6">Order History</h2>
           <!-- Order Status Filter Tabs -->
@@ -650,7 +1014,21 @@ const deleteAddress = async (id: number) => {
         </div>
 
         <div v-if="currentSection === 'wishlist'">
-          <h2 class="font-headline text-2xl text-primary mb-6">Wishlist</h2>
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <div>
+              <h2 class="font-headline text-2xl text-primary">Wishlist</h2>
+              <p class="text-sm text-on-surface-variant mt-1">Bagikan produk favorit tanpa membuka data akun Anda.</p>
+            </div>
+            <button
+              v-if="wishlistStore.items && wishlistStore.items.length > 0"
+              @click="shareWishlist"
+              :disabled="isSharingWishlist"
+              class="px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wide bg-primary text-white hover:bg-primary-container transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              <span class="material-symbols-outlined text-base">ios_share</span>
+              {{ isSharingWishlist ? 'Membuat...' : 'Salin Link' }}
+            </button>
+          </div>
 
           <div v-if="!wishlistStore.items || wishlistStore.items.length === 0" class="text-center py-12 bg-surface-container-low rounded-none">
             <p class="text-on-surface-variant">Belum ada produk di wishlist Anda.</p>

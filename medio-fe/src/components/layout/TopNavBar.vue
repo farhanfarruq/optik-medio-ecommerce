@@ -2,7 +2,10 @@
 import { useCartStore } from '../../stores/cartStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useRouter } from 'vue-router';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
+import { productRepository, type ProductSearchSuggestions } from '../../repositories/ProductRepository';
+import { resolveImageUrl } from '../../core/utils/image';
+import { useAnalytics } from '../../composables/useAnalytics';
 
 const cartStore = useCartStore();
 const authStore = useAuthStore();
@@ -12,6 +15,15 @@ const isScrolled = ref(false);
 const isSearchOpen = ref(false);
 const searchQuery = ref('');
 const windowWidth = ref(window.innerWidth);
+const searchSuggestions = ref<ProductSearchSuggestions>({ products: [], categories: [] });
+const recentSearches = ref<string[]>([]);
+const isSuggestionLoading = ref(false);
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+const showSuggestionPanel = computed(() =>
+  isSearchOpen.value &&
+  (searchQuery.value.trim().length >= 2 || recentSearches.value.length > 0)
+);
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 50;
@@ -31,22 +43,95 @@ const toggleSearch = () => {
 };
 
 const executeSearch = () => {
-  if (searchQuery.value.trim()) {
-    router.push({ path: '/products', query: { search: searchQuery.value } });
+  const query = searchQuery.value.trim();
+  if (query) {
+    saveRecentSearch(query);
+    router.push({ path: '/products', query: { search: query } });
     isSearchOpen.value = false;
     searchQuery.value = '';
+    searchSuggestions.value = { products: [], categories: [] };
   }
+};
+
+const handleSearchBlur = () => {
+  window.setTimeout(() => {
+    if (!searchQuery.value) isSearchOpen.value = false;
+  }, 150);
+};
+
+const saveRecentSearch = (query: string) => {
+  recentSearches.value = [query, ...recentSearches.value.filter(item => item.toLowerCase() !== query.toLowerCase())].slice(0, 5);
+  window.localStorage.setItem('medio_recent_searches', JSON.stringify(recentSearches.value));
+};
+
+const loadRecentSearches = () => {
+  try {
+    const raw = window.localStorage.getItem('medio_recent_searches');
+    const parsed = raw ? JSON.parse(raw) : [];
+    recentSearches.value = Array.isArray(parsed) ? parsed.slice(0, 5) : [];
+  } catch {
+    recentSearches.value = [];
+  }
+};
+
+const selectProduct = (slug: string) => {
+  isSearchOpen.value = false;
+  searchQuery.value = '';
+  router.push(`/products/${slug}`);
+};
+
+const selectCategory = (slug: string) => {
+  isSearchOpen.value = false;
+  searchQuery.value = '';
+  router.push(`/products/category/${slug}`);
+};
+
+const selectRecentSearch = (query: string) => {
+  searchQuery.value = query;
+  executeSearch();
 };
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll);
   window.addEventListener('resize', updateWidth);
+  loadRecentSearches();
   handleScroll();
 });
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
   window.removeEventListener('resize', updateWidth);
+  if (searchTimer) clearTimeout(searchTimer);
+});
+
+watch(searchQuery, (query) => {
+  if (searchTimer) clearTimeout(searchTimer);
+  const term = query.trim();
+  if (term.length < 2) {
+    searchSuggestions.value = { products: [], categories: [] };
+    return;
+  }
+
+  searchTimer = setTimeout(async () => {
+    try {
+      isSuggestionLoading.value = true;
+      searchSuggestions.value = await productRepository.getSearchSuggestions(term);
+
+      // Track search no result
+      if (
+        searchSuggestions.value.products.length === 0 &&
+        searchSuggestions.value.categories.length === 0
+      ) {
+        const { trackSearchNoResult } = useAnalytics();
+        trackSearchNoResult(term);
+      }
+    } catch (error) {
+      console.warn('Failed to fetch search suggestions', error);
+      searchSuggestions.value = { products: [], categories: [] };
+    } finally {
+      isSuggestionLoading.value = false;
+    }
+  }, 250);
 });
 
 const goToCart = () => router.push('/cart');
@@ -91,7 +176,35 @@ const handleUserClick = () => {
       </router-link>
       
       <!-- Center Links (Empty for now to maintain minimalist look) -->
-      <div class="hidden md:flex items-center gap-8 ml-10 flex-grow">
+      <div class="hidden md:flex items-center gap-6 ml-10 flex-grow">
+        <router-link
+          to="/products"
+          class="text-xs font-black uppercase tracking-widest transition-colors"
+          :class="isScrolled ? 'text-stone-700 hover:text-stone-950' : 'text-white/85 hover:text-white'"
+        >
+          Produk
+        </router-link>
+        <router-link
+          to="/face-shape-quiz"
+          class="text-xs font-black uppercase tracking-widest transition-colors"
+          :class="isScrolled ? 'text-stone-700 hover:text-stone-950' : 'text-white/85 hover:text-white'"
+        >
+          Quiz
+        </router-link>
+        <router-link
+          to="/virtual-try-on"
+          class="text-xs font-black uppercase tracking-widest transition-colors"
+          :class="isScrolled ? 'text-stone-700 hover:text-stone-950' : 'text-white/85 hover:text-white'"
+        >
+          Try-On
+        </router-link>
+        <router-link
+          to="/compare"
+          class="text-xs font-black uppercase tracking-widest transition-colors"
+          :class="isScrolled ? 'text-stone-700 hover:text-stone-950' : 'text-white/85 hover:text-white'"
+        >
+          Compare
+        </router-link>
       </div>
 
       <!-- Actions -->
@@ -101,7 +214,7 @@ const handleUserClick = () => {
       >
         <!-- Integrated Search Bar -->
         <div 
-          class="relative flex items-center h-12 transition-all duration-500 ease-out overflow-hidden"
+          class="relative flex items-center h-12 transition-all duration-500 ease-out"
           :class="isSearchOpen ? 'w-[200px] md:w-[350px] px-4 bg-white/10 backdrop-blur-md border-b border-amber-500/50' : 'w-10'"
           :style="isSearchOpen && isScrolled ? 'background: rgba(0,0,0,0.03);' : ''"
         >
@@ -122,7 +235,7 @@ const handleUserClick = () => {
             class="w-full bg-transparent border-none text-sm font-bold focus:ring-0 outline-none placeholder:text-stone-500 px-2"
             :class="isScrolled ? 'text-stone-900' : 'text-white'"
             @keyup.enter="executeSearch"
-            @blur="() => { if(!searchQuery) isSearchOpen = false }"
+            @blur="handleSearchBlur"
           />
 
           <button 
@@ -132,6 +245,63 @@ const handleUserClick = () => {
           >
             <span class="material-symbols-outlined text-sm">close</span>
           </button>
+
+          <div
+            v-if="showSuggestionPanel"
+            class="absolute left-0 right-0 top-[calc(100%+10px)] bg-white text-stone-900 border border-stone-100 shadow-2xl p-3 max-h-[420px] overflow-y-auto"
+          >
+            <div v-if="isSuggestionLoading" class="py-4 text-center text-xs font-bold text-stone-500">
+              Mencari...
+            </div>
+
+            <div v-else-if="searchQuery.trim().length >= 2" class="space-y-3">
+              <div v-if="searchSuggestions.products.length > 0">
+                <p class="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-2">Produk</p>
+                <button
+                  v-for="product in searchSuggestions.products"
+                  :key="product.id"
+                  @mousedown.prevent="selectProduct(product.slug)"
+                  class="w-full flex items-center gap-3 p-2 text-left hover:bg-stone-50 transition-colors"
+                >
+                  <img :src="resolveImageUrl(product)" :alt="product.name" class="w-10 h-10 object-contain bg-stone-50 border border-stone-100 shrink-0" />
+                  <span class="min-w-0">
+                    <span class="block text-xs font-black truncate">{{ product.name }}</span>
+                    <span class="block text-[11px] text-stone-500 truncate">{{ product.brand || 'Optik Medio' }} · Rp {{ product.price.toLocaleString('id-ID') }}</span>
+                  </span>
+                </button>
+              </div>
+
+              <div v-if="searchSuggestions.categories.length > 0">
+                <p class="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-2">Kategori</p>
+                <button
+                  v-for="category in searchSuggestions.categories"
+                  :key="category.id"
+                  @mousedown.prevent="selectCategory(category.slug)"
+                  class="w-full flex items-center gap-2 p-2 text-left text-xs font-bold hover:bg-stone-50 transition-colors"
+                >
+                  <span class="material-symbols-outlined text-base" style="color: #c19a51;">category</span>
+                  {{ category.name }}
+                </button>
+              </div>
+
+              <div v-if="searchSuggestions.products.length === 0 && searchSuggestions.categories.length === 0" class="py-4 text-center text-xs font-bold text-stone-500">
+                Tidak ada saran ditemukan.
+              </div>
+            </div>
+
+            <div v-else-if="recentSearches.length > 0">
+              <p class="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-2">Terakhir Dicari</p>
+              <button
+                v-for="query in recentSearches"
+                :key="query"
+                @mousedown.prevent="selectRecentSearch(query)"
+                class="w-full flex items-center gap-2 p-2 text-left text-xs font-bold hover:bg-stone-50 transition-colors"
+              >
+                <span class="material-symbols-outlined text-base" style="color: #c19a51;">history</span>
+                {{ query }}
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- User & Cart (Hidden when search is wide on mobile) -->

@@ -73,7 +73,7 @@ class AuthSessionTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_login_uses_session_auth_without_returning_token(): void
+    public function test_login_requires_otp_without_starting_session(): void
     {
         $this->withoutMiddleware(ValidateCsrfToken::class);
 
@@ -88,11 +88,13 @@ class AuthSessionTest extends TestCase
         ]);
 
         $response
-            ->assertOk()
+            ->assertStatus(403)
+            ->assertJsonPath('requires_otp', true)
+            ->assertJsonPath('email', $user->email)
             ->assertJsonMissingPath('token')
-            ->assertJsonPath('user.id', $user->id);
+            ->assertJsonMissingPath('user');
 
-        $this->assertAuthenticatedAs($user);
+        $this->assertGuest();
     }
 
     public function test_verify_otp_is_rate_limited_after_repeated_failures(): void

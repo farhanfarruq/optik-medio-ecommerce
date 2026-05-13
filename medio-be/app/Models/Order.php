@@ -201,6 +201,7 @@ class Order extends Model
 
     public function logs(): HasMany
     {
-        return $this->hasMany(OrderLog::class)->latest();
+        // ORDER-005: Urutan ascending (kronologis) untuk tracking; gunakan ->latest() saat perlu terbaru dulu
+        return $this->hasMany(OrderLog::class)->oldest();
     }
 }

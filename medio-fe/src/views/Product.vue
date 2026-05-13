@@ -1,24 +1,29 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { productRepository, type Category } from '../repositories/ProductRepository';
+import { productRepository, type Category, type ProductFilters } from '../repositories/ProductRepository';
 import type { Product } from '../types';
 import { resolveImageUrl } from '../core/utils/image';
 import { settingRepository, type Testimonial } from '../repositories/SettingRepository';
 import { bannerRepository, type BannerItem } from '../repositories/BannerRepository';
 import { useWishlistStore } from '../stores/wishlistStore';
 import { useCartStore } from '../stores/cartStore';
+import { useCompareStore } from '../stores/compareStore';
 import { useToast } from '../composables/useToast';
 
 const route = useRoute();
 const router = useRouter();
 const wishlistStore = useWishlistStore();
 const cartStore = useCartStore();
+const compareStore = useCompareStore();
 const { showToast } = useToast();
 const products = ref<Product[]>([]);
+const lensShowcaseProducts = ref<Product[]>([]);
 const categories = ref<Category[]>([]);
 const brands = ref<string[]>([]);
+const productFilters = ref<ProductFilters | null>(null);
 const isLoading = ref(true);
+const isLoadingLensShowcase = ref(false);
 const hasError = ref(false);
 const categorySlug = ref(route.params.slug as string);
 const searchQuery = ref(route.query.search as string || '');
@@ -28,7 +33,17 @@ const currentPage = ref(1);
 const lastPage = ref(1);
 const totalProducts = ref(0);
 const isLoadingMore = ref(false);
-const selectedBrand = ref<string>('');
+const selectedBrand = ref<string>(route.query.brand as string || '');
+const selectedGender = ref<string>(route.query.gender as string || '');
+const selectedFrameShape = ref<string>(route.query.frame_shape as string || '');
+const selectedFrameMaterial = ref<string>(route.query.frame_material as string || '');
+const selectedFrameColor = ref<string>(route.query.frame_color as string || '');
+const selectedFaceSizeFit = ref<string>(route.query.face_size_fit as string || '');
+const inStockOnly = ref(route.query.in_stock_only === 'true');
+const prescriptionSupported = ref(route.query.prescription_supported === 'true');
+const minPrice = ref(route.query.min_price as string || '');
+const maxPrice = ref(route.query.max_price as string || '');
+const selectedSort = ref(route.query.sort as string || 'latest');
 const hasPromo = ref(route.query.has_promo === 'true');
 const promoId = ref(route.query.promo_id as string || '');
 const activePromoName = ref('');
@@ -64,6 +79,61 @@ const categoryDescription = computed(() => {
   return map[categorySlug.value] || `Jelajahi koleksi ${categoryTitle.value} terbaik kami.`;
 });
 
+const availableBrands = computed(() => productFilters.value?.brands?.length ? productFilters.value.brands : brands.value);
+const availableGenders = computed(() => productFilters.value?.genders || []);
+const availableFrameShapes = computed(() => productFilters.value?.frame_shapes || []);
+const availableFrameMaterials = computed(() => productFilters.value?.frame_materials || []);
+const availableFrameColors = computed(() => productFilters.value?.frame_colors || []);
+const availableFaceSizeFits = computed(() => productFilters.value?.face_size_fits || []);
+
+const formatFilterLabel = (value: string) => {
+  const labels: Record<string, string> = {
+    men: 'Pria',
+    women: 'Wanita',
+    unisex: 'Unisex',
+    kids: 'Anak',
+    small: 'Small',
+    medium: 'Medium',
+    large: 'Large',
+    price_low: 'Harga Terendah',
+    price_high: 'Harga Tertinggi',
+    best_seller: 'Terlaris',
+    rating: 'Rating',
+    popular: 'Populer',
+  };
+
+  return labels[value] || value
+    .split(/[-_]/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
+const activeFilterChips = computed(() => {
+  const chips: Array<{ key: string; label: string; value: string }> = [];
+
+  if (selectedBrand.value) chips.push({ key: 'brand', label: 'Merek', value: selectedBrand.value });
+  if (selectedGender.value) chips.push({ key: 'gender', label: 'Gender', value: formatFilterLabel(selectedGender.value) });
+  if (selectedFrameShape.value) chips.push({ key: 'frame_shape', label: 'Bentuk', value: formatFilterLabel(selectedFrameShape.value) });
+  if (selectedFrameMaterial.value) chips.push({ key: 'frame_material', label: 'Material', value: formatFilterLabel(selectedFrameMaterial.value) });
+  if (selectedFrameColor.value) chips.push({ key: 'frame_color', label: 'Warna', value: formatFilterLabel(selectedFrameColor.value) });
+  if (selectedFaceSizeFit.value) chips.push({ key: 'face_size_fit', label: 'Fit', value: formatFilterLabel(selectedFaceSizeFit.value) });
+  if (inStockOnly.value) chips.push({ key: 'in_stock_only', label: 'Stok', value: 'Tersedia' });
+  if (prescriptionSupported.value) chips.push({ key: 'prescription_supported', label: 'Resep', value: 'Didukung' });
+  if (hasPromo.value) chips.push({ key: 'promo', label: 'Promo', value: activePromoName.value || 'Aktif' });
+  if (selectedSort.value !== 'latest') {
+    chips.push({ key: 'sort', label: 'Urutkan', value: formatFilterLabel(selectedSort.value) });
+  }
+  if (minPrice.value || maxPrice.value) {
+    chips.push({
+      key: 'price',
+      label: 'Harga',
+      value: `${minPrice.value || '0'} - ${maxPrice.value || 'maks'}`,
+    });
+  }
+
+  return chips;
+});
+
 const fetchProducts = async (isLoadMore = false) => {
   try {
     if (isLoadMore) {
@@ -74,12 +144,46 @@ const fetchProducts = async (isLoadMore = false) => {
     }
     
     hasError.value = false;
-    const params: any = { page: currentPage.value };
+    const params: any = {
+      page: currentPage.value,
+      exclude_not_for_sale: 'true',
+      prioritize_glasses: 'true',
+    };
     if (categorySlug.value) {
       params.category = categorySlug.value;
     }
     if (selectedBrand.value) {
       params.brand = selectedBrand.value;
+    }
+    if (selectedGender.value) {
+      params.gender = selectedGender.value;
+    }
+    if (selectedFrameShape.value) {
+      params.frame_shape = selectedFrameShape.value;
+    }
+    if (selectedFrameMaterial.value) {
+      params.frame_material = selectedFrameMaterial.value;
+    }
+    if (selectedFrameColor.value) {
+      params.frame_color = selectedFrameColor.value;
+    }
+    if (selectedFaceSizeFit.value) {
+      params.face_size_fit = selectedFaceSizeFit.value;
+    }
+    if (inStockOnly.value) {
+      params.in_stock_only = 'true';
+    }
+    if (prescriptionSupported.value) {
+      params.prescription_supported = 'true';
+    }
+    if (minPrice.value) {
+      params.min_price = minPrice.value;
+    }
+    if (maxPrice.value) {
+      params.max_price = maxPrice.value;
+    }
+    if (selectedSort.value) {
+      params.sort = selectedSort.value;
     }
     if (searchQuery.value) {
       params.search = searchQuery.value;
@@ -118,6 +222,25 @@ const fetchProducts = async (isLoadMore = false) => {
   }
 };
 
+const fetchLensShowcaseProducts = async () => {
+  try {
+    isLoadingLensShowcase.value = true;
+    const response = await productRepository.getProducts({
+      category: 'lensa-kacamata',
+      only_not_for_sale: 'true',
+      per_page: 12,
+      sort: 'popular',
+    });
+
+    lensShowcaseProducts.value = response.data || response;
+  } catch (error) {
+    console.warn('Could not load lens showcase products', error);
+    lensShowcaseProducts.value = [];
+  } finally {
+    isLoadingLensShowcase.value = false;
+  }
+};
+
 const handleLoadMore = () => {
   if (!isLoadingMore.value && currentPage.value < lastPage.value) {
     currentPage.value++;
@@ -133,6 +256,16 @@ const fetchBrands = async () => {
   }
 };
 
+const fetchFilterMetadata = async () => {
+  try {
+    productFilters.value = await productRepository.getFilters();
+    brands.value = productFilters.value.brands || [];
+  } catch (e) {
+    console.warn('Could not load product filters', e);
+    fetchBrands();
+  }
+};
+
 const fetchCategories = async () => {
   try {
     categories.value = await productRepository.getCategories();
@@ -143,7 +276,8 @@ const fetchCategories = async () => {
 
 onMounted(() => {
   fetchCategories();
-  fetchBrands();
+  fetchFilterMetadata();
+  fetchLensShowcaseProducts();
   
   if (cartStore.activePromos.length === 0) {
     cartStore.fetchPromos();
@@ -211,9 +345,58 @@ watch(() => route.query.promo_id, async (val) => {
   fetchProducts(false);
 });
 
-watch(selectedBrand, () => {
+watch([
+  selectedBrand,
+  selectedGender,
+  selectedFrameShape,
+  selectedFrameMaterial,
+  selectedFrameColor,
+  selectedFaceSizeFit,
+  inStockOnly,
+  prescriptionSupported,
+  minPrice,
+  maxPrice,
+  selectedSort,
+], () => {
   fetchProducts(false);
 });
+
+const clearFilter = (key: string) => {
+  if (key === 'brand') selectedBrand.value = '';
+  if (key === 'gender') selectedGender.value = '';
+  if (key === 'frame_shape') selectedFrameShape.value = '';
+  if (key === 'frame_material') selectedFrameMaterial.value = '';
+  if (key === 'frame_color') selectedFrameColor.value = '';
+  if (key === 'face_size_fit') selectedFaceSizeFit.value = '';
+  if (key === 'in_stock_only') inStockOnly.value = false;
+  if (key === 'prescription_supported') prescriptionSupported.value = false;
+  if (key === 'price') {
+    minPrice.value = '';
+    maxPrice.value = '';
+  }
+  if (key === 'sort') selectedSort.value = 'latest';
+  if (key === 'promo') {
+    router.push({ query: { ...route.query, has_promo: undefined, promo_id: undefined } });
+  }
+};
+
+const clearAllFilters = () => {
+  selectedBrand.value = '';
+  selectedGender.value = '';
+  selectedFrameShape.value = '';
+  selectedFrameMaterial.value = '';
+  selectedFrameColor.value = '';
+  selectedFaceSizeFit.value = '';
+  inStockOnly.value = false;
+  prescriptionSupported.value = false;
+  minPrice.value = '';
+  maxPrice.value = '';
+  selectedSort.value = 'latest';
+
+  if (hasPromo.value || promoId.value) {
+    router.push({ query: { ...route.query, has_promo: undefined, promo_id: undefined } });
+  }
+};
 
 const goToCategory = (slug: string | null) => {
   showFilterPanel.value = false;
@@ -243,6 +426,15 @@ const toggleWishlist = async (product: Product) => {
     added ? 'Produk ditambahkan ke wishlist.' : 'Produk dihapus dari wishlist.',
     'success',
   );
+};
+
+const toggleCompare = (product: Product) => {
+  const result = compareStore.toggle(product);
+  if (result === 'full') {
+    showToast('Compare maksimal 4 produk.', 'error');
+    return;
+  }
+  showToast(result === 'added' ? 'Produk ditambahkan ke compare.' : 'Produk dihapus dari compare.', 'success');
 };
 
 onUnmounted(() => {
@@ -365,7 +557,25 @@ onUnmounted(() => {
         <span v-else-if="isLoading">Memuat produk...</span>
       </p>
 
-      <div class="flex items-center gap-3">
+      <div class="flex flex-wrap items-center gap-3">
+        <button
+          @click="showFilterPanel = !showFilterPanel"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-none text-xs font-black uppercase tracking-wider border transition-all active:scale-95"
+          :style="showFilterPanel || activeFilterChips.length > 0
+            ? 'background: #1a1209; color: white; border-color: #1a1209;'
+            : 'background: white; color: #1a1209; border-color: #d6cbbb;'"
+        >
+          <span class="material-symbols-outlined text-sm">tune</span>
+          Filter
+          <span
+            v-if="activeFilterChips.length > 0"
+            class="min-w-5 h-5 px-1.5 inline-flex items-center justify-center text-[10px] font-black"
+            style="background: #c19a51; color: white;"
+          >
+            {{ activeFilterChips.length }}
+          </span>
+        </button>
+
         <span class="text-xs font-bold uppercase tracking-widest text-stone-500">Merek:</span>
         <div class="relative">
           <select 
@@ -374,11 +584,127 @@ onUnmounted(() => {
             style="color: #1a1209;"
           >
             <option value="">Semua Merek</option>
-            <option v-for="brand in brands" :key="brand" :value="brand">{{ brand }}</option>
+            <option v-for="brand in availableBrands" :key="brand" :value="brand">{{ brand }}</option>
           </select>
           <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none text-sm">
             expand_more
           </span>
+        </div>
+
+        <span class="text-xs font-bold uppercase tracking-widest text-stone-500">Urut:</span>
+        <div class="relative">
+          <select
+            v-model="selectedSort"
+            class="appearance-none bg-white border border-stone-300 px-4 py-2 pr-10 rounded-none text-sm font-medium focus:outline-none focus:border-amber-700 cursor-pointer shadow-sm"
+            style="color: #1a1209;"
+          >
+            <option value="latest">Terbaru</option>
+            <option value="price_low">Harga Terendah</option>
+            <option value="price_high">Harga Tertinggi</option>
+            <option value="best_seller">Terlaris</option>
+            <option value="rating">Rating</option>
+            <option value="popular">Populer</option>
+          </select>
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none text-sm">
+            expand_more
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="activeFilterChips.length > 0" class="flex flex-wrap items-center gap-2 mb-5">
+      <button
+        v-for="chip in activeFilterChips"
+        :key="chip.key"
+        @click="clearFilter(chip.key)"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-none text-[11px] font-bold border transition-all hover:border-stone-900"
+        style="background: #f8f5ef; color: #1a1209; border-color: #e4d8c8;"
+      >
+        <span class="uppercase tracking-wider text-stone-500">{{ chip.label }}</span>
+        <span>{{ chip.value }}</span>
+        <span class="material-symbols-outlined text-sm">close</span>
+      </button>
+      <button
+        @click="clearAllFilters"
+        class="px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-stone-500 hover:text-stone-900"
+      >
+        Reset
+      </button>
+    </div>
+
+    <div
+      v-if="showFilterPanel"
+      class="mb-7 border border-stone-200 bg-white shadow-sm"
+    >
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 p-5">
+        <label class="block">
+          <span class="block text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Gender</span>
+          <select v-model="selectedGender" class="w-full border border-stone-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-amber-700">
+            <option value="">Semua</option>
+            <option v-for="item in availableGenders" :key="item" :value="item">{{ formatFilterLabel(item) }}</option>
+          </select>
+        </label>
+
+        <label class="block">
+          <span class="block text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Bentuk Frame</span>
+          <select v-model="selectedFrameShape" class="w-full border border-stone-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-amber-700">
+            <option value="">Semua</option>
+            <option v-for="item in availableFrameShapes" :key="item" :value="item">{{ formatFilterLabel(item) }}</option>
+          </select>
+        </label>
+
+        <label class="block">
+          <span class="block text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Material</span>
+          <select v-model="selectedFrameMaterial" class="w-full border border-stone-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-amber-700">
+            <option value="">Semua</option>
+            <option v-for="item in availableFrameMaterials" :key="item" :value="item">{{ formatFilterLabel(item) }}</option>
+          </select>
+        </label>
+
+        <label class="block">
+          <span class="block text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Warna</span>
+          <select v-model="selectedFrameColor" class="w-full border border-stone-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-amber-700">
+            <option value="">Semua</option>
+            <option v-for="item in availableFrameColors" :key="item" :value="item">{{ formatFilterLabel(item) }}</option>
+          </select>
+        </label>
+
+        <label class="block">
+          <span class="block text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Fit Wajah</span>
+          <select v-model="selectedFaceSizeFit" class="w-full border border-stone-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-amber-700">
+            <option value="">Semua</option>
+            <option v-for="item in availableFaceSizeFits" :key="item" :value="item">{{ formatFilterLabel(item) }}</option>
+          </select>
+        </label>
+
+        <div class="grid grid-cols-2 gap-2">
+          <label class="block">
+            <span class="block text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Min</span>
+            <input v-model="minPrice" inputmode="numeric" placeholder="Rp" class="w-full border border-stone-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-amber-700" />
+          </label>
+          <label class="block">
+            <span class="block text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Max</span>
+            <input v-model="maxPrice" inputmode="numeric" placeholder="Rp" class="w-full border border-stone-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-amber-700" />
+          </label>
+        </div>
+
+        <label class="flex items-center gap-2 text-sm font-bold text-stone-700">
+          <input v-model="inStockOnly" type="checkbox" class="w-4 h-4 accent-amber-700" />
+          Stok tersedia
+        </label>
+
+        <label class="flex items-center gap-2 text-sm font-bold text-stone-700">
+          <input v-model="prescriptionSupported" type="checkbox" class="w-4 h-4 accent-amber-700" />
+          Bisa resep
+        </label>
+
+        <div class="flex items-end">
+          <button
+            @click="clearAllFilters"
+            class="w-full px-4 py-2 text-xs font-black uppercase tracking-wider border border-stone-300 text-stone-700 hover:border-stone-900 hover:text-stone-900 transition-all"
+          >
+            Reset Filter
+          </button>
         </div>
       </div>
     </div>
@@ -426,6 +752,8 @@ onUnmounted(() => {
             :alt="product.name"
             class="object-contain w-full h-full transition-transform duration-700 ease-out group-hover:scale-110"
             :class="{ 'opacity-40 grayscale': product.stock <= 0 }"
+            loading="lazy"
+            decoding="async"
           />
 
           <button
@@ -436,6 +764,16 @@ onUnmounted(() => {
             @click.stop="toggleWishlist(product)"
           >
             <span class="material-symbols-outlined text-base" :style="wishlistStore.isWishlisted(product.id) ? 'color: #b45309;' : 'color: #c19a51;'">favorite</span>
+          </button>
+
+          <button
+            class="absolute top-14 right-3 w-9 h-9 rounded-none flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-md"
+            :style="compareStore.isCompared(product.id)
+              ? 'background: rgba(26,18,9,0.9); backdrop-filter: blur(8px); opacity: 1; color: white;'
+              : 'background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); color: #7a6230;'"
+            @click.stop="toggleCompare(product)"
+          >
+            <span class="material-symbols-outlined text-base">compare_arrows</span>
           </button>
 
           <!-- Best Seller Badge -->
@@ -552,6 +890,32 @@ onUnmounted(() => {
       </article>
     </div>
 
+    <div
+      v-if="compareStore.count > 0"
+      class="fixed left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-[720px] bottom-5 z-40 bg-white border border-stone-200 shadow-2xl p-3 flex items-center justify-between gap-3"
+    >
+      <div class="flex items-center gap-3 min-w-0">
+        <span class="material-symbols-outlined text-xl shrink-0" style="color: #c19a51;">compare_arrows</span>
+        <div class="min-w-0">
+          <p class="text-xs font-black uppercase tracking-widest text-stone-900">{{ compareStore.count }}/4 produk</p>
+          <p class="text-[11px] text-stone-500 truncate">{{ compareStore.items.map(item => item.name).join(', ') }}</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button @click="compareStore.clear()" class="px-3 py-2 text-xs font-bold text-stone-600 border border-stone-200">
+          Reset
+        </button>
+        <button
+          @click="router.push('/compare')"
+          :disabled="!compareStore.canCompare"
+          class="px-4 py-2 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50"
+          style="background: #1a1209;"
+        >
+          Compare
+        </button>
+      </div>
+    </div>
+
     <div class="w-full mt-12 mb-8 flex flex-col items-center gap-6">
       <div v-if="isLoadingMore" class="flex items-center gap-3 text-stone-500">
         <span class="material-symbols-outlined animate-spin text-2xl" style="color: #c19a51;">sync</span>
@@ -580,6 +944,58 @@ onUnmounted(() => {
         </span>
       </div>
     </div>
+
+    <section v-if="lensShowcaseProducts.length > 0 || isLoadingLensShowcase" class="mt-20 mb-12">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-3" style="color: #c19a51;">Pilihan Lensa Resep</p>
+          <h2 class="text-3xl md:text-4xl font-black tracking-tight" style="font-family: 'Outfit', sans-serif; color: #1a1209;">Merek Lensa yang Tersedia</h2>
+          <p class="text-sm text-stone-500 mt-3 max-w-2xl leading-relaxed">
+            Produk berikut bersifat katalog informasi. Pemilihan dan pembelian lensa dilakukan bersama frame melalui konsultasi resep di Optik Medio.
+          </p>
+        </div>
+        <router-link to="/appointment" class="inline-flex items-center gap-2 px-5 py-3 text-xs font-black uppercase tracking-widest text-white transition-all hover:shadow-lg" style="background: #1a1209;">
+          Konsultasi Lensa
+          <span class="material-symbols-outlined text-sm">arrow_forward</span>
+        </router-link>
+      </div>
+
+      <div v-if="isLoadingLensShowcase" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div v-for="i in 4" :key="i" class="animate-pulse border border-stone-100 p-5" style="background: #fffdf7;">
+          <div class="aspect-[4/3] mb-4" style="background: #e8e2d8;"></div>
+          <div class="h-3 w-1/2 mb-3" style="background: #d4cdc0;"></div>
+          <div class="h-4 w-3/4" style="background: #dcd7ce;"></div>
+        </div>
+      </div>
+
+      <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <article
+          v-for="lens in lensShowcaseProducts"
+          :key="lens.id"
+          class="group border border-stone-100 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+          style="background: #fffdf7;"
+          @click="goToDetail(lens.slug)"
+        >
+          <div class="aspect-[4/3] p-5 flex items-center justify-center" style="background: linear-gradient(145deg, #f5f2ee, #ede7dc);">
+            <img
+              :src="resolveImageUrl(lens)"
+              :alt="lens.name"
+              class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+          <div class="p-4">
+            <p class="text-[9px] font-black uppercase tracking-[0.2em] mb-2" style="color: #8a7a60;">{{ lens.brand || 'Lensa' }}</p>
+            <h3 class="font-bold text-sm leading-tight line-clamp-2 min-h-[2.5rem]" style="color: #1a1209;">{{ lens.name }}</h3>
+            <div class="mt-4 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest" style="color: #c19a51;">
+              Informasi
+              <span class="material-symbols-outlined text-sm">visibility</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
 
     <section class="mt-24 mb-12">
       <div class="flex flex-col md:flex-row justify-between items-end mb-10 gap-4">

@@ -1,5 +1,19 @@
 # Implementation Tasks — Audit E-Commerce Optik Medio
 
+## Implementation Priority Overlay
+
+Gunakan checklist audit di bawah sebagai basis evidence, lalu kerjakan perbaikan dengan urutan berikut:
+
+- **P0 — Finansial, security, ownership:** OTP guard/rate limit, webhook Xendit token, ownership `shipping_address_id`, ownership order/payment proof, formula total, mutual exclusion diskon-promo, transaksi order/stok/poin/payment.
+- **P1 — Checkout dan lifecycle:** stok atomik, produk resep wajib, cart calculate/store payload parity, `linked_item_index`, `clearCart` setelah order sukses, `order_logs`, `confirmDelivery` hanya dari `shipped`.
+- **P2 — Operasional:** loyalty consistency, affiliate commission, complain/return guard, RajaOngkir fallback, Filament resources, CORS/security headers, content active/cache rules.
+
+Path implementasi memakai repo aktual:
+
+- Backend: `medio-be/app/...`, `medio-be/routes/...`, `medio-be/tests/...`
+- Frontend: `medio-fe/src/...`
+- Laporan: `AUDIT_REPORT.md`
+
 ## Task Dependency Graph
 
 ```

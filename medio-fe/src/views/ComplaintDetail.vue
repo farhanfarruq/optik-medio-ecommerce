@@ -10,6 +10,7 @@ const router = useRouter();
 const complain = ref<any>(null);
 const isLoading = ref(true);
 const error = ref('');
+const apiOrigin = new URL(import.meta.env.VITE_API_URL || 'http://localhost:8000/api', window.location.origin).origin;
 
 const statusLabel = computed(() => {
   const map: Record<string, string> = {
@@ -127,7 +128,7 @@ onMounted(async () => {
           <!-- Lampiran -->
           <div v-if="complain.attachment_path" class="mt-4 pt-4 border-t" style="border-color: #f0ece4;">
             <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-2" style="color: #8a7a60;">Lampiran</p>
-            <a :href="`${$apiBase?.replace('/api','')}/storage/${complain.attachment_path}`"
+            <a :href="`${apiOrigin}/storage/${complain.attachment_path}`"
                target="_blank"
                class="inline-flex items-center gap-1.5 text-xs font-bold underline"
                style="color: #c19a51;">

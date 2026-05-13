@@ -17,7 +17,19 @@ export interface ReviewSummary {
 class ReviewRepository {
   async getProductReviews(slug: string): Promise<ReviewSummary> {
     const { data } = await apiClient.get(`/products/${slug}/reviews`);
-    return data;
+    const reviews = Array.isArray(data?.reviews)
+      ? data.reviews
+      : Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data)
+          ? data
+          : [];
+
+    return {
+      avg_rating: Number(data?.avg_rating ?? data?.average_rating ?? 0),
+      total_reviews: Number(data?.total_reviews ?? data?.total ?? data?.meta?.total ?? reviews.length),
+      reviews,
+    };
   }
 
   async submitReview(orderItemId: number, rating: number, comment: string): Promise<void> {

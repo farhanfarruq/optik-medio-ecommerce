@@ -18,9 +18,13 @@ export const useWishlistStore = defineStore('wishlist', () => {
     try {
       isLoading.value = true;
       const response = await apiClient.get('/wishlist');
-      // Backend returns the collection directly as JSON array
+      // Backend returns array of Wishlist objects with nested 'product' relation
+      // e.g. [{ id, user_id, product_id, product: { id, name, price, ... } }]
       const data = response.data;
-      items.value = Array.isArray(data) ? data : (data.data || []);
+      const rawList = Array.isArray(data) ? data : (data.data || []);
+      items.value = rawList
+        .map((item: any) => item.product ?? item)
+        .filter((p: any) => p && p.id);
     } catch (error) {
       console.error('Failed to fetch wishlist', error);
     } finally {
@@ -72,6 +76,12 @@ export const useWishlistStore = defineStore('wishlist', () => {
     }
   };
 
+  const createShareLink = async () => {
+    const response = await apiClient.post('/wishlist/share');
+    const token = response.data.token;
+    return `${window.location.origin}/wishlist/shared/${encodeURIComponent(token)}`;
+  };
+
   // Sync when auth state changes
   watch(() => authStore.isAuthenticated, (isAuthenticated) => {
     if (isAuthenticated) {
@@ -81,7 +91,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
     }
   });
 
-  return { items, isLoading, isWishlisted, toggleWishlist, removeFromWishlist, fetchWishlist };
+  return { items, isLoading, isWishlisted, toggleWishlist, removeFromWishlist, fetchWishlist, createShareLink };
 }, {
   persist: {
     key: 'optik-medio-wishlist',

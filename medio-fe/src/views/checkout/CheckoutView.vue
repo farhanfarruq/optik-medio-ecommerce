@@ -9,11 +9,13 @@ import { apiClient } from '../../core/api/axiosclient';
 import { useToast } from '../../composables/useToast';
 import { resolveImageUrl } from '../../core/utils/image';
 import { useAuthStore } from '../../stores/authStore';
+import { useAnalytics } from '../../composables/useAnalytics';
 
 const { showToast } = useToast();
 const cartStore = useCartStore();
 const authStore = useAuthStore();
 const router = useRouter();
+const { trackCheckoutStarted, trackCheckoutFailed } = useAnalytics();
 
 // State Form Pengiriman
 const form = ref({
@@ -92,9 +94,11 @@ const maxLoyaltyPoints = computed(() => {
   const maxDiscount = Math.floor(cartStore.cartTotal * 0.05);
   return Math.min(userLoyaltyPoints.value, Math.ceil(maxDiscount / 1000));
 });
+const selectedLoyaltyPoints = computed(() =>
+  loyaltyPointsToUse.value > 0 ? Math.min(loyaltyPointsToUse.value, maxLoyaltyPoints.value) : 0
+);
 const loyaltyDiscountAmount = computed(() => {
-  const pts = Math.min(loyaltyPointsToUse.value, maxLoyaltyPoints.value);
-  return pts * 1000;
+  return selectedLoyaltyPoints.value * 1000;
 });
 
 const applyCoupon = async () => {
@@ -105,8 +109,8 @@ const applyCoupon = async () => {
     const response = await apiClient.post('/discounts/validate', { code: couponCode.value });
     appliedDiscount.value = response.data.discount;
     showToast('Kupon berhasil diterapkan!', 'success');
-    cartStore.setPromo(null); // Remove promo if applying discount
-    await cartStore.calculateCart(appliedDiscount.value.id, selectedShippingCost.value);
+    await cartStore.setPromo(null); // Remove promo if applying discount
+    await cartStore.calculateCart(appliedDiscount.value.id, selectedShippingCost.value, selectedLoyaltyPoints.value, form.value.id);
   } catch (error: any) {
     appliedDiscount.value = null;
     const msg = error.response?.data?.message || 'Gagal menerapkan kupon.';
@@ -119,7 +123,7 @@ const applyCoupon = async () => {
 const removeCoupon = async () => {
   appliedDiscount.value = null;
   couponCode.value = '';
-  await cartStore.calculateCart(undefined, selectedShippingCost.value);
+  await cartStore.calculateCart(undefined, selectedShippingCost.value, selectedLoyaltyPoints.value, form.value.id);
 };
 
 const handlePromoSelect = async (promoId: number) => {
@@ -130,7 +134,7 @@ const handlePromoSelect = async (promoId: number) => {
   const targetId = cartStore.appliedPromoId === promoId ? null : promoId;
   
   try {
-    await cartStore.setPromo(targetId, appliedDiscount.value?.id, selectedShippingCost.value);
+    await cartStore.setPromo(targetId, appliedDiscount.value?.id, selectedShippingCost.value, selectedLoyaltyPoints.value, form.value.id);
     if (targetId) {
       showToast('Promo berhasil diterapkan!', 'success');
     } else {
@@ -201,6 +205,12 @@ const selectAddress = async (addr: any) => {
 
 // Fetch Data Awal & Pre-fill
 onMounted(async () => {
+  // Track checkout started
+  trackCheckoutStarted(
+    cartStore.items.length,
+    cartStore.items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0)
+  );
+
   try {
     isProvLoading.value = true;
     isLoadingPayment.value = true;
@@ -224,7 +234,7 @@ onMounted(async () => {
       selectedPaymentMethodId.value = paymentMethods.value[0].id;
     }
 
-    await cartStore.calculateCart(appliedDiscount.value?.id, 0);
+    await cartStore.calculateCart(appliedDiscount.value?.id, 0, selectedLoyaltyPoints.value, form.value.id);
 
     const userResponse = await apiClient.get('/auth/me');
     const user = userResponse.data;
@@ -248,8 +258,12 @@ onMounted(async () => {
 
 watch(() => form.value.selected_service, async (newVal) => {
   if (newVal && selectedShippingCost.value > 0) {
-    await cartStore.calculateCart(appliedDiscount.value?.id, selectedShippingCost.value);
+    await cartStore.calculateCart(appliedDiscount.value?.id, selectedShippingCost.value, selectedLoyaltyPoints.value, form.value.id);
   }
+});
+
+watch(selectedLoyaltyPoints, async () => {
+  await cartStore.calculateCart(appliedDiscount.value?.id, selectedShippingCost.value, selectedLoyaltyPoints.value, form.value.id);
 });
 
 // Watchers
@@ -388,7 +402,7 @@ const calculateShipping = async () => {
     } finally {
       isCalculating.value = false;
       if (shippingResults.value.length > 0) {
-        await cartStore.calculateCart(appliedDiscount.value?.id, shippingResults.value[0].cost);
+        await cartStore.calculateCart(appliedDiscount.value?.id, shippingResults.value[0].cost, selectedLoyaltyPoints.value, form.value.id);
       }
     }
   }
@@ -404,6 +418,10 @@ const selectedShippingCost = computed(() => {
 });
 
 const grandTotal = computed(() => {
+  // CART-004: Gunakan total dari API sebagai sumber kebenaran jika tersedia
+  if (cartStore.calculatedData) {
+    return Math.max(0, cartStore.calculatedData.total_price);
+  }
   const subtotalAfterDiscount = Math.max(0, cartStore.cartTotal - discountAmount.value);
   return Math.max(0, subtotalAfterDiscount + selectedShippingCost.value - levelDiscountAmount.value - loyaltyDiscountAmount.value);
 });
@@ -450,28 +468,7 @@ const submitOrder = async () => {
          shippingAddressId = addressResponse.data.id;
     }
 
-    // Build items list — map frames first, then find their attached lenses
-    const frameItems = cartStore.items.filter((item: any) => !item.parent_item_id);
-
-    const itemsPayload = frameItems.flatMap((frame: any, frameIndex: number) => {
-      const lens = cartStore.items.find((i: any) => i.parent_item_id === frame.cart_id);
-      const frameEntry = {
-        product_id: frame.id,
-        quantity: frame.quantity || 1,
-        variant: frame.variant || null,
-        prescription: frame.prescription || null,
-      };
-      if (!lens) return [frameEntry];
-
-      const lensEntry = {
-        product_id: lens.id,
-        quantity: lens.quantity || 1,
-        variant: lens.variant || null,
-        prescription: null,
-        linked_item_index: frameIndex, // tells backend this is a child lens
-      };
-      return [frameEntry, lensEntry];
-    });
+    const itemsPayload = cartStore.buildCheckoutItemsPayload();
 
     const payload = {
       shipping_address_id: shippingAddressId,
@@ -482,7 +479,7 @@ const submitOrder = async () => {
       bank_id: needsBankSelection.value ? selectedBankId.value : null,
       discount_id: appliedDiscount.value?.id || null,
       promo_id: cartStore.appliedPromoId || null,
-      loyalty_points_used: loyaltyPointsToUse.value > 0 ? Math.min(loyaltyPointsToUse.value, maxLoyaltyPoints.value) : 0,
+      loyalty_points_used: selectedLoyaltyPoints.value,
       items: itemsPayload,
       notes: ''
     };
@@ -506,10 +503,12 @@ const submitOrder = async () => {
       const msg = Array.isArray(firstError) ? String(firstError[0]) : 'Data tidak valid.';
       checkoutError.value = msg;
       showToast(msg, 'error');
+      trackCheckoutFailed('validation_error', msg);
     } else {
       const msg = error.response?.data?.message || 'Terjadi kesalahan saat membuat pesanan.';
       checkoutError.value = msg;
       showToast(msg, 'error');
+      trackCheckoutFailed('server_error', msg);
     }
   } finally {
     isSubmitting.value = false;
@@ -808,6 +807,33 @@ const submitOrder = async () => {
         <div class="w-full lg:w-2/5 xl:w-1/3">
           <div class="sticky top-28 bg-white p-8 rounded-none shadow-lg border border-stone-100">
             <h2 class="text-xl font-bold text-stone-900 mb-8" style="font-family: 'Outfit', sans-serif;">Ringkasan Pesanan</h2>
+
+            <div class="space-y-4 mb-8">
+              <div
+                v-for="item in cartStore.items"
+                :key="item.id + '-' + (item.variant?.color || '') + '-' + (item.lens_option_id || '')"
+                class="flex gap-3 border-b border-stone-100 pb-4 last:border-b-0 last:pb-0"
+              >
+                <div class="w-16 h-16 border border-stone-100 bg-stone-50 flex items-center justify-center shrink-0">
+                  <img :src="resolveImageUrl(item.image_url || item.images?.[0], item.name)" :alt="item.name" class="w-full h-full object-contain p-1" />
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <h3 class="text-sm font-black text-stone-900 line-clamp-2">{{ item.name }}</h3>
+                      <p class="text-xs text-stone-500 mt-1">Qty {{ item.quantity }}</p>
+                    </div>
+                    <p class="text-sm font-black text-stone-900 whitespace-nowrap">Rp {{ (item.price * item.quantity).toLocaleString('id-ID') }}</p>
+                  </div>
+                  <div v-if="item.configuration_snapshot" class="mt-3 p-3 text-xs space-y-1" style="background: rgba(193,154,81,0.08); color: #5a5248;">
+                    <p v-if="item.configuration_snapshot.lens_option"><b>Lensa:</b> {{ item.configuration_snapshot.lens_option.name }} (+Rp {{ Number(item.configuration_snapshot.lens_option.base_price || 0).toLocaleString('id-ID') }})</p>
+                    <p v-if="item.configuration_snapshot.lens_coating"><b>Coating:</b> {{ item.configuration_snapshot.lens_coating.name }} (+Rp {{ Number(item.configuration_snapshot.lens_coating.price || 0).toLocaleString('id-ID') }})</p>
+                    <p v-if="item.configuration_snapshot.prescription_profile_id"><b>Resep:</b> Profil #{{ item.configuration_snapshot.prescription_profile_id }}</p>
+                    <p v-else-if="item.configuration_snapshot.prescription"><b>Resep:</b> Input manual</p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <div class="flex flex-col gap-4 text-sm mb-8">
                             <div class="flex justify-between text-stone-500">

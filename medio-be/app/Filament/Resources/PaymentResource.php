@@ -130,6 +130,15 @@ class PaymentResource extends Resource
                     ->label('Dibayar Pada')
                     ->dateTime('d M Y, H:i')
                     ->placeholder('Belum dibayar'),
+                Tables\Columns\TextColumn::make('provider')
+                    ->label('Provider')
+                    ->badge()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'xendit' => 'info',
+                        'manual' => 'warning',
+                        default  => 'gray',
+                    })
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime('d M Y, H:i')
@@ -147,18 +156,56 @@ class PaymentResource extends Resource
                         'refund'    => '↩️ Refund',
                     ])
                     ->multiple(),
-                Tables\Filters\Filter::make('unpaid_orders')
-                    ->label('Menunggu Pembayaran')
-                    ->query(fn ($query) => $query->where('status', 'pending')),
+                Tables\Filters\Filter::make('xendit_pending')
+                    ->label('Xendit Menunggu')
+                    ->query(fn ($query) => $query->where('provider', 'xendit')->where('status', 'pending')),
+                Tables\Filters\Filter::make('manual_proof_pending')
+                    ->label('Bukti Transfer Belum Diverifikasi')
+                    ->query(fn ($query) => $query->whereHas('order', fn ($q) =>
+                        $q->whereNotNull('payment_proof_image')->where('is_payment_verified', false)
+                    )),
+                Tables\Filters\Filter::make('failed_expired')
+                    ->label('Gagal / Expired')
+                    ->query(fn ($query) => $query->whereIn('status', ['failed', 'expired'])),
                 Tables\Filters\Filter::make('today')
                     ->label('Bayar Hari Ini')
                     ->query(fn ($query) => $query->whereDate('paid_at', today())),
+                Tables\Filters\Filter::make('this_month')
+                    ->label('Bulan Ini')
+                    ->query(fn ($query) => $query->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)),
             ])
             ->actions([
                 \Filament\Actions\ViewAction::make(),
                 \Filament\Actions\EditAction::make(),
             ])
-            ->bulkActions([]);
+            ->bulkActions([
+                \Filament\Actions\BulkActionGroup::make([
+                    \Filament\Actions\BulkAction::make('export_reconciliation')
+                        ->label('Export Rekonsiliasi CSV')
+                        ->icon('heroicon-o-arrow-down-tray')
+                        ->color('success')
+                        ->action(function ($records) {
+                            $csv = "order_number,customer,payment_method,provider,amount,status,paid_at\n";
+                            foreach ($records as $payment) {
+                                $csv .= implode(',', [
+                                    $payment->order?->order_number ?? '-',
+                                    '"' . ($payment->order?->user?->name ?? '-') . '"',
+                                    $payment->payment_method ?? '-',
+                                    $payment->provider ?? '-',
+                                    $payment->gross_amount,
+                                    $payment->status,
+                                    $payment->paid_at?->format('Y-m-d H:i:s') ?? '-',
+                                ]) . "\n";
+                            }
+
+                            return response()->streamDownload(
+                                fn () => print($csv),
+                                'rekonsiliasi-' . now()->format('Y-m-d') . '.csv',
+                                ['Content-Type' => 'text/csv']
+                            );
+                        }),
+                ]),
+            ]);
     }
 
     public static function getPages(): array

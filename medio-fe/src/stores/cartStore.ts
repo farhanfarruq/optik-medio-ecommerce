@@ -117,6 +117,36 @@ export const useCartStore = defineStore('cart', () => {
     calculatedData.value = null;
   }
 
+  function buildCheckoutItemsPayload() {
+    const frameItems = items.value.filter((item: any) => !item.parent_item_id);
+
+    return frameItems.flatMap((frame: any, frameIndex: number) => {
+      const lens = items.value.find((item: any) => item.parent_item_id === frame.cart_id);
+      const frameEntry = {
+        product_id: frame.id,
+        quantity: frame.quantity || 1,
+        variant: frame.variant || null,
+        prescription: frame.prescription || null,
+        lens_option_id: frame.lens_option_id || null,
+        lens_coating_id: frame.lens_coating_id || null,
+        prescription_profile_id: frame.prescription_profile_id || null,
+      };
+
+      if (!lens) return [frameEntry];
+
+      return [
+        frameEntry,
+        {
+          product_id: lens.id,
+          quantity: lens.quantity || 1,
+          variant: lens.variant || null,
+          prescription: lens.prescription || null,
+          linked_item_index: frameIndex,
+        },
+      ];
+    });
+  }
+
   async function fetchPromos() {
     try {
       const response = await apiClient.get('/promos');
@@ -128,7 +158,7 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
-  async function calculateCart(discountId?: number, shippingCost?: number) {
+  async function calculateCart(discountId?: number, shippingCost?: number, loyaltyPointsUsed = 0, shippingAddressId?: number | null) {
     if (items.value.length === 0) {
       calculatedData.value = null;
       return;
@@ -136,19 +166,15 @@ export const useCartStore = defineStore('cart', () => {
     
     isCalculating.value = true;
     try {
-      const payloadItems = items.value.map(item => ({
-        product_id: item.id,
-        quantity: item.quantity,
-        variant: item.variant || null
-      }));
-
       const payload: any = {
-        items: payloadItems,
+        items: buildCheckoutItemsPayload(),
         promo_id: appliedPromoId.value
       };
 
       if (discountId) payload.discount_id = discountId;
       if (shippingCost !== undefined) payload.shipping_cost = shippingCost;
+      if (loyaltyPointsUsed > 0) payload.loyalty_points_used = loyaltyPointsUsed;
+      if (shippingAddressId) payload.shipping_address_id = shippingAddressId;
 
       const response = await apiClient.post('/orders/calculate', payload);
       calculatedData.value = response.data;
@@ -167,13 +193,13 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
-  async function setPromo(promoId: number | null, discountId?: number, shippingCost?: number) {
+  async function setPromo(promoId: number | null, discountId?: number, shippingCost?: number, loyaltyPointsUsed = 0, shippingAddressId?: number | null) {
     const previousPromoId = appliedPromoId.value;
     appliedPromoId.value = promoId;
     isPromoExplicitlyCleared.value = (promoId === null);
     
     try {
-      await calculateCart(discountId, shippingCost);
+      await calculateCart(discountId, shippingCost, loyaltyPointsUsed, shippingAddressId);
     } catch (err) {
       appliedPromoId.value = previousPromoId;
       throw err;
@@ -198,6 +224,7 @@ export const useCartStore = defineStore('cart', () => {
     updateQuantity, 
     removeFromCart, 
     clearCart, 
+    buildCheckoutItemsPayload,
     fetchPromos, 
     calculateCart, 
     setPromo,

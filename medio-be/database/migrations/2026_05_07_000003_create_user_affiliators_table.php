@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('user_affiliators', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete()->unique();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('affiliate_code')->unique();
             $table->enum('status', ['pending', 'approved', 'rejected', 'suspended'])->default('pending');
             $table->decimal('commission_rate_percentage', 5, 2)->default(0);
@@ -21,6 +21,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamps();
 
+            $table->unique('user_id');
             $table->index(['status', 'created_at']);
         });
     }

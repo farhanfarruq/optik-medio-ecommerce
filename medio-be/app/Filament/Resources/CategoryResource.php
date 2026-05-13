@@ -39,6 +39,27 @@ class CategoryResource extends Resource
                     ->columnSpanFull(),
                 Forms\Components\Toggle::make('is_active')
                     ->required(),
+
+                \Filament\Schemas\Components\Section::make('SEO & Metadata')
+                    ->collapsed()
+                    ->schema([
+                        Forms\Components\TextInput::make('meta_title')
+                            ->label('Meta Title')
+                            ->maxLength(70)
+                            ->helperText('Maks 70 karakter.')
+                            ->columnSpanFull(),
+                        Forms\Components\Textarea::make('meta_description')
+                            ->label('Meta Description')
+                            ->maxLength(160)
+                            ->rows(2)
+                            ->helperText('Maks 160 karakter.')
+                            ->columnSpanFull(),
+                        Forms\Components\TextInput::make('og_image')
+                            ->label('OG Image URL')
+                            ->url()
+                            ->maxLength(500)
+                            ->columnSpanFull(),
+                    ]),
             ]);
     }
 

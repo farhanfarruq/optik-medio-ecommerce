@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Models\Category;
 use App\Models\Product;
 use App\Repositories\Interfaces\ProductRepositoryInterface;
 
@@ -38,6 +39,37 @@ class ProductRepository implements ProductRepositoryInterface
             $query->where('brand', $filters['brand']);
         }
 
+        foreach (['gender', 'frame_shape', 'frame_material', 'frame_color', 'face_size_fit'] as $attribute) {
+            if (!empty($filters[$attribute])) {
+                $query->where($attribute, $filters[$attribute]);
+            }
+        }
+
+        if (!empty($filters['prescription_supported']) && $filters['prescription_supported'] === 'true') {
+            $query->where('is_prescription_required', true);
+        }
+
+        if (!empty($filters['featured']) && $filters['featured'] === 'true') {
+            $query->where('is_featured', true);
+        }
+
+        if (!empty($filters['exclude_not_for_sale']) && $filters['exclude_not_for_sale'] === 'true') {
+            $query->where('is_not_for_sale', false);
+        }
+
+        if (!empty($filters['only_not_for_sale']) && $filters['only_not_for_sale'] === 'true') {
+            $query->where('is_not_for_sale', true);
+        }
+
+        if (!empty($filters['campaign_tag'])) {
+            $campaignTag = str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], trim((string) $filters['campaign_tag']));
+            $query->where('campaign_tags', 'like', '%' . $campaignTag . '%');
+        }
+
+        if (!empty($filters['in_stock_only']) && $filters['in_stock_only'] === 'true') {
+            $query->where('stock', '>', 0);
+        }
+
         if (!empty($filters['min_price'])) {
             $query->where('price', '>=', $filters['min_price']);
         }
@@ -51,7 +83,9 @@ class ProductRepository implements ProductRepositoryInterface
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', '%' . $search . '%')
                   ->orWhere('brand', 'like', '%' . $search . '%')
-                  ->orWhere('sku', 'like', '%' . $search . '%');
+                  ->orWhere('sku', 'like', '%' . $search . '%')
+                  ->orWhere('tags', 'like', '%' . $search . '%')
+                  ->orWhere('campaign_tags', 'like', '%' . $search . '%');
             });
         }
 
@@ -95,6 +129,29 @@ class ProductRepository implements ProductRepositoryInterface
                 }
             });
         }
+
+        if (!empty($filters['prioritize_glasses']) && $filters['prioritize_glasses'] === 'true') {
+            $glassesCategoryIds = Category::whereIn('slug', [
+                'kacamata-frame',
+                'frame-kacamata',
+                'kacamata-hitam',
+                'kacamata-baca',
+            ])->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+            if (!empty($glassesCategoryIds)) {
+                $query->orderByRaw('CASE WHEN category_id IN (' . implode(',', $glassesCategoryIds) . ') THEN 0 ELSE 1 END');
+            }
+        }
+
+        match ($filters['sort'] ?? 'latest') {
+            'price_low' => $query->orderBy('price'),
+            'price_high' => $query->orderByDesc('price'),
+            'featured' => $query->orderByDesc('is_featured')->orderByDesc('recommendation_priority')->orderByDesc('purchase_count'),
+            'best_seller' => $query->orderByDesc('is_best_seller')->orderByDesc('recommendation_priority')->orderByDesc('purchase_count'),
+            'rating' => $query->orderByDesc('avg_rating'),
+            'popular' => $query->orderByDesc('recommendation_priority')->orderByDesc('purchase_count'),
+            default => $query->latest(),
+        };
 
         $perPage = min(max((int) ($filters['per_page'] ?? 24), 1), 48);
 

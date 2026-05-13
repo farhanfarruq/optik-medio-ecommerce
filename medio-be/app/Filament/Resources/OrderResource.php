@@ -27,13 +27,18 @@ class OrderResource extends Resource
             ->components([
                 Forms\Components\Select::make('status')
                     ->options([
-                        'unpaid' => 'Unpaid',
-                        'paid' => 'Paid',
-                        'processing' => 'Processing',
-                        'shipped' => 'Shipped',
-                        'delivered' => 'Delivered',
-                        'cancelled' => 'Cancelled',
-                        'refunded' => 'Refunded',
+                        'unpaid'                      => 'Unpaid',
+                        'paid'                        => 'Paid',
+                        'processing'                  => 'Processing',
+                        'waiting_prescription_review' => 'Menunggu Review Resep',
+                        'prescription_verified'       => 'Resep Diverifikasi',
+                        'lens_processing'             => 'Proses Lensa',
+                        'ready_to_ship'               => 'Siap Kirim',
+                        'shipped'                     => 'Shipped',
+                        'delivered'                   => 'Delivered',
+                        'completed'                   => 'Completed',
+                        'cancelled'                   => 'Cancelled',
+                        'refunded'                    => 'Refunded',
                     ])
                     ->required(),
                 Forms\Components\Select::make('bank_id')
@@ -90,11 +95,40 @@ class OrderResource extends Resource
                             ->label('Produk yang Dibeli')
                             ->content(function (?Order $record) {
                                 if (!$record) return '-';
-                                $itemsHtml = '<ul class="list-disc ml-5 space-y-1">';
+                                $record->loadMissing('items.lensOption', 'items.lensCoating', 'items.prescriptionProfile');
+
+                                $itemsHtml = '<div style="display: flex; flex-direction: column; gap: 12px;">';
                                 foreach ($record->items as $item) {
-                                    $itemsHtml .= "<li><b>{$item->quantity}x</b> {$item->product_name} - Rp " . number_format($item->price, 0, ',', '.') . "</li>";
+                                    $snapshot = $item->configuration_snapshot ?? [];
+                                    $lensOption = $snapshot['lens_option']['name'] ?? $item->lensOption?->name;
+                                    $lensPrice = $snapshot['lens_option']['base_price'] ?? $item->lens_price ?? 0;
+                                    $coating = $snapshot['lens_coating']['name'] ?? $item->lensCoating?->name;
+                                    $coatingPrice = $snapshot['lens_coating']['price'] ?? $item->coating_price ?? 0;
+                                    $prescriptionLabel = $item->prescriptionProfile
+                                        ? 'Profil #' . $item->prescriptionProfile->id . ' - ' . e($item->prescriptionProfile->label)
+                                        : (!empty($snapshot['prescription']) ? 'Input manual' : null);
+
+                                    $itemsHtml .= "<div style='border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; background: #ffffff;'>";
+                                    $itemsHtml .= "<div style='font-weight: 700; color: #111827;'>" . e($item->quantity) . "x " . e($item->product_name) . "</div>";
+                                    $itemsHtml .= "<div style='font-size: 12px; color: #6b7280;'>Harga item: Rp " . number_format((float) $item->product_price, 0, ',', '.') . " | Subtotal: Rp " . number_format((float) $item->subtotal, 0, ',', '.') . "</div>";
+
+                                    if ($lensOption || $coating || $prescriptionLabel) {
+                                        $itemsHtml .= "<div style='margin-top: 8px; padding: 8px; background: #f9fafb; border-radius: 6px; font-size: 12px; color: #374151;'>";
+                                        if ($lensOption) {
+                                            $itemsHtml .= "<div><b>Lensa:</b> " . e($lensOption) . " (+Rp " . number_format((float) $lensPrice, 0, ',', '.') . ")</div>";
+                                        }
+                                        if ($coating) {
+                                            $itemsHtml .= "<div><b>Coating:</b> " . e($coating) . " (+Rp " . number_format((float) $coatingPrice, 0, ',', '.') . ")</div>";
+                                        }
+                                        if ($prescriptionLabel) {
+                                            $itemsHtml .= "<div><b>Resep:</b> {$prescriptionLabel}</div>";
+                                        }
+                                        $itemsHtml .= '</div>';
+                                    }
+
+                                    $itemsHtml .= '</div>';
                                 }
-                                $itemsHtml .= '</ul>';
+                                $itemsHtml .= '</div>';
                                 return new \Illuminate\Support\HtmlString($itemsHtml);
                             }),
                     ])
@@ -278,6 +312,71 @@ class OrderResource extends Resource
 
                         $record->update(['status' => 'cancelled']);
                     }),
+                \Filament\Actions\Action::make('send_notification')
+                    ->label('Kirim Notifikasi')
+                    ->icon('heroicon-o-bell')
+                    ->color('gray')
+                    ->form([
+                        \Filament\Forms\Components\Select::make('notification_type')
+                            ->label('Jenis Notifikasi')
+                            ->options([
+                                'order_update'   => 'Update Status Pesanan',
+                                'payment_remind' => 'Pengingat Pembayaran',
+                                'custom'         => 'Pesan Kustom',
+                            ])
+                            ->required()
+                            ->live(),
+                        \Filament\Forms\Components\Textarea::make('custom_message')
+                            ->label('Pesan Kustom')
+                            ->rows(3)
+                            ->placeholder('Tulis pesan untuk pelanggan...')
+                            ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get) => $get('notification_type') === 'custom')
+                            ->required(fn (\Filament\Schemas\Components\Utilities\Get $get): bool => $get('notification_type') === 'custom')
+                            ->dehydrated(fn (\Filament\Schemas\Components\Utilities\Get $get): bool => $get('notification_type') === 'custom'),
+                    ])
+                    ->action(function (Order $record, array $data): void {
+                        try {
+                            $type    = $data['notification_type'];
+                            $message = trim((string) ($data['custom_message'] ?? ''));
+                            $sent    = false;
+
+                            if ($type === 'order_update') {
+                                $eventType = match ($record->status) {
+                                    'processing', 'cancelled', 'delivered' => $record->status,
+                                    'paid' => $record->is_payment_verified ? 'payment_verified' : 'paid',
+                                    default => $record->status,
+                                };
+
+                                \Illuminate\Support\Facades\Mail::to($record->user->email)
+                                    ->send(new \App\Mail\OrderStatusMail($record, $eventType));
+                                $sent = true;
+                            } elseif ($type === 'payment_remind' && $record->status === 'unpaid') {
+                                \Illuminate\Support\Facades\Mail::raw(
+                                    "Halo {$record->user->name},\n\nPesanan #{$record->order_number} Anda belum dibayar. Segera selesaikan pembayaran sebelum pesanan dibatalkan.\n\nTerima kasih,\nOptik Medio",
+                                    fn ($m) => $m->to($record->user->email)->subject("Pengingat Pembayaran #{$record->order_number}")
+                                );
+                                $sent = true;
+                            } elseif ($type === 'custom' && $message !== '') {
+                                \Illuminate\Support\Facades\Mail::to($record->user->email)
+                                    ->send(new \App\Mail\OrderCustomNotificationMail($record, $message));
+                                $sent = true;
+                            }
+
+                            if (!$sent) {
+                                throw new \RuntimeException('Jenis notifikasi tidak valid untuk status pesanan ini.');
+                            }
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Notifikasi berhasil dikirim ke ' . $record->user->email)
+                                ->success()
+                                ->send();
+                        } catch (\Exception $e) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Gagal mengirim notifikasi: ' . $e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
                 \Filament\Actions\ViewAction::make(),
                 \Filament\Actions\EditAction::make(),
             ])
@@ -289,6 +388,64 @@ class OrderResource extends Resource
                         ->color('primary')
                         ->requiresConfirmation()
                         ->action(fn ($records) => $records->each->update(['status' => 'processing'])),
+                    \Filament\Actions\BulkAction::make('bulk_update_tracking')
+                        ->label('Update Resi (Bulk)')
+                        ->icon('heroicon-o-truck')
+                        ->color('info')
+                        ->form([
+                            \Filament\Forms\Components\Textarea::make('tracking_data')
+                                ->label('Data Resi (satu baris per order)')
+                                ->helperText('Format: ORDER_NUMBER|TRACKING_NUMBER — satu baris per pesanan')
+                                ->rows(6)
+                                ->required(),
+                        ])
+                        ->action(function ($records, array $data): void {
+                            $lines = array_filter(array_map('trim', explode("\n", $data['tracking_data'])));
+                            $map   = [];
+                            foreach ($lines as $line) {
+                                [$orderNum, $tracking] = array_pad(explode('|', $line, 2), 2, '');
+                                if ($orderNum && $tracking) {
+                                    $map[trim($orderNum)] = trim($tracking);
+                                }
+                            }
+                            foreach ($records as $record) {
+                                if (isset($map[$record->order_number])) {
+                                    $record->update([
+                                        'tracking_number' => $map[$record->order_number],
+                                        'status'          => 'shipped',
+                                        'shipped_at'      => now(),
+                                    ]);
+                                }
+                            }
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                    \Filament\Actions\BulkAction::make('mark_shipped')
+                        ->label('Tandai: Dikirim')
+                        ->icon('heroicon-o-truck')
+                        ->color('info')
+                        ->requiresConfirmation()
+                        ->action(fn ($records) => $records->each->update([
+                            'status'     => 'shipped',
+                            'shipped_at' => now(),
+                        ])),
+                    \Filament\Actions\BulkAction::make('mark_cancelled')
+                        ->label('Batalkan Pesanan')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(function ($records): void {
+                            foreach ($records as $record) {
+                                if (in_array($record->status, ['unpaid', 'paid', 'processing'], true)) {
+                                    foreach ($record->items as $item) {
+                                        if (! $item->parent_item_id) {
+                                            \App\Models\Product::where('id', $item->product_id)
+                                                ->increment('stock', $item->quantity);
+                                        }
+                                    }
+                                    $record->update(['status' => 'cancelled']);
+                                }
+                            }
+                        }),
                     \Filament\Actions\DeleteBulkAction::make(),
                 ]),
             ]);

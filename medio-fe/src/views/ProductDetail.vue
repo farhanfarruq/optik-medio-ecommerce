@@ -9,6 +9,8 @@ import type { Product } from '../types';
 
 import { resolveImageUrl } from '../core/utils/image';
 import { useToast } from '../composables/useToast';
+import { useSeoMeta } from '../composables/useSeoMeta';
+import { useAnalytics } from '../composables/useAnalytics';
 
 const { showToast } = useToast();
 
@@ -16,11 +18,15 @@ const route = useRoute();
 const router = useRouter();
 const cartStore = useCartStore();
 const wishlistStore = useWishlistStore();
+const { setSeo, setJsonLd, buildProductJsonLd } = useSeoMeta();
+const { trackProductViewed } = useAnalytics();
 
 const product = ref<Product | null>(null);
 const isLoading = ref(true);
 const lenses = ref<Product[]>([]);
 const isLensesLoading = ref(false);
+const similarFrames = ref<Product[]>([]);
+const compatibleLenses = ref<Product[]>([]);
 const productReviews = ref<Review[]>([]);
 const reviewSummary = ref({ avg_rating: 0, total_reviews: 0 });
 
@@ -46,6 +52,33 @@ onMounted(async () => {
   try {
     const data = await productRepository.getProductBySlug(slug);
     product.value = data;
+
+    // Inject SEO meta + JSON-LD
+    const resolvedImages = (data as any).resolved_images || [];
+    const firstImage = resolvedImages[0]?.url || resolvedImages[0] || null;
+    setSeo({
+      title: (data as any).meta_title || data.name,
+      description: (data as any).meta_description || (data.description ? data.description.substring(0, 155) : undefined),
+      ogType: 'product',
+      ogImage: (data as any).og_image || firstImage || undefined,
+      ogUrl: window.location.href,
+    });
+    setJsonLd(buildProductJsonLd({
+      name: data.name,
+      description: data.description,
+      slug: data.slug,
+      price: data.price,
+      stock: data.stock,
+      brand: (data as any).brand,
+      sku: (data as any).sku,
+      gtin: (data as any).gtin,
+      images: resolvedImages.map((img: any) => img?.url || img),
+      rating: reviewSummary.value.avg_rating || undefined,
+      reviewCount: reviewSummary.value.total_reviews || undefined,
+    }));
+
+    // Track product view
+    trackProductViewed(data.id, data.slug, data.name);
     try {
       const reviews = await reviewRepository.getProductReviews(slug);
       productReviews.value = reviews.reviews;
@@ -68,6 +101,7 @@ onMounted(async () => {
     if (data.is_prescription_required) {
       fetchLenses();
     }
+    fetchRecommendations(slug);
   } catch (error) {
     console.error('Failed to fetch product', error);
     router.push('/products');
@@ -85,6 +119,16 @@ const fetchLenses = async () => {
     console.error('Failed to fetch lenses', error);
   } finally {
     isLensesLoading.value = false;
+  }
+};
+
+const fetchRecommendations = async (slug: string) => {
+  try {
+    const recommendations = await productRepository.getRecommendations(slug);
+    similarFrames.value = recommendations.similar_frames || [];
+    compatibleLenses.value = recommendations.compatible_lenses || [];
+  } catch (error) {
+    console.warn('Failed to fetch product recommendations', error);
   }
 };
 
@@ -163,6 +207,53 @@ const formatPromoDescription = (desc: string) => {
   // Match patterns like "15.00%" and turn them into "15%"
   return desc.replace(/(\d+)\.00%/g, '$1%');
 };
+
+const formatProductLabel = (value: string | number | null | undefined) => {
+  if (value === null || value === undefined || value === '') return '';
+
+  const stringValue = String(value);
+  const labels: Record<string, string> = {
+    men: 'Pria',
+    women: 'Wanita',
+    unisex: 'Unisex',
+    kids: 'Anak',
+    small: 'Small',
+    medium: 'Medium',
+    large: 'Large',
+  };
+
+  return labels[stringValue] || stringValue
+    .split(/[-_]/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
+const frameSizeRows = computed(() => {
+  const p = product.value;
+  if (!p) return [];
+
+  return [
+    { label: 'Lebar Lensa', value: p.lens_width },
+    { label: 'Bridge', value: p.bridge_width },
+    { label: 'Panjang Gagang', value: p.temple_length },
+    { label: 'Lebar Frame', value: p.frame_width },
+  ].filter(row => row.value !== null && row.value !== undefined);
+});
+
+const frameProfileRows = computed(() => {
+  const p = product.value;
+  if (!p) return [];
+
+  return [
+    { label: 'Bentuk', value: p.frame_shape },
+    { label: 'Material', value: p.frame_material },
+    { label: 'Warna', value: p.frame_color },
+    { label: 'Gender', value: p.gender },
+    { label: 'Fit Wajah', value: p.face_size_fit },
+  ].filter(row => row.value !== null && row.value !== undefined && row.value !== '');
+});
+
+const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProfileRows.value.length > 0);
 </script>
 
 <template>
@@ -208,9 +299,7 @@ const formatPromoDescription = (desc: string) => {
       </div>
     </div>
 
-    <!-- ╔══════════════════════════╗ -->
-    <!-- ║     PRODUCT CONTENT      ║ -->
-    <!-- ╚══════════════════════════╝ -->
+
     <div class="max-w-[1440px] mx-auto px-6 md:px-12 py-12 md:py-16" style="padding-top: 140px;">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20">
 
@@ -374,6 +463,45 @@ const formatPromoDescription = (desc: string) => {
             {{ product.description }}
           </p>
 
+          <!-- Frame Size Guide -->
+          <div
+            v-if="hasFrameGuide"
+            class="border rounded-none overflow-hidden"
+            style="background: rgba(245,242,238,0.65); border-color: rgba(193,154,81,0.18);"
+          >
+            <div class="px-4 py-3 border-b flex items-center justify-between gap-3" style="border-color: rgba(193,154,81,0.14);">
+              <div>
+                <p class="text-xs font-black uppercase tracking-[0.18em]" style="color: #7a6230;">Panduan Ukuran Frame</p>
+                <p class="text-[11px] mt-1" style="color: #8a7a60;">Gunakan data ini untuk membandingkan kenyamanan fit.</p>
+              </div>
+              <span class="material-symbols-outlined text-xl" style="color: #c19a51;">straighten</span>
+            </div>
+
+            <div v-if="frameSizeRows.length > 0" class="grid grid-cols-2 sm:grid-cols-4 border-b" style="border-color: rgba(193,154,81,0.14);">
+              <div
+                v-for="row in frameSizeRows"
+                :key="row.label"
+                class="px-4 py-3 border-r last:border-r-0"
+                style="border-color: rgba(193,154,81,0.14);"
+              >
+                <p class="text-[10px] font-black uppercase tracking-widest" style="color: #8a7a60;">{{ row.label }}</p>
+                <p class="text-lg font-black mt-1" style="color: #1a1209;">{{ row.value }} <span class="text-xs font-bold text-stone-400">mm</span></p>
+              </div>
+            </div>
+
+            <div v-if="frameProfileRows.length > 0" class="grid grid-cols-2 sm:grid-cols-3 gap-px" style="background: rgba(193,154,81,0.12);">
+              <div
+                v-for="row in frameProfileRows"
+                :key="row.label"
+                class="px-4 py-3"
+                style="background: white;"
+              >
+                <p class="text-[10px] font-black uppercase tracking-widest" style="color: #8a7a60;">{{ row.label }}</p>
+                <p class="text-sm font-bold mt-1" style="color: #1a1209;">{{ formatProductLabel(row.value) }}</p>
+              </div>
+            </div>
+          </div>
+
           <!-- Prescription Notice -->
           <div
             v-if="product.is_prescription_required && !product.is_not_for_sale"
@@ -529,6 +657,59 @@ const formatPromoDescription = (desc: string) => {
         </div>
       </div>
     </div>
+
+    <section v-if="similarFrames.length > 0 || compatibleLenses.length > 0" class="max-w-[1440px] mx-auto px-6 md:px-12 pb-16">
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
+        <div>
+          <p class="text-xs font-black uppercase tracking-[0.25em] mb-2" style="color: #c19a51;">Rekomendasi Optik</p>
+          <h2 class="text-3xl font-black" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Pilihan yang Cocok</h2>
+        </div>
+        <router-link to="/products" class="text-xs font-black uppercase tracking-widest text-amber-700 hover:text-amber-800 transition-all flex items-center gap-2 group">
+          Lihat Koleksi
+          <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+        </router-link>
+      </div>
+
+      <div v-if="similarFrames.length > 0" class="mb-10">
+        <h3 class="text-sm font-black uppercase tracking-[0.18em] mb-4" style="color: #7a6230;">Frame Serupa</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <article
+            v-for="item in similarFrames.slice(0, 4)"
+            :key="item.id"
+            @click="router.push(`/products/${item.slug}`)"
+            class="cursor-pointer border bg-white transition-all hover:-translate-y-1 hover:shadow-lg"
+            style="border-color: rgba(193,154,81,0.14);"
+          >
+            <div class="aspect-[4/5] p-4 flex items-center justify-center" style="background: linear-gradient(145deg, #f5f2ee, #ede7dc);">
+              <img :src="resolveImageUrl(item)" :alt="item.name" class="w-full h-full object-contain mix-blend-multiply" />
+            </div>
+            <div class="p-4">
+              <p class="text-[10px] font-black uppercase tracking-widest mb-1" style="color: #8a7a60;">{{ item.name }}</p>
+              <h4 class="font-bold text-sm line-clamp-2" style="color: #1a1209;">{{ item.brand || 'Optik Medio' }}</h4>
+              <p class="text-sm font-black mt-2" style="color: #7a6230;">Rp {{ item.price.toLocaleString('id-ID') }}</p>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <div v-if="compatibleLenses.length > 0">
+        <h3 class="text-sm font-black uppercase tracking-[0.18em] mb-4" style="color: #7a6230;">Lensa Kompatibel</h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <article
+            v-for="item in compatibleLenses.slice(0, 4)"
+            :key="item.id"
+            @click="router.push(`/products/${item.slug}`)"
+            class="cursor-pointer border bg-white p-5 transition-all hover:-translate-y-1 hover:shadow-lg"
+            style="border-color: rgba(193,154,81,0.14);"
+          >
+            <span class="material-symbols-outlined text-2xl mb-3 block" style="color: #c19a51;">visibility</span>
+            <p class="text-[10px] font-black uppercase tracking-widest mb-1" style="color: #8a7a60;">{{ item.brand || 'Lensa' }}</p>
+            <h4 class="font-bold text-sm line-clamp-2" style="color: #1a1209;">{{ item.name }}</h4>
+            <p class="text-sm font-black mt-3" style="color: #7a6230;">Rp {{ item.price.toLocaleString('id-ID') }}</p>
+          </article>
+        </div>
+      </div>
+    </section>
 
     <section class="max-w-[1440px] mx-auto px-6 md:px-12 pb-16">
       <div class="border rounded-none p-8" style="background: white; border-color: rgba(193,154,81,0.15); box-shadow: 0 2px 12px rgba(0,0,0,0.04);">

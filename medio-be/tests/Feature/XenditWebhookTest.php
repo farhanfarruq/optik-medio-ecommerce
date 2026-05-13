@@ -22,6 +22,7 @@ class XenditWebhookTest extends TestCase
         ]);
 
         Schema::dropIfExists('payments');
+        Schema::dropIfExists('order_logs');
         Schema::dropIfExists('order_items');
         Schema::dropIfExists('orders');
         Schema::dropIfExists('shipping_addresses');
@@ -85,6 +86,19 @@ class XenditWebhookTest extends TestCase
             $table->timestamps();
         });
 
+        Schema::create('order_logs', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('order_id')->constrained()->onDelete('cascade');
+            $table->string('event_type');
+            $table->string('previous_status')->nullable();
+            $table->string('current_status')->nullable();
+            $table->string('title')->nullable();
+            $table->text('description')->nullable();
+            $table->json('metadata')->nullable();
+            $table->foreignId('acted_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+        });
+
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
@@ -99,11 +113,27 @@ class XenditWebhookTest extends TestCase
             $table->unsignedBigInteger('parent_item_id')->nullable();
             $table->timestamps();
         });
+
+        Schema::create('webhook_event_logs', function (Blueprint $table) {
+            $table->id();
+            $table->string('provider')->default('xendit');
+            $table->string('event_type')->nullable();
+            $table->string('idempotency_key')->unique();
+            $table->string('external_id')->nullable();
+            $table->string('status')->nullable();
+            $table->json('payload')->nullable();
+            $table->string('processing_status')->default('received');
+            $table->text('processing_note')->nullable();
+            $table->timestamp('processed_at')->nullable();
+            $table->timestamps();
+        });
     }
 
     protected function tearDown(): void
     {
+        Schema::dropIfExists('webhook_event_logs');
         Schema::dropIfExists('payments');
+        Schema::dropIfExists('order_logs');
         Schema::dropIfExists('order_items');
         Schema::dropIfExists('orders');
         Schema::dropIfExists('shipping_addresses');

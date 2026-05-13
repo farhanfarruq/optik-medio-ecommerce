@@ -60,11 +60,15 @@ class DatabaseSeeder extends Seeder
 
         $this->call(ArticleSeeder::class);
         $this->call(BankSeeder::class);
+        $this->call(BannerSeeder::class);
+        $this->call(ExpeditionSeeder::class);
+        $this->call(FaqSeeder::class);
+        $this->call(LevelMemberSeeder::class);
         $this->call(PaymentMethodSeeder::class);
+        $this->call(AdminShowcaseSeeder::class);
 
-        $this->command->info('✅ Seeder selesai: Settings, Discounts, Users, Articles, Banks, dan Payment Methods berhasil dibuat.');
+        $this->command->info('✅ Seeder selesai: data master, katalog demo, order workflow, inventori, appointment, warranty, referral, dan data admin showcase berhasil dibuat.');
         $this->command->info('');
-        $this->command->info('📦 Untuk import produk, jalankan:');
-        $this->command->info('   php artisan import:optik-products');
+        $this->command->info('📦 Admin demo terisi untuk pengujian halaman order kanban, inventori, stock opname, appointment, warranty, referral, dan dashboard.');
     }
 }

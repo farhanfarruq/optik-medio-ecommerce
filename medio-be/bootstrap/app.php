@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->statefulApi();
         $middleware->validateCsrfTokens(except: ['api/*']);
+        $middleware->append(\App\Http\Middleware\CorrelationId::class);
         // Tambahkan security headers ke semua response
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         $middleware->alias([

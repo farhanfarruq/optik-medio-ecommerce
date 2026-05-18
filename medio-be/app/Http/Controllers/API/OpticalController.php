@@ -25,6 +25,16 @@ class OpticalController extends Controller
         );
     }
 
+    public function lensOptions(): JsonResponse
+    {
+        return response()->json(
+            LensOption::where('is_active', true)
+                ->orderBy('type')
+                ->orderBy('name')
+                ->get()
+        );
+    }
+
     public function configure(Request $request): JsonResponse
     {
         $validated = $request->validate([

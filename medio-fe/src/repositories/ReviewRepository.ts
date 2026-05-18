@@ -6,6 +6,10 @@ export interface Review {
   comment: string | null;
   user_name: string;
   created_at: string;
+  user?: {
+    id?: number;
+    name?: string | null;
+  } | null;
 }
 
 export interface ReviewSummary {
@@ -25,10 +29,15 @@ class ReviewRepository {
           ? data
           : [];
 
+    const normalizedReviews = reviews.map((review: any) => ({
+      ...review,
+      user_name: review?.user_name || review?.user?.name || 'Pengguna',
+    }));
+
     return {
       avg_rating: Number(data?.avg_rating ?? data?.average_rating ?? 0),
-      total_reviews: Number(data?.total_reviews ?? data?.total ?? data?.meta?.total ?? reviews.length),
-      reviews,
+      total_reviews: Number(data?.total_reviews ?? data?.total ?? data?.meta?.total ?? normalizedReviews.length),
+      reviews: normalizedReviews,
     };
   }
 

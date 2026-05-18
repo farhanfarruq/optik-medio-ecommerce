@@ -47,7 +47,7 @@ class ProductCompatibilityResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('frameProduct.name')->label('Frame')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('lensOption.name')->label('Lens Option')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('lensOption.type')->label('Lens Type')->badge(),
+                Tables\Columns\TextColumn::make('lensOption.type')->label('Lens Type')->badge()->searchable(),
                 Tables\Columns\TextColumn::make('updated_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([])

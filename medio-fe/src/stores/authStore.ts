@@ -94,8 +94,10 @@ export const useAuthStore = defineStore('auth', () => {
         user.value = null;
         return null;
       }
-
-      throw error;
+      // Error lain (network, 500, dll) — set user null tapi jangan throw
+      // agar tidak menyebabkan logout loop di router.beforeEach
+      user.value = null;
+      return null;
     } finally {
       hasInitialized.value = true;
     }

@@ -21,54 +21,120 @@ class PrescriptionProfileResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Forms\Components\Select::make('user_id')
-                ->relationship('user', 'name')
-                ->required()
-                ->searchable()
-                ->preload(),
-            Forms\Components\TextInput::make('label')
-                ->required()
-                ->maxLength(255),
-            Forms\Components\Select::make('lens_type')
-                ->options([
-                    'single_vision' => 'Single Vision',
-                    'progressive' => 'Progressive',
-                    'reading' => 'Reading',
-                    'blue_light' => 'Blue Light',
-                    'photochromic' => 'Photochromic',
-                    'high_index' => 'High Index',
-                    'anti_radiation' => 'Anti Radiation',
+            \Filament\Schemas\Components\Section::make('Informasi Resep')
+                ->schema([
+                    Forms\Components\Select::make('user_id')
+                        ->label('Pelanggan')
+                        ->relationship('user', 'name')
+                        ->required()
+                        ->searchable()
+                        ->preload(),
+                    Forms\Components\TextInput::make('label')
+                        ->label('Nama Resep')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\Select::make('lens_type')
+                        ->label('Fungsi Lensa Dasar')
+                        ->helperText('Gunakan fungsi dasar lensa. Fitur seperti Blue Light, Photochromic, dan High Index dipilih saat konfigurasi produk.')
+                        ->options(self::lensTypeOptions())
+                        ->native(false),
+                    Forms\Components\Toggle::make('is_default')
+                        ->label('Jadikan Resep Utama'),
                 ])
-                ->native(false),
-            Forms\Components\TextInput::make('right_sphere')->numeric()->label('OD SPH'),
-            Forms\Components\TextInput::make('right_cylinder')->numeric()->label('OD CYL'),
-            Forms\Components\TextInput::make('right_axis')->numeric()->minValue(0)->maxValue(180)->label('OD Axis'),
-            Forms\Components\TextInput::make('right_add')->numeric()->label('OD ADD'),
-            Forms\Components\TextInput::make('left_sphere')->numeric()->label('OS SPH'),
-            Forms\Components\TextInput::make('left_cylinder')->numeric()->label('OS CYL'),
-            Forms\Components\TextInput::make('left_axis')->numeric()->minValue(0)->maxValue(180)->label('OS Axis'),
-            Forms\Components\TextInput::make('left_add')->numeric()->label('OS ADD'),
-            Forms\Components\TextInput::make('pd_single')->numeric()->label('PD Single'),
-            Forms\Components\TextInput::make('pd_right')->numeric()->label('PD Right'),
-            Forms\Components\TextInput::make('pd_left')->numeric()->label('PD Left'),
-            Forms\Components\FileUpload::make('attachment_path')
-                ->label('Attachment')
-                ->disk('public')
-                ->directory('prescriptions')
-                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
-                ->maxSize(4096)
-                ->columnSpanFull(),
-            Forms\Components\Textarea::make('notes')
-                ->maxLength(2000)
-                ->columnSpanFull(),
-            Forms\Components\Toggle::make('is_default'),
-            Forms\Components\Select::make('verified_by')
-                ->relationship('verifier', 'name')
-                ->searchable()
-                ->preload()
-                ->disabled(),
-            Forms\Components\DateTimePicker::make('verified_at')
-                ->disabled(),
+                ->columns(2),
+            \Filament\Schemas\Components\Section::make('Parameter OD / OS')
+                ->schema([
+                    Forms\Components\TextInput::make('right_sphere')->numeric()->step(0.25)->label('OD SPH'),
+                    Forms\Components\TextInput::make('right_cylinder')->numeric()->step(0.25)->label('OD CYL'),
+                    Forms\Components\TextInput::make('right_axis')
+                        ->numeric()
+                        ->minValue(1)
+                        ->maxValue(180)
+                        ->label('OD Axis')
+                        ->disabled(fn (callable $get) => (float) ($get('right_cylinder') ?? 0) === 0.0),
+                    Forms\Components\TextInput::make('right_add')
+                        ->numeric()
+                        ->step(0.25)
+                        ->minValue(0)
+                        ->maxValue(5)
+                        ->label('OD ADD')
+                        ->disabled(fn (callable $get) => $get('lens_type') !== 'progressive'),
+                    Forms\Components\TextInput::make('left_sphere')->numeric()->step(0.25)->label('OS SPH'),
+                    Forms\Components\TextInput::make('left_cylinder')->numeric()->step(0.25)->label('OS CYL'),
+                    Forms\Components\TextInput::make('left_axis')
+                        ->numeric()
+                        ->minValue(1)
+                        ->maxValue(180)
+                        ->label('OS Axis')
+                        ->disabled(fn (callable $get) => (float) ($get('left_cylinder') ?? 0) === 0.0),
+                    Forms\Components\TextInput::make('left_add')
+                        ->numeric()
+                        ->step(0.25)
+                        ->minValue(0)
+                        ->maxValue(5)
+                        ->label('OS ADD')
+                        ->disabled(fn (callable $get) => $get('lens_type') !== 'progressive'),
+                ])
+                ->columns(4),
+            \Filament\Schemas\Components\Section::make('Pupillary Distance (PD)')
+                ->schema([
+                    Forms\Components\Radio::make('pd_mode')
+                        ->label('Mode PD')
+                        ->options([
+                            'single' => 'PD Tunggal',
+                            'dual' => 'PD Ganda',
+                        ])
+                        ->default(fn (?PrescriptionProfile $record) => ($record?->pd_right !== null && $record?->pd_left !== null) ? 'dual' : 'single')
+                        ->dehydrated(false)
+                        ->live(),
+                    Forms\Components\TextInput::make('pd_single')
+                        ->numeric()
+                        ->step(0.5)
+                        ->minValue(50)
+                        ->maxValue(75)
+                        ->label('PD Tunggal')
+                        ->helperText('Rentang umum 50 - 75 mm.')
+                        ->disabled(fn (callable $get) => ($get('pd_mode') ?? 'single') !== 'single'),
+                    Forms\Components\TextInput::make('pd_right')
+                        ->numeric()
+                        ->step(0.5)
+                        ->minValue(25)
+                        ->maxValue(38)
+                        ->label('PD Kanan')
+                        ->helperText('Rentang umum 25 - 38 mm.')
+                        ->disabled(fn (callable $get) => ($get('pd_mode') ?? 'single') !== 'dual'),
+                    Forms\Components\TextInput::make('pd_left')
+                        ->numeric()
+                        ->step(0.5)
+                        ->minValue(25)
+                        ->maxValue(38)
+                        ->label('PD Kiri')
+                        ->helperText('Rentang umum 25 - 38 mm.')
+                        ->disabled(fn (callable $get) => ($get('pd_mode') ?? 'single') !== 'dual'),
+                ])
+                ->columns(2),
+            \Filament\Schemas\Components\Section::make('Lampiran dan Catatan')
+                ->schema([
+                    Forms\Components\FileUpload::make('attachment_path')
+                        ->label('Lampiran Resep')
+                        ->disk('public')
+                        ->directory('prescriptions')
+                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
+                        ->maxSize(4096),
+                    Forms\Components\Textarea::make('notes')
+                        ->label('Catatan Pelanggan')
+                        ->maxLength(2000),
+                    Forms\Components\Select::make('verified_by')
+                        ->label('Diverifikasi Oleh')
+                        ->relationship('verifier', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->disabled(),
+                    Forms\Components\DateTimePicker::make('verified_at')
+                        ->label('Tanggal Verifikasi')
+                        ->disabled(),
+                ])
+                ->columns(2),
         ]);
     }
 
@@ -77,15 +143,21 @@ class PrescriptionProfileResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
-                Tables\Columns\TextColumn::make('label')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('user.name')->label('Customer')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('lens_type')->badge()->placeholder('-'),
+                Tables\Columns\TextColumn::make('label')->label('Nama Resep')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('user.name')->label('Pelanggan')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('lens_type')
+                    ->label('Fungsi Lensa')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => self::lensTypeLabel($state))
+                    ->placeholder('-'),
                 Tables\Columns\TextColumn::make('right_sphere')->label('OD SPH')->placeholder('-'),
                 Tables\Columns\TextColumn::make('left_sphere')->label('OS SPH')->placeholder('-'),
-                Tables\Columns\TextColumn::make('pd_single')->label('PD')->placeholder('-'),
-                Tables\Columns\IconColumn::make('is_default')->boolean(),
+                Tables\Columns\TextColumn::make('pd_single')->label('PD Tunggal')->placeholder('-'),
+                Tables\Columns\TextColumn::make('pd_right')->label('PD Kanan')->placeholder('-')->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('pd_left')->label('PD Kiri')->placeholder('-')->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\IconColumn::make('is_default')->label('Utama')->boolean(),
                 Tables\Columns\IconColumn::make('verified_at')
-                    ->label('Verified')
+                    ->label('Terverifikasi')
                     ->boolean()
                     ->getStateUsing(fn (PrescriptionProfile $record): bool => filled($record->verified_at)),
                 Tables\Columns\TextColumn::make('verification_status')
@@ -99,27 +171,28 @@ class PrescriptionProfileResource extends Resource
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
                         'approved' => 'Disetujui',
                         'rejected' => 'Ditolak',
-                        default    => 'Pending',
+                        default    => 'Menunggu',
                     }),
                 Tables\Columns\TextColumn::make('created_at')->dateTime('d M Y, H:i')->sortable(),
             ])
             ->filters([
                 Tables\Filters\TernaryFilter::make('verified_at')
-                    ->label('Verified')
+                    ->label('Terverifikasi')
                     ->queries(
                         true: fn ($query) => $query->whereNotNull('verified_at'),
                         false: fn ($query) => $query->whereNull('verified_at'),
                     ),
                 Tables\Filters\SelectFilter::make('verification_status')
+                    ->label('Status')
                     ->options([
-                        'pending'  => '⏳ Pending',
+                        'pending'  => '⏳ Menunggu',
                         'approved' => '✅ Disetujui',
                         'rejected' => '❌ Ditolak',
                     ]),
             ])
             ->actions([
                 \Filament\Actions\Action::make('verify')
-                    ->label('Approve')
+                    ->label('Setujui')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(fn (PrescriptionProfile $record): bool => blank($record->verified_at))
@@ -182,5 +255,22 @@ class PrescriptionProfileResource extends Resource
             'create' => Pages\CreatePrescriptionProfile::route('/create'),
             'edit' => Pages\EditPrescriptionProfile::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function lensTypeOptions(): array
+    {
+        return [
+            'single_vision' => 'Single Vision',
+            'progressive' => 'Progresif / Bifokal',
+            'reading' => 'Single Vision Baca',
+        ];
+    }
+
+    private static function lensTypeLabel(?string $state): string
+    {
+        return self::lensTypeOptions()[$state ?? ''] ?? ($state ?: '-');
     }
 }

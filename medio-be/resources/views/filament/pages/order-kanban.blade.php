@@ -28,10 +28,7 @@
                     {{-- Kartu Order --}}
                     <div class="space-y-2 min-h-[200px]">
                         @forelse ($statusOrders as $order)
-                            <a
-                                href="{{ $order['view_url'] }}"
-                                class="block bg-white rounded-lg border border-gray-200 p-3 shadow-sm hover:shadow-md hover:border-gray-300 transition-all"
-                            >
+                            <div class="bg-white rounded-lg border border-gray-200 p-3 shadow-sm hover:shadow-md hover:border-gray-300 transition-all">
                                 <div class="flex items-start justify-between gap-2 mb-2">
                                     <span class="font-bold text-xs text-gray-900 truncate">{{ $order['order_number'] }}</span>
                                     <span class="text-[10px] px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap {{ $col['color'] }}">
@@ -43,10 +40,29 @@
                                 </p>
                                 <p class="text-xs font-bold text-gray-900 mb-1">{{ $order['total'] }}</p>
                                 <div class="flex items-center justify-between">
-                                    <span class="text-[10px] text-gray-400">{{ $order['payment'] }}</span>
-                                    <span class="text-[10px] text-gray-400">{{ $order['created_at'] }}</span>
+                                     <span class="text-[10px] text-gray-400">{{ $order['payment'] }}</span>
+                                     <span class="text-[10px] text-gray-400">{{ $order['created_at'] }}</span>
+                                 </div>
+                                <div class="mt-3 grid grid-cols-[1fr_auto] gap-2">
+                                    <select
+                                        wire:change="updateOrderStatus({{ $order['id'] }}, $event.target.value)"
+                                        wire:loading.attr="disabled"
+                                        class="w-full rounded-md border-gray-300 text-xs shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                    >
+                                        @foreach ($columns as $targetStatus => $targetCol)
+                                            <option value="{{ $targetStatus }}" @selected($order['status'] === $targetStatus)>
+                                                {{ $targetCol['label'] }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <a
+                                        href="{{ $order['view_url'] }}"
+                                        class="inline-flex items-center justify-center rounded-md border border-gray-300 px-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                    >
+                                        Detail
+                                    </a>
                                 </div>
-                            </a>
+                            </div>
                         @empty
                             <div class="flex items-center justify-center h-24 border-2 border-dashed border-gray-200 rounded-lg">
                                 <p class="text-xs text-gray-400">Tidak ada pesanan</p>

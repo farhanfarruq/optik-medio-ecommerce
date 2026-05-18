@@ -19,6 +19,20 @@ class AppointmentResource extends Resource
     protected static ?string $navigationLabel = 'Appointment';
     protected static ?int    $navigationSort  = 6;
 
+    public static function getNavigationBadge(): ?string
+    {
+        $count = static::getModel()::query()
+            ->where('status', 'pending')
+            ->count();
+
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): string | array | null
+    {
+        return 'warning';
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
@@ -42,8 +56,8 @@ class AppointmentResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('appointment_number')->label('No.')->weight('bold')->copyable(),
                 Tables\Columns\TextColumn::make('customer_name')->label('Pelanggan')->searchable(),
-                Tables\Columns\TextColumn::make('customer_phone')->label('Telepon'),
-                Tables\Columns\TextColumn::make('branch.name')->label('Cabang')->badge()->color('info'),
+                Tables\Columns\TextColumn::make('customer_phone')->label('Telepon')->searchable(),
+                Tables\Columns\TextColumn::make('branch.name')->label('Cabang')->badge()->color('info')->searchable(),
                 Tables\Columns\TextColumn::make('appointment_date')->label('Tanggal')->date('d M Y')->sortable(),
                 Tables\Columns\TextColumn::make('appointment_time')->label('Waktu'),
                 Tables\Columns\TextColumn::make('service_type')->label('Layanan')
@@ -69,7 +83,10 @@ class AppointmentResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options(['pending' => 'Pending', 'confirmed' => 'Dikonfirmasi', 'completed' => 'Selesai', 'cancelled' => 'Dibatalkan']),
-                Tables\Filters\SelectFilter::make('branch')->relationship('branch', 'name'),
+                Tables\Filters\SelectFilter::make('branch')
+                    ->relationship('branch', 'name')
+                    ->searchable()
+                    ->preload(),
                 Tables\Filters\Filter::make('today')
                     ->label('Hari Ini')
                     ->query(fn ($q) => $q->whereDate('appointment_date', today())),

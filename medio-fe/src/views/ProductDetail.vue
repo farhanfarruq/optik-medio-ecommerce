@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { computed, ref, reactive, onMounted } from 'vue';
+import { computed, ref, reactive, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCartStore } from '../stores/cartStore';
 import { useWishlistStore } from '../stores/wishlistStore';
+import { useAuthStore } from '../stores/authStore';
 import { productRepository } from '../repositories/ProductRepository';
 import { reviewRepository, type Review } from '../repositories/ReviewRepository';
+import { opticalRepository, type LensCoating } from '../repositories/OpticalRepository';
+import { prescriptionRepository, type PrescriptionProfile } from '../repositories/PrescriptionRepository';
+import type { LensOption } from '../repositories/ProductRepository';
 import type { Product } from '../types';
 
 import { resolveImageUrl } from '../core/utils/image';
@@ -18,6 +22,7 @@ const route = useRoute();
 const router = useRouter();
 const cartStore = useCartStore();
 const wishlistStore = useWishlistStore();
+const authStore = useAuthStore();
 const { setSeo, setJsonLd, buildProductJsonLd } = useSeoMeta();
 const { trackProductViewed } = useAnalytics();
 
@@ -27,16 +32,17 @@ const lenses = ref<Product[]>([]);
 const isLensesLoading = ref(false);
 const similarFrames = ref<Product[]>([]);
 const compatibleLenses = ref<Product[]>([]);
+const relatedProducts = ref<Product[]>([]);
 const productReviews = ref<Review[]>([]);
 const reviewSummary = ref({ avg_rating: 0, total_reviews: 0 });
 
 const formState = reactive({
   color: null as any,
   size: '',
-  pdType: 'dual',
+  pdType: 'single',
   prescription: {
-    od: { sph: '0.00', cyl: '0.00', axis: '0', add: '0.00' },
-    os: { sph: '0.00', cyl: '0.00', axis: '0', add: '0.00' },
+    od: { sph: '0.00', cyl: '0.00', axis: '', add: '0.00' },
+    os: { sph: '0.00', cyl: '0.00', axis: '', add: '0.00' },
     pdRight: '',
     pdLeft: '',
     pdSingle: ''
@@ -44,8 +50,122 @@ const formState = reactive({
 });
 
 const isLensModalOpen = ref(false);
+const isLensChoiceModalOpen = ref(false);
+
+// ── Lens Configurator state ──────────────────────────────────────────────────
+const allCoatings = ref<LensCoating[]>([]);
+const isCoatingsLoading = ref(false);
+const selectedLensOption = ref<LensOption | null>(null);
+const selectedCoating = ref<LensCoating | null>(null);
+// Step: 'lens' = pilih lens option, 'coating' = pilih coating
+const configuratorStep = ref<'lens' | 'coating'>('lens');
+// Computed harga total dengan lens + coating
+const configuratorTotalPrice = computed(() => {
+  if (!product.value) return 0;
+  const base = product.value.price || 0;
+  const lensPrice = selectedLensOption.value?.base_price || 0;
+  const coatingPrice = selectedCoating.value?.price || 0;
+  return base + lensPrice + coatingPrice;
+});
+
+const loadCoatings = async () => {
+  if (allCoatings.value.length > 0) return;
+  isCoatingsLoading.value = true;
+  try {
+    allCoatings.value = await opticalRepository.getLensCoatings();
+  } catch (e) {
+    console.error('Failed to load coatings', e);
+  } finally {
+    isCoatingsLoading.value = false;
+  }
+};
+
+const openLensConfigurator = async () => {
+  selectedLensOption.value = null;
+  selectedCoating.value = null;
+  configuratorStep.value = 'lens';
+  await loadCoatings();
+  isLensModalOpen.value = true;
+};
+
+const selectLensOption = (opt: LensOption) => {
+  selectedLensOption.value = opt;
+  configuratorStep.value = 'coating';
+};
+
+const skipCoating = () => {
+  selectedCoating.value = null;
+  confirmLensConfiguration();
+};
+
+const confirmLensConfiguration = () => {
+  executeAddToCart();
+};
+const supportsAddInConfigurator = computed(() => selectedLensOption.value?.type === 'progressive');
+const usesOdAxis = computed(() => Number(formState.prescription.od.cyl || 0) !== 0);
+const usesOsAxis = computed(() => Number(formState.prescription.os.cyl || 0) !== 0);
 const activeImage = ref(0);
 const addedToCart = ref(false);
+
+const productCategoryContext = computed(() => {
+  const category = (product.value as any)?.category;
+  return `${category?.slug ?? ''} ${category?.name ?? ''}`.trim().toLowerCase();
+});
+
+const isFrameProduct = computed(() => {
+  if (!product.value) return false;
+
+  return productCategoryContext.value.includes('frame')
+    || Boolean(
+      product.value.frame_shape
+      || product.value.frame_material
+      || product.value.frame_color
+      || product.value.face_size_fit
+      || product.value.lens_width
+      || product.value.bridge_width
+      || product.value.temple_length
+      || product.value.frame_width,
+    );
+});
+
+const isStandaloneLensProduct = computed(() => {
+  if (!product.value) return false;
+
+  return !isFrameProduct.value
+    && (
+      productCategoryContext.value.includes('lensa')
+      || productCategoryContext.value.includes('softlens')
+    );
+});
+
+const primaryRecommendations = computed(() => (
+  isFrameProduct.value ? similarFrames.value : relatedProducts.value
+));
+
+const primaryRecommendationTitle = computed(() => (
+  isFrameProduct.value ? 'Frame Serupa' : 'Produk Serupa'
+));
+
+const showCompatibleLenses = computed(() => (
+  isFrameProduct.value && compatibleLenses.value.length > 0
+));
+
+const hasRecommendationSection = computed(() => (
+  primaryRecommendations.value.length > 0 || showCompatibleLenses.value
+));
+
+const isAppointmentProduct = computed(() => {
+  if (!product.value) return false;
+
+  const category = (product.value as any)?.category;
+  const categoryContext = `${category?.slug ?? ''} ${category?.name ?? ''}`.toLowerCase();
+  const productContext = `${product.value.slug} ${product.value.name}`.toLowerCase();
+
+  return categoryContext.includes('paket-pemeriksaan')
+    || productContext.includes('paket-pemeriksaan')
+    || productContext.includes('pemeriksaan-mata')
+    || productContext.includes('konsultasi');
+});
 
 onMounted(async () => {
   const slug = route.params.slug as string;
@@ -100,6 +220,7 @@ onMounted(async () => {
     }
     if (data.is_prescription_required) {
       fetchLenses();
+      loadPrescriptions(); // muat resep tersimpan user jika login
     }
     fetchRecommendations(slug);
   } catch (error) {
@@ -127,6 +248,11 @@ const fetchRecommendations = async (slug: string) => {
     const recommendations = await productRepository.getRecommendations(slug);
     similarFrames.value = recommendations.similar_frames || [];
     compatibleLenses.value = recommendations.compatible_lenses || [];
+    relatedProducts.value = recommendations.related_products || [];
+    // Assign compatible_lens_options ke product agar bisa diakses di template dan modal
+    if (product.value && recommendations.compatible_lens_options) {
+      (product.value as any).compatible_lens_options = recommendations.compatible_lens_options;
+    }
   } catch (error) {
     console.warn('Failed to fetch product recommendations', error);
   }
@@ -134,22 +260,72 @@ const fetchRecommendations = async (slug: string) => {
 
 const handleAddToCartClick = () => {
   if (!product.value) return;
-  if (product.value.is_prescription_required) {
-    isLensModalOpen.value = true;
-  } else {
-    executeAddToCart();
+
+  // 1. Produk appointment → redirect ke halaman appointment
+  if (isAppointmentProduct.value) {
+    router.push({
+      path: '/appointment',
+      query: {
+        service: 'eye_test',
+        source_product: product.value.slug,
+        source_label: product.value.name,
+      },
+    });
+    return;
   }
+
+  // 2. Softlens / lensa kontak → langsung ke keranjang (dengan resep jika butuh)
+  if (productCategoryContext.value.includes('softlens') || productCategoryContext.value.includes('lensa-kontak')) {
+    executeAddToCart();
+    return;
+  }
+
+  // 3. Lensa standalone (bukan softlens, bukan frame) dengan resep
+  //    → tampilkan pilihan: beli lensa saja atau pilih frame dulu
+  if (isStandaloneLensProduct.value && product.value.is_prescription_required) {
+    isLensChoiceModalOpen.value = true;
+    return;
+  }
+
+  // 4. Frame yang butuh resep → WAJIB buka lens configurator (pilih lens + coating)
+  //    Ini berlaku meski compatible_lens_options kosong (akan tampil pesan di modal)
+  if (isFrameProduct.value && product.value.is_prescription_required) {
+    openLensConfigurator();
+    return;
+  }
+
+  // 5. Frame tanpa resep tapi punya lens options → buka lens configurator
+  if (isFrameProduct.value && (product.value as any).compatible_lens_options?.length > 0) {
+    openLensConfigurator();
+    return;
+  }
+
+  // 6. Produk lainnya → langsung ke keranjang
+  executeAddToCart();
 };
 
 const executeAddToCart = (selectedLens: any = null) => {
   if (!product.value) return;
+
+  if (product.value.is_prescription_required) {
+    const prescriptionError = validatePrescriptionInput();
+    if (prescriptionError) {
+      showToast(prescriptionError, 'error');
+      return;
+    }
+  }
 
   const cartItem = {
     ...product.value,
     variant: {
       color: formState.color?.name,
       size: formState.size
-    }
+    },
+    // Sertakan lens option & coating yang dipilih dari configurator
+    lens_option_id: selectedLensOption.value?.id ?? null,
+    lens_coating_id: selectedCoating.value?.id ?? null,
+    // Sertakan prescription profile jika user memilih resep tersimpan
+    prescription_profile_id: selectedPrescriptionProfileId.value ?? null,
   };
 
   cartStore.addToCart(
@@ -159,9 +335,58 @@ const executeAddToCart = (selectedLens: any = null) => {
   );
 
   isLensModalOpen.value = false;
+  isLensChoiceModalOpen.value = false;
+  selectedLensOption.value = null;
+  selectedCoating.value = null;
   addedToCart.value = true;
   showToast('Produk berhasil ditambahkan ke keranjang!', 'success');
   setTimeout(() => { addedToCart.value = false; }, 2500);
+};
+
+const validatePrescriptionInput = () => {
+  if (usesOdAxis.value) {
+    const axis = Number(formState.prescription.od.axis);
+    if (!Number.isInteger(axis) || axis < 1 || axis > 180) {
+      return 'Axis kanan wajib diisi dengan angka 1 sampai 180 jika CYL kanan diisi.';
+    }
+  }
+
+  if (usesOsAxis.value) {
+    const axis = Number(formState.prescription.os.axis);
+    if (!Number.isInteger(axis) || axis < 1 || axis > 180) {
+      return 'Axis kiri wajib diisi dengan angka 1 sampai 180 jika CYL kiri diisi.';
+    }
+  }
+
+  if (formState.pdType === 'single') {
+    const pdSingle = Number(formState.prescription.pdSingle);
+    if (!Number.isFinite(pdSingle) || pdSingle < 50 || pdSingle > 75) {
+      return 'PD tunggal wajib diisi dalam rentang 50 sampai 75 mm.';
+    }
+  } else {
+    const pdRight = Number(formState.prescription.pdRight);
+    const pdLeft = Number(formState.prescription.pdLeft);
+
+    if (!Number.isFinite(pdRight) || pdRight < 25 || pdRight > 38) {
+      return 'PD kanan wajib diisi dalam rentang 25 sampai 38 mm.';
+    }
+
+    if (!Number.isFinite(pdLeft) || pdLeft < 25 || pdLeft > 38) {
+      return 'PD kiri wajib diisi dalam rentang 25 sampai 38 mm.';
+    }
+  }
+
+  if (!supportsAddInConfigurator.value) {
+    formState.prescription.od.add = '0.00';
+    formState.prescription.os.add = '0.00';
+  }
+
+  return null;
+};
+
+const chooseFrameBeforeCheckout = () => {
+  isLensChoiceModalOpen.value = false;
+  router.push('/products');
 };
 
 const isWishlisted = computed(() => product.value ? wishlistStore.isWishlisted(product.value.id) : false);
@@ -177,6 +402,96 @@ const toggleWishlist = async () => {
 };
 
 const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50', '-0.25', '0.00', '+0.25', '+0.50', '+0.75', '+1.00', '+1.25', '+1.50', '+1.75', '+2.00'];
+
+// Format nilai numerik dari DB agar cocok dengan format sphOptions ('+0.50', '-1.25', '0.00')
+const formatSphValue = (val: number | string | null | undefined): string => {
+  if (val == null || val === '') return '0.00';
+  const num = parseFloat(String(val));
+  if (isNaN(num)) return '0.00';
+  if (num === 0) return '0.00';
+  const formatted = Math.abs(num).toFixed(2);
+  return num > 0 ? `+${formatted}` : `-${formatted}`;
+};
+
+// ── Prescription Profile (resep tersimpan dari profil user) ──────────────────
+const prescriptions = ref<PrescriptionProfile[]>([]);
+const selectedPrescriptionProfileId = ref<number | null>(null);
+
+const loadPrescriptions = async () => {
+  if (!authStore.user) return;
+  try {
+    prescriptions.value = await prescriptionRepository.list();
+  } catch (e) {
+    // silent — user mungkin belum login atau belum punya resep
+  }
+};
+
+const applyPrescriptionProfile = (profile: PrescriptionProfile) => {
+  // Toggle: klik lagi untuk deselect
+  if (selectedPrescriptionProfileId.value === profile.id) {
+    selectedPrescriptionProfileId.value = null;
+    return;
+  }
+  selectedPrescriptionProfileId.value = profile.id;
+  // Isi form resep dari data profil — format nilai agar cocok dengan sphOptions
+  formState.prescription.od.sph = formatSphValue(profile.right_sphere);
+  formState.prescription.od.cyl = formatSphValue(profile.right_cylinder);
+  formState.prescription.od.axis = profile.right_axis != null ? String(profile.right_axis) : '';
+  formState.prescription.od.add = formatSphValue(profile.right_add);
+  formState.prescription.os.sph = formatSphValue(profile.left_sphere);
+  formState.prescription.os.cyl = formatSphValue(profile.left_cylinder);
+  formState.prescription.os.axis = profile.left_axis != null ? String(profile.left_axis) : '';
+  formState.prescription.os.add = formatSphValue(profile.left_add);
+  if (profile.pd_right != null && profile.pd_left != null) {
+    formState.pdType = 'dual';
+    formState.prescription.pdRight = String(profile.pd_right);
+    formState.prescription.pdLeft = String(profile.pd_left);
+  } else if (profile.pd_single != null) {
+    formState.pdType = 'single';
+    formState.prescription.pdSingle = String(profile.pd_single);
+  }
+};
+
+watch(
+  () => formState.prescription.od.cyl,
+  (cylinder) => {
+    if (Number(cylinder || 0) === 0) {
+      formState.prescription.od.axis = '';
+    }
+  },
+);
+
+watch(
+  () => formState.prescription.os.cyl,
+  (cylinder) => {
+    if (Number(cylinder || 0) === 0) {
+      formState.prescription.os.axis = '';
+    }
+  },
+);
+
+watch(
+  () => supportsAddInConfigurator.value,
+  (supportsAdd) => {
+    if (!supportsAdd) {
+      formState.prescription.od.add = '0.00';
+      formState.prescription.os.add = '0.00';
+    }
+  },
+);
+
+watch(
+  () => formState.pdType,
+  (pdType) => {
+    if (pdType === 'single') {
+      formState.prescription.pdRight = '';
+      formState.prescription.pdLeft = '';
+      return;
+    }
+
+    formState.prescription.pdSingle = '';
+  },
+);
 
 const getProductPromos = (p: Product | null) => {
   if (!p) return { buyPromos: [], discountPromos: [] };
@@ -571,27 +886,66 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
 
           <!-- Prescription Form -->
           <div v-if="product.is_prescription_required && !product.is_not_for_sale" class="flex flex-col gap-6 pt-6 border-t" style="border-color: rgba(193,154,81,0.15);">
-            <h2 class="font-bold text-lg" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Resep Kacamata Anda</h2>
+            <div class="flex items-center justify-between">
+              <h2 class="font-bold text-lg" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Resep Kacamata Anda</h2>
+            </div>
+
+            <!-- Gunakan Resep Tersimpan -->
+            <div v-if="authStore.user && prescriptions.length > 0" class="flex flex-col gap-2">
+              <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: #8a7a60;">Resep Tersimpan</p>
+              <div class="flex flex-col gap-2">
+                <button
+                  v-for="profile in prescriptions"
+                  :key="profile.id"
+                  @click="applyPrescriptionProfile(profile)"
+                  class="flex items-center justify-between p-3 border text-left transition-all hover:shadow-sm"
+                  :style="selectedPrescriptionProfileId === profile.id
+                    ? 'border-color: #c19a51; background: rgba(193,154,81,0.06); box-shadow: 0 0 0 2px rgba(193,154,81,0.25);'
+                    : 'border-color: rgba(193,154,81,0.2); background: white;'"
+                >
+                  <div>
+                    <p class="text-xs font-bold" style="color: #1a1209;">{{ profile.label }}</p>
+                    <p class="text-[10px] mt-0.5" style="color: #8a7a60;">
+                      OD: {{ profile.right_sphere ?? '—' }} / {{ profile.right_cylinder ?? '—' }} / {{ profile.right_axis ?? '—' }}
+                      &nbsp;|&nbsp;
+                      OS: {{ profile.left_sphere ?? '—' }} / {{ profile.left_cylinder ?? '—' }} / {{ profile.left_axis ?? '—' }}
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span v-if="profile.verification_status === 'approved'" class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5" style="background: rgba(22,163,74,0.1); color: #16a34a;">Terverifikasi</span>
+                    <span v-else-if="profile.verification_status === 'pending'" class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5" style="background: rgba(234,179,8,0.1); color: #ca8a04;">Menunggu</span>
+                    <span class="material-symbols-outlined text-base" :style="selectedPrescriptionProfileId === profile.id ? 'color: #c19a51;' : 'color: rgba(193,154,81,0.3);'">
+                      {{ selectedPrescriptionProfileId === profile.id ? 'check_circle' : 'radio_button_unchecked' }}
+                    </span>
+                  </div>
+                </button>
+              </div>
+              <div class="flex items-center gap-3 mt-1">
+                <div class="flex-1 h-px" style="background: rgba(193,154,81,0.15);"></div>
+                <span class="text-[10px] font-black uppercase tracking-wider" style="color: #8a7a60;">atau isi manual</span>
+                <div class="flex-1 h-px" style="background: rgba(193,154,81,0.15);"></div>
+              </div>
+            </div>
 
             <div class="p-5 rounded-none border" style="background: rgba(245,242,238,0.8); border-color: rgba(193,154,81,0.15);">
-              <div class="grid grid-cols-5 gap-3 mb-4">
+              <div class="grid gap-3 mb-4" :class="supportsAddInConfigurator ? 'grid-cols-5' : 'grid-cols-4'">
                 <div class="col-span-1"></div>
                 <div class="text-center text-[10px] font-black uppercase tracking-widest" style="color: #8a7a60;">SPH</div>
                 <div class="text-center text-[10px] font-black uppercase tracking-widest" style="color: #8a7a60;">CYL</div>
                 <div class="text-center text-[10px] font-black uppercase tracking-widest" style="color: #8a7a60;">Axis</div>
-                <div class="text-center text-[10px] font-black uppercase tracking-widest" style="color: #8a7a60;">ADD</div>
+                <div v-if="supportsAddInConfigurator" class="text-center text-[10px] font-black uppercase tracking-widest" style="color: #8a7a60;">ADD</div>
 
                 <div class="flex items-center justify-end pr-2 text-xs font-black" style="color: #1a1209;">OD</div>
                 <div><select v-model="formState.prescription.od.sph" class="w-full rounded-none border-0 text-xs p-2 focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
                 <div><select v-model="formState.prescription.od.cyl" class="w-full rounded-none border-0 text-xs p-2 focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
-                <div><input v-model="formState.prescription.od.axis" type="number" class="w-full rounded-none text-xs p-2 text-center focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"/></div>
-                <div><select v-model="formState.prescription.od.add" class="w-full rounded-none border-0 text-xs p-2 focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
+                <div><input v-model="formState.prescription.od.axis" :disabled="!usesOdAxis" type="number" min="1" max="180" class="w-full rounded-none text-xs p-2 text-center focus:ring-2 disabled:bg-stone-100 disabled:text-stone-400 disabled:cursor-not-allowed" style="background: white; border: 1px solid rgba(193,154,81,0.2);"/></div>
+                <div v-if="supportsAddInConfigurator"><select v-model="formState.prescription.od.add" class="w-full rounded-none border-0 text-xs p-2 focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"><option v-for="opt in sphOptions.filter((opt) => !String(opt).startsWith('-'))" :value="opt">{{opt}}</option></select></div>
 
                 <div class="flex items-center justify-end pr-2 text-xs font-black mt-2" style="color: #1a1209;">OS</div>
                 <div class="mt-2"><select v-model="formState.prescription.os.sph" class="w-full rounded-none border-0 text-xs p-2 focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
                 <div class="mt-2"><select v-model="formState.prescription.os.cyl" class="w-full rounded-none border-0 text-xs p-2 focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
-                <div class="mt-2"><input v-model="formState.prescription.os.axis" type="number" class="w-full rounded-none text-xs p-2 text-center focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"/></div>
-                <div class="mt-2"><select v-model="formState.prescription.os.add" class="w-full rounded-none border-0 text-xs p-2 focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
+                <div class="mt-2"><input v-model="formState.prescription.os.axis" :disabled="!usesOsAxis" type="number" min="1" max="180" class="w-full rounded-none text-xs p-2 text-center focus:ring-2 disabled:bg-stone-100 disabled:text-stone-400 disabled:cursor-not-allowed" style="background: white; border: 1px solid rgba(193,154,81,0.2);"/></div>
+                <div v-if="supportsAddInConfigurator" class="mt-2"><select v-model="formState.prescription.os.add" class="w-full rounded-none border-0 text-xs p-2 focus:ring-2" style="background: white; border: 1px solid rgba(193,154,81,0.2);"><option v-for="opt in sphOptions.filter((opt) => !String(opt).startsWith('-'))" :value="opt">{{opt}}</option></select></div>
               </div>
 
               <div class="pt-4 border-t" style="border-color: rgba(193,154,81,0.15);">
@@ -608,35 +962,67 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
                 <div v-if="formState.pdType === 'dual'" class="grid grid-cols-2 gap-3">
                   <div>
                     <label class="block text-[10px] font-bold mb-1.5" style="color: #8a7a60;">PD Kanan</label>
-                    <input v-model="formState.prescription.pdRight" type="number" class="w-full rounded-none p-2.5 text-sm" style="background: white; border: 1px solid rgba(193,154,81,0.2);"/>
+                    <input v-model="formState.prescription.pdRight" type="number" min="25" max="38" class="w-full rounded-none p-2.5 text-sm" style="background: white; border: 1px solid rgba(193,154,81,0.2);"/>
                   </div>
                   <div>
                     <label class="block text-[10px] font-bold mb-1.5" style="color: #8a7a60;">PD Kiri</label>
-                    <input v-model="formState.prescription.pdLeft" type="number" class="w-full rounded-none p-2.5 text-sm" style="background: white; border: 1px solid rgba(193,154,81,0.2);"/>
+                    <input v-model="formState.prescription.pdLeft" type="number" min="25" max="38" class="w-full rounded-none p-2.5 text-sm" style="background: white; border: 1px solid rgba(193,154,81,0.2);"/>
                   </div>
                 </div>
                 <div v-else>
                   <label class="block text-[10px] font-bold mb-1.5" style="color: #8a7a60;">PD</label>
-                  <input v-model="formState.prescription.pdSingle" type="number" class="w-full rounded-none p-2.5 text-sm" style="background: white; border: 1px solid rgba(193,154,81,0.2);"/>
+                  <input v-model="formState.prescription.pdSingle" type="number" min="50" max="75" class="w-full rounded-none p-2.5 text-sm" style="background: white; border: 1px solid rgba(193,154,81,0.2);"/>
                 </div>
               </div>
             </div>
           </div>
 
+          <!-- Lens Configuration Summary (muncul setelah user memilih dari modal) -->
+          <div
+            v-if="isFrameProduct && (product as any).compatible_lens_options?.length > 0 && (selectedLensOption || selectedCoating)"
+            class="p-4 border"
+            style="background: rgba(193,154,81,0.04); border-color: rgba(193,154,81,0.25);"
+          >
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: #8a7a60;">Konfigurasi Lensa</p>
+              <button @click="openLensConfigurator" class="text-[10px] font-black uppercase tracking-wider underline" style="color: #c19a51;">Ubah</button>
+            </div>
+            <div class="flex flex-col gap-1">
+              <div v-if="selectedLensOption" class="flex items-center justify-between text-xs">
+                <span style="color: #5a5248;">{{ selectedLensOption.name }}</span>
+                <span class="font-bold" style="color: #1a1209;">+Rp {{ (selectedLensOption.base_price || 0).toLocaleString('id-ID') }}</span>
+              </div>
+              <div v-if="selectedCoating" class="flex items-center justify-between text-xs">
+                <span style="color: #5a5248;">{{ selectedCoating.name }}</span>
+                <span class="font-bold" style="color: #1a1209;">+Rp {{ (selectedCoating.price || 0).toLocaleString('id-ID') }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hint untuk frame yang belum dikonfigurasi -->
+          <div
+            v-else-if="isFrameProduct && (product as any).compatible_lens_options?.length > 0 && !selectedLensOption"
+            class="p-3 border text-xs"
+            style="background: rgba(193,154,81,0.04); border-color: rgba(193,154,81,0.2); color: #8a7a60;"
+          >
+            <span class="material-symbols-outlined text-sm align-middle mr-1" style="color: #c19a51;">info</span>
+            Klik tombol di bawah untuk memilih jenis lensa dan coating yang sesuai.
+          </div>
+
           <!-- Add to Cart Button -->
           <button
-            v-if="!product.is_not_for_sale"
+            v-if="!product.is_not_for_sale || isAppointmentProduct"
             @click="handleAddToCartClick"
-            :disabled="product.stock <= 0"
+            :disabled="!isAppointmentProduct && product.stock <= 0"
             class="w-full py-4 px-6 font-black text-sm uppercase tracking-widest rounded-none transition-all flex items-center justify-center gap-3 shadow-lg"
-            :style="product.stock > 0
+            :style="(isAppointmentProduct || product.stock > 0)
               ? (addedToCart
                 ? 'background: linear-gradient(135deg, #15803d, #16a34a); color: white; box-shadow: 0 8px 25px rgba(22,163,74,0.3);'
                 : 'background: linear-gradient(135deg, #1a1209 0%, #3d2c0e 100%); color: white; box-shadow: 0 8px 25px rgba(26,18,9,0.25);')
               : 'background: rgba(245,242,238,0.8); color: #a09080; cursor: not-allowed;'"
           >
-            <span class="material-symbols-outlined text-lg">{{ addedToCart ? 'check_circle' : (product.stock > 0 ? 'shopping_bag' : 'block') }}</span>
-            {{ addedToCart ? 'Ditambahkan!' : (product.stock > 0 ? (product.is_prescription_required ? 'Pilih Lensa & Tambah ke Keranjang' : 'Tambah ke Keranjang') : 'Stok Habis') }}
+            <span class="material-symbols-outlined text-lg">{{ addedToCart ? 'check_circle' : (isAppointmentProduct ? 'calendar_today' : (product.stock > 0 ? 'shopping_bag' : 'block')) }}</span>
+            {{ addedToCart ? 'Ditambahkan!' : (isAppointmentProduct ? 'Booking Jadwal Konsultasi' : (product.stock > 0 ? (isStandaloneLensProduct ? 'Lanjutkan Pembelian Lensa' : (isFrameProduct && (product as any).compatible_lens_options?.length > 0 ? (selectedLensOption ? 'Tambah ke Keranjang' : 'Pilih Lensa & Coating') : 'Tambah ke Keranjang')) : 'Stok Habis')) }}
           </button>
 
           <!-- Trust Badges -->
@@ -658,7 +1044,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
       </div>
     </div>
 
-    <section v-if="similarFrames.length > 0 || compatibleLenses.length > 0" class="max-w-[1440px] mx-auto px-6 md:px-12 pb-16">
+    <section v-if="hasRecommendationSection" class="max-w-[1440px] mx-auto px-6 md:px-12 pb-16">
       <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
         <div>
           <p class="text-xs font-black uppercase tracking-[0.25em] mb-2" style="color: #c19a51;">Rekomendasi Optik</p>
@@ -670,11 +1056,11 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
         </router-link>
       </div>
 
-      <div v-if="similarFrames.length > 0" class="mb-10">
-        <h3 class="text-sm font-black uppercase tracking-[0.18em] mb-4" style="color: #7a6230;">Frame Serupa</h3>
+      <div v-if="primaryRecommendations.length > 0" class="mb-10">
+        <h3 class="text-sm font-black uppercase tracking-[0.18em] mb-4" style="color: #7a6230;">{{ primaryRecommendationTitle }}</h3>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <article
-            v-for="item in similarFrames.slice(0, 4)"
+            v-for="item in primaryRecommendations.slice(0, 4)"
             :key="item.id"
             @click="router.push(`/products/${item.slug}`)"
             class="cursor-pointer border bg-white transition-all hover:-translate-y-1 hover:shadow-lg"
@@ -692,20 +1078,24 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
         </div>
       </div>
 
-      <div v-if="compatibleLenses.length > 0">
+      <div v-if="showCompatibleLenses">
         <h3 class="text-sm font-black uppercase tracking-[0.18em] mb-4" style="color: #7a6230;">Lensa Kompatibel</h3>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <article
             v-for="item in compatibleLenses.slice(0, 4)"
             :key="item.id"
             @click="router.push(`/products/${item.slug}`)"
-            class="cursor-pointer border bg-white p-5 transition-all hover:-translate-y-1 hover:shadow-lg"
+            class="cursor-pointer border bg-white transition-all hover:-translate-y-1 hover:shadow-lg"
             style="border-color: rgba(193,154,81,0.14);"
           >
-            <span class="material-symbols-outlined text-2xl mb-3 block" style="color: #c19a51;">visibility</span>
-            <p class="text-[10px] font-black uppercase tracking-widest mb-1" style="color: #8a7a60;">{{ item.brand || 'Lensa' }}</p>
-            <h4 class="font-bold text-sm line-clamp-2" style="color: #1a1209;">{{ item.name }}</h4>
-            <p class="text-sm font-black mt-3" style="color: #7a6230;">Rp {{ item.price.toLocaleString('id-ID') }}</p>
+            <div class="aspect-[4/5] p-4 flex items-center justify-center" style="background: linear-gradient(145deg, #f5f2ee, #ede7dc);">
+              <img :src="resolveImageUrl(item)" :alt="item.name" class="w-full h-full object-contain mix-blend-multiply" />
+            </div>
+            <div class="p-4">
+              <p class="text-[10px] font-black uppercase tracking-widest mb-1" style="color: #8a7a60;">{{ item.brand || 'Lensa' }}</p>
+              <h4 class="font-bold text-sm line-clamp-2" style="color: #1a1209;">{{ item.name }}</h4>
+              <p class="text-sm font-black mt-2" style="color: #7a6230;">Rp {{ item.price.toLocaleString('id-ID') }}</p>
+            </div>
           </article>
         </div>
       </div>
@@ -761,40 +1151,177 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
     <!-- ║          LENS SELECTOR MODAL         ║ -->
     <!-- ╚══════════════════════════════════════╝ -->
     <Teleport to="body">
-      <div v-if="isLensModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(10,8,5,0.75); backdrop-filter: blur(20px);">
-        <div class="w-full max-w-2xl rounded-none p-8 border" style="background: #faf8f5; border-color: rgba(193,154,81,0.2); box-shadow: 0 30px 80px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
-          <div class="flex items-center justify-between mb-8">
-            <h2 class="text-2xl font-black" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Pilih Lensa Anda</h2>
-            <button @click="isLensModalOpen = false" class="w-10 h-10 rounded-none flex items-center justify-center transition-all" style="background: rgba(193,154,81,0.1); color: #7a6230;">
+      <div v-if="isLensChoiceModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(10,8,5,0.75); backdrop-filter: blur(20px);">
+        <div class="w-full max-w-xl rounded-none p-8 border" style="background: #faf8f5; border-color: rgba(193,154,81,0.2); box-shadow: 0 30px 80px rgba(0,0,0,0.3);">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-black" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Lanjutkan Pembelian Lensa</h2>
+            <button @click="isLensChoiceModalOpen = false" class="w-10 h-10 rounded-none flex items-center justify-center transition-all" style="background: rgba(193,154,81,0.1); color: #7a6230;">
               <span class="material-symbols-outlined">close</span>
             </button>
           </div>
 
-          <div v-if="isLensesLoading" class="flex justify-center py-12">
-            <div class="w-10 h-10 rounded-none border-4 border-t-transparent animate-spin" style="border-color: rgba(193,154,81,0.25); border-top-color: #c19a51;"></div>
-          </div>
+          <p class="text-sm leading-relaxed mb-6" style="color: #5a5248;">
+            Resep sudah siap. Anda bisa lanjut beli lensa ini saja, atau pilih frame terlebih dulu bila ingin dipasangkan dalam satu pesanan.
+          </p>
 
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <button
-              v-for="lens in lenses.slice(0, 4)"
-              :key="lens.id"
-              @click="executeAddToCart(lens)"
-              class="p-5 rounded-none border text-left transition-all hover:-translate-y-1 hover:shadow-lg active:scale-95"
+              @click="executeAddToCart()"
+              class="w-full p-5 border text-left transition-all hover:-translate-y-1 hover:shadow-lg"
               style="border-color: rgba(193,154,81,0.2); background: white;"
             >
-              <h3 class="font-bold text-base mb-1" style="color: #1a1209;">{{ lens.name }}</h3>
-              <p class="text-xs leading-relaxed mb-4" style="color: #8a7a60;">{{ lens.description }}</p>
-              <p class="font-black text-base" style="color: #c19a51;">+Rp {{ lens.price.toLocaleString('id-ID') }}</p>
+              <span class="material-symbols-outlined text-2xl mb-3 block" style="color: #c19a51;">shopping_bag</span>
+              <p class="text-sm font-black uppercase tracking-widest mb-1" style="color: #8a7a60;">Tanpa Frame</p>
+              <h3 class="font-bold text-base" style="color: #1a1209;">Beli Lensa Saja</h3>
+              <p class="text-sm mt-2" style="color: #5a5248;">Tambahkan lensa ini ke keranjang dengan resep yang sudah Anda isi.</p>
             </button>
 
-            <div v-if="lenses.length === 0" class="col-span-2 text-center py-8 rounded-none" style="background: rgba(220,38,38,0.05); color: #dc2626;">
-              Tidak ada lensa ditemukan. Hubungi tim kami.
+            <button
+              @click="chooseFrameBeforeCheckout"
+              class="w-full p-5 border text-left transition-all hover:-translate-y-1 hover:shadow-lg"
+              style="border-color: rgba(193,154,81,0.2); background: white;"
+            >
+              <span class="material-symbols-outlined text-2xl mb-3 block" style="color: #c19a51;">visibility</span>
+              <p class="text-sm font-black uppercase tracking-widest mb-1" style="color: #8a7a60;">Dengan Frame</p>
+              <h3 class="font-bold text-base" style="color: #1a1209;">Pilih Frame Dulu</h3>
+              <p class="text-sm mt-2" style="color: #5a5248;">Lanjut ke katalog untuk memilih frame sebelum checkout.</p>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ╔══════════════════════════════════════════════════╗ -->
+      <!-- ║     LENS OPTION + COATING CONFIGURATOR MODAL    ║ -->
+      <!-- ╚══════════════════════════════════════════════════╝ -->
+      <div v-if="isLensModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(10,8,5,0.75); backdrop-filter: blur(20px);">
+        <div class="w-full max-w-2xl rounded-none border" style="background: #faf8f5; border-color: rgba(193,154,81,0.2); box-shadow: 0 30px 80px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
+
+          <!-- Header -->
+          <div class="flex items-center justify-between p-8 pb-0">
+            <div>
+              <p class="text-[10px] font-black uppercase tracking-[0.24em] mb-1" style="color: #c19a51;">
+                {{ configuratorStep === 'lens' ? 'Langkah 1 dari 2' : 'Langkah 2 dari 2' }}
+              </p>
+              <h2 class="text-2xl font-black" style="color: #1a1209; font-family: 'Outfit', sans-serif;">
+                {{ configuratorStep === 'lens' ? 'Pilih Jenis Lensa' : 'Pilih Coating Lensa' }}
+              </h2>
+              <p class="text-xs mt-1" style="color: #8a7a60;">
+                {{ configuratorStep === 'lens'
+                  ? 'Pilih jenis lensa yang sesuai dengan kebutuhan penglihatan Anda.'
+                  : 'Tambahkan lapisan pelindung untuk kenyamanan dan ketahanan lensa.' }}
+              </p>
+            </div>
+            <button @click="isLensModalOpen = false" class="w-10 h-10 rounded-none flex items-center justify-center transition-all flex-shrink-0" style="background: rgba(193,154,81,0.1); color: #7a6230;">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+
+          <!-- Step indicator -->
+          <div class="flex gap-2 px-8 pt-4">
+            <div class="h-1 flex-1 rounded-none transition-all" :style="configuratorStep === 'lens' ? 'background: #c19a51;' : 'background: #c19a51;'"></div>
+            <div class="h-1 flex-1 rounded-none transition-all" :style="configuratorStep === 'coating' ? 'background: #c19a51;' : 'background: rgba(193,154,81,0.2);'"></div>
+          </div>
+
+          <!-- Harga sementara -->
+          <div class="mx-8 mt-4 p-4 border" style="background: rgba(193,154,81,0.05); border-color: rgba(193,154,81,0.2);">
+            <div class="flex items-center justify-between text-xs">
+              <span style="color: #8a7a60;">Frame</span>
+              <span class="font-bold" style="color: #1a1209;">Rp {{ (product?.price || 0).toLocaleString('id-ID') }}</span>
+            </div>
+            <div v-if="selectedLensOption" class="flex items-center justify-between text-xs mt-1">
+              <span style="color: #8a7a60;">{{ selectedLensOption.name }}</span>
+              <span class="font-bold" style="color: #1a1209;">+Rp {{ (selectedLensOption.base_price || 0).toLocaleString('id-ID') }}</span>
+            </div>
+            <div v-if="selectedCoating" class="flex items-center justify-between text-xs mt-1">
+              <span style="color: #8a7a60;">{{ selectedCoating.name }}</span>
+              <span class="font-bold" style="color: #1a1209;">+Rp {{ (selectedCoating.price || 0).toLocaleString('id-ID') }}</span>
+            </div>
+            <div class="flex items-center justify-between mt-2 pt-2 border-t" style="border-color: rgba(193,154,81,0.2);">
+              <span class="text-xs font-black uppercase tracking-wider" style="color: #5a5248;">Total</span>
+              <span class="font-black text-base" style="color: #c19a51;">Rp {{ configuratorTotalPrice.toLocaleString('id-ID') }}</span>
             </div>
           </div>
 
-          <button @click="isLensModalOpen = false" class="mt-8 w-full py-3 text-sm font-bold rounded-none transition-all" style="color: #8a7a60; border: 1px solid rgba(193,154,81,0.2);">
-            Batal
-          </button>
+          <!-- ── STEP 1: Pilih Lens Option ── -->
+          <div v-if="configuratorStep === 'lens'" class="p-8 pt-5">
+            <div v-if="isLensesLoading" class="flex justify-center py-12">
+              <div class="w-10 h-10 rounded-none border-4 border-t-transparent animate-spin" style="border-color: rgba(193,154,81,0.25); border-top-color: #c19a51;"></div>
+            </div>
+
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <button
+                v-for="opt in (product as any)?.compatible_lens_options || []"
+                :key="opt.id"
+                @click="selectLensOption(opt)"
+                class="p-5 rounded-none border text-left transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+                style="border-color: rgba(193,154,81,0.2); background: white;"
+              >
+                <div class="flex items-start justify-between gap-2 mb-2">
+                  <h3 class="font-bold text-sm leading-tight" style="color: #1a1209;">{{ opt.name }}</h3>
+                  <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 flex-shrink-0" style="background: rgba(193,154,81,0.1); color: #8a7a60;">{{ opt.type?.replace('_', ' ') }}</span>
+                </div>
+                <p class="font-black text-base" style="color: #c19a51;">+Rp {{ (opt.base_price || 0).toLocaleString('id-ID') }}</p>
+              </button>
+
+              <div v-if="!(product as any)?.compatible_lens_options?.length" class="col-span-2 text-center py-8 rounded-none" style="background: rgba(193,154,81,0.05); border: 1px solid rgba(193,154,81,0.2);">
+                <span class="material-symbols-outlined text-3xl mb-3 block" style="color: #c19a51;">info</span>
+                <p class="text-sm font-bold mb-1" style="color: #1a1209;">Lensa belum dikonfigurasi</p>
+                <p class="text-xs mb-4" style="color: #8a7a60;">Admin belum mengatur pilihan lensa untuk frame ini. Anda tetap bisa melanjutkan — tim kami akan menghubungi untuk konfirmasi lensa.</p>
+                <button
+                  @click="skipCoating"
+                  class="px-6 py-2.5 text-sm font-black uppercase tracking-wider"
+                  style="background: #1a1209; color: white;"
+                >
+                  Lanjutkan Tanpa Pilih Lensa
+                </button>
+              </div>
+            </div>
+
+            <button @click="isLensModalOpen = false" class="mt-6 w-full py-3 text-sm font-bold rounded-none transition-all" style="color: #8a7a60; border: 1px solid rgba(193,154,81,0.2);">
+              Batal
+            </button>
+          </div>
+
+          <!-- ── STEP 2: Pilih Coating ── -->
+          <div v-if="configuratorStep === 'coating'" class="p-8 pt-5">
+            <div v-if="isCoatingsLoading" class="flex justify-center py-12">
+              <div class="w-10 h-10 rounded-none border-4 border-t-transparent animate-spin" style="border-color: rgba(193,154,81,0.25); border-top-color: #c19a51;"></div>
+            </div>
+
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <button
+                v-for="coating in allCoatings"
+                :key="coating.id"
+                @click="selectedCoating = coating; confirmLensConfiguration()"
+                class="p-5 rounded-none border text-left transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+                :style="selectedCoating?.id === coating.id
+                  ? 'border-color: #c19a51; background: rgba(193,154,81,0.06); box-shadow: 0 0 0 2px rgba(193,154,81,0.3);'
+                  : 'border-color: rgba(193,154,81,0.2); background: white;'"
+              >
+                <h3 class="font-bold text-sm mb-1" style="color: #1a1209;">{{ coating.name }}</h3>
+                <p v-if="coating.description" class="text-xs leading-relaxed mb-3" style="color: #8a7a60;">{{ coating.description }}</p>
+                <p class="font-black text-base" style="color: #c19a51;">+Rp {{ (coating.price || 0).toLocaleString('id-ID') }}</p>
+              </button>
+            </div>
+
+            <div class="flex flex-col gap-3 mt-6">
+              <button
+                @click="skipCoating"
+                class="w-full py-3 text-sm font-bold rounded-none transition-all"
+                style="background: #1a1209; color: white;"
+              >
+                Lanjutkan Tanpa Coating
+              </button>
+              <button
+                @click="configuratorStep = 'lens'"
+                class="w-full py-3 text-sm font-bold rounded-none transition-all"
+                style="color: #8a7a60; border: 1px solid rgba(193,154,81,0.2);"
+              >
+                ← Kembali Pilih Lensa
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
     </Teleport>

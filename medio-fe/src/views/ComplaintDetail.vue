@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { complaintRepository } from '../repositories/ComplaintRepository';
 import PageHero from '../components/layout/PageHero.vue';
+import { apiOrigin } from '../core/api/axiosclient';
 
 const route = useRoute();
 const router = useRouter();
@@ -10,8 +11,6 @@ const router = useRouter();
 const complain = ref<any>(null);
 const isLoading = ref(true);
 const error = ref('');
-const apiOrigin = new URL(import.meta.env.VITE_API_URL || 'http://localhost:8000/api', window.location.origin).origin;
-
 const statusLabel = computed(() => {
   const map: Record<string, string> = {
     open: 'Menunggu Tindakan',
@@ -49,6 +48,10 @@ const backTo = computed(() =>
 
 const backLabel = computed(() =>
   complain.value?.order ? 'Kembali ke Pesanan' : 'Kembali ke Pesanan Saya'
+);
+
+const complaintTypeLabel = computed(() =>
+  complain.value?.complaint_type === 'shipping_protection' ? 'Klaim Proteksi Pengiriman' : 'Komplain Umum'
 );
 
 const formatDate = (val: string) =>
@@ -89,6 +92,11 @@ onMounted(async () => {
       <main class="max-w-3xl mx-auto px-6 py-10">
         <!-- Header -->
         <div class="border p-6 mb-6" style="background: white; border-color: rgba(193,154,81,0.2); box-shadow: 0 2px 12px rgba(0,0,0,0.04);">
+          <div class="mb-3">
+            <span class="inline-flex px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em]" :style="`background: ${complain.complaint_type === 'shipping_protection' ? 'rgba(37,99,235,0.1)' : 'rgba(193,154,81,0.1)'}; color: ${complain.complaint_type === 'shipping_protection' ? '#1d4ed8' : '#8a7a60'};`">
+              {{ complaintTypeLabel }}
+            </span>
+          </div>
           <div class="flex items-start justify-between gap-4 flex-wrap">
             <div>
               <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-1" style="color: #8a7a60;">Komplain #{{ complain.id }}</p>

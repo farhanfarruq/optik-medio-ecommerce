@@ -161,9 +161,17 @@ export const useCartStore = defineStore('cart', () => {
     });
   }
 
-  function buildCalculatePayload(discountId?: number, shippingCost?: number, loyaltyPointsUsed = 0, shippingAddressId?: number | null) {
+  function buildCalculatePayload(
+    discountId?: number,
+    shippingCost?: number,
+    loyaltyPointsUsed = 0,
+    shippingAddressId?: number | null,
+    shippingProtectionOpted = false,
+    fulfillmentMethod = 'delivery',
+  ) {
     const payload: any = {
       items: buildCheckoutItemsPayload(),
+      fulfillment_method: fulfillmentMethod,
     };
 
     if (appliedPromoId.value && !discountId) payload.promo_id = appliedPromoId.value;
@@ -171,6 +179,7 @@ export const useCartStore = defineStore('cart', () => {
     if (shippingCost !== undefined) payload.shipping_cost = shippingCost;
     if (loyaltyPointsUsed > 0) payload.loyalty_points_used = loyaltyPointsUsed;
     if (shippingAddressId) payload.shipping_address_id = shippingAddressId;
+    if (shippingProtectionOpted) payload.shipping_protection_opted = true;
 
     return payload;
   }
@@ -186,7 +195,14 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
-  async function calculateCart(discountId?: number, shippingCost?: number, loyaltyPointsUsed = 0, shippingAddressId?: number | null) {
+  async function calculateCart(
+    discountId?: number,
+    shippingCost?: number,
+    loyaltyPointsUsed = 0,
+    shippingAddressId?: number | null,
+    shippingProtectionOpted = false,
+    fulfillmentMethod = 'delivery',
+  ) {
     if (items.value.length === 0) {
       calculatedData.value = null;
       return;
@@ -194,7 +210,7 @@ export const useCartStore = defineStore('cart', () => {
     
     isCalculating.value = true;
     try {
-      const response = await apiClient.post('/orders/calculate', buildCalculatePayload(discountId, shippingCost, loyaltyPointsUsed, shippingAddressId));
+      const response = await apiClient.post('/orders/calculate', buildCalculatePayload(discountId, shippingCost, loyaltyPointsUsed, shippingAddressId, shippingProtectionOpted, fulfillmentMethod));
       calculatedData.value = response.data;
     } catch (err: any) {
       console.error('Calculate failed', err);
@@ -208,7 +224,7 @@ export const useCartStore = defineStore('cart', () => {
           appliedPromoId.value = null;
           isPromoExplicitlyCleared.value = true;
 
-          const response = await apiClient.post('/orders/calculate', buildCalculatePayload(discountId, shippingCost, loyaltyPointsUsed, shippingAddressId));
+          const response = await apiClient.post('/orders/calculate', buildCalculatePayload(discountId, shippingCost, loyaltyPointsUsed, shippingAddressId, shippingProtectionOpted, fulfillmentMethod));
           calculatedData.value = response.data;
           return;
         }
@@ -220,13 +236,21 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
-  async function setPromo(promoId: number | null, discountId?: number, shippingCost?: number, loyaltyPointsUsed = 0, shippingAddressId?: number | null) {
+  async function setPromo(
+    promoId: number | null,
+    discountId?: number,
+    shippingCost?: number,
+    loyaltyPointsUsed = 0,
+    shippingAddressId?: number | null,
+    shippingProtectionOpted = false,
+    fulfillmentMethod = 'delivery',
+  ) {
     const previousPromoId = appliedPromoId.value;
     appliedPromoId.value = promoId;
     isPromoExplicitlyCleared.value = (promoId === null);
     
     try {
-      await calculateCart(discountId, shippingCost, loyaltyPointsUsed, shippingAddressId);
+      await calculateCart(discountId, shippingCost, loyaltyPointsUsed, shippingAddressId, shippingProtectionOpted, fulfillmentMethod);
 
       if (promoId && appliedPromoId.value !== promoId) {
         const error: any = new Error('Anda telah mencapai batas pemakaian untuk promo ini.');

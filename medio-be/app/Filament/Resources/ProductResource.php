@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductResource\Pages;
+use App\Models\LensOption;
 use App\Models\Product;
 use Filament\Forms;
 use Filament\Schemas\Schema;
@@ -245,6 +246,40 @@ class ProductResource extends Resource
                     ])
                     ->columns(3),
 
+                // ── Lens Options Kompatibel ──────────────────────────────────
+                \Filament\Schemas\Components\Section::make('Lensa Kompatibel')
+                    ->description('Pilih jenis lensa yang bisa dipasangkan dengan frame ini. Hanya relevan untuk produk frame kacamata.')
+                    ->collapsible()
+                    ->schema([
+                        Forms\Components\Select::make('compatible_lens_option_ids')
+                            ->label('Lens Options yang Kompatibel')
+                            ->multiple()
+                            ->options(
+                                LensOption::where('is_active', true)
+                                    ->orderBy('type')
+                                    ->orderBy('name')
+                                    ->get()
+                                    ->mapWithKeys(fn (LensOption $opt) => [
+                                        $opt->id => "[{$opt->type}] {$opt->name} — Rp " . number_format($opt->base_price, 0, ',', '.'),
+                                    ])
+                                    ->toArray()
+                            )
+                            ->default([])
+                            ->searchable()
+                            ->helperText('Pilih semua jenis lensa yang bisa dipasang ke frame ini. Pilihan ini akan muncul saat customer membeli produk.')
+                            ->columnSpanFull()
+                            ->dehydrated(true)
+                            ->afterStateHydrated(function (Forms\Components\Select $component, $record) {
+                                if ($record) {
+                                    $ids = $record->compatibleLensOptions()
+                                        ->pluck('lens_options.id')
+                                        ->map(fn ($id) => (string) $id)
+                                        ->toArray();
+                                    $component->state($ids);
+                                }
+                            }),
+                    ]),
+
                 \Filament\Schemas\Components\Section::make('SEO & Metadata')
                     ->collapsed()
                     ->schema([
@@ -274,7 +309,7 @@ class ProductResource extends Resource
                             ->maxLength(255),
                         Forms\Components\TextInput::make('og_image')
                             ->label('OG Image URL')
-                            ->url()
+                            ->rules(['nullable', 'url'])
                             ->helperText('URL gambar untuk Open Graph / social share. Kosongkan untuk pakai gambar utama produk.')
                             ->maxLength(500),
                     ])
@@ -292,10 +327,10 @@ class ProductResource extends Resource
                     ->circular(),
                 Tables\Columns\TextColumn::make('name')->searchable(),
                 Tables\Columns\TextColumn::make('sku')->searchable()->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('category.name')->sortable(),
+                Tables\Columns\TextColumn::make('category.name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('brand')->searchable()->toggleable(),
-                Tables\Columns\TextColumn::make('frame_shape')->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('face_size_fit')->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('frame_shape')->searchable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('face_size_fit')->searchable()->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('price')->money('IDR')->sortable(),
                 Tables\Columns\TextColumn::make('stock')->numeric()->sortable(),
                 Tables\Columns\TextColumn::make('recommendation_priority')
@@ -310,11 +345,82 @@ class ProductResource extends Resource
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
+                Tables\Filters\SelectFilter::make('category')
+                    ->label('Kategori')
+                    ->relationship('category', 'name')
+                    ->searchable()
+                    ->preload(),
                 Tables\Filters\TernaryFilter::make('is_featured')->label('Featured'),
                 Tables\Filters\TernaryFilter::make('is_best_seller')->label('Best Seller'),
+                Tables\Filters\TernaryFilter::make('is_active')->label('Aktif'),
+                Tables\Filters\TernaryFilter::make('is_prescription_required')->label('Butuh Resep'),
             ])
             ->actions([ \Filament\Actions\EditAction::make(), \Filament\Actions\DeleteAction::make() ])
-            ->bulkActions([ \Filament\Actions\BulkActionGroup::make([ \Filament\Actions\DeleteBulkAction::make() ]) ]);
+            ->bulkActions([
+                \Filament\Actions\BulkActionGroup::make([
+                    \Filament\Actions\BulkAction::make('update_product_flags')
+                        ->label('Atur Status Produk')
+                        ->icon('heroicon-o-adjustments-horizontal')
+                        ->modalHeading('Atur status produk terpilih')
+                        ->schema([
+                            Forms\Components\Select::make('is_active')
+                                ->label('Is active')
+                                ->options([
+                                    '1' => 'On',
+                                    '0' => 'Off',
+                                ])
+                                ->placeholder('Jangan ubah')
+                                ->native(false),
+                            Forms\Components\Select::make('is_best_seller')
+                                ->label('Best Seller')
+                                ->options([
+                                    '1' => 'On',
+                                    '0' => 'Off',
+                                ])
+                                ->placeholder('Jangan ubah')
+                                ->native(false),
+                            Forms\Components\Select::make('is_featured')
+                                ->label('Featured')
+                                ->options([
+                                    '1' => 'On',
+                                    '0' => 'Off',
+                                ])
+                                ->placeholder('Jangan ubah')
+                                ->native(false),
+                            Forms\Components\Select::make('is_prescription_required')
+                                ->label('Is prescription required')
+                                ->options([
+                                    '1' => 'On',
+                                    '0' => 'Off',
+                                ])
+                                ->placeholder('Jangan ubah')
+                                ->native(false),
+                        ])
+                        ->action(function ($records, array $data): void {
+                            $updates = [];
+
+                            foreach ([
+                                'is_active',
+                                'is_best_seller',
+                                'is_featured',
+                                'is_prescription_required',
+                            ] as $field) {
+                                if (($data[$field] ?? null) !== null) {
+                                    $updates[$field] = (string) $data[$field] === '1';
+                                }
+                            }
+
+                            if ($updates === []) {
+                                return;
+                            }
+
+                            $records->each(fn (Product $record) => $record->update($updates));
+                        })
+                        ->successNotificationTitle('Status produk diperbarui')
+                        ->deselectRecordsAfterCompletion(),
+                    \Filament\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
     }
 
     public static function getPages(): array

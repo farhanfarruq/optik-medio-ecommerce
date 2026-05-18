@@ -34,6 +34,9 @@ const form = ref({
   selected_service: ''
 });
 
+// Metode pemenuhan: 'delivery' = dikirim ke alamat, 'store_pickup' = ambil di toko
+const fulfillmentMethod = ref<'delivery' | 'store_pickup'>('delivery');
+
 // State Data RajaOngkir
 const provinces = ref<Location[]>([]);
 const cities = ref<Location[]>([]);
@@ -76,6 +79,67 @@ const needsBankSelection = computed(() =>
   selectedPaymentMethod.value?.requires_bank_selection ?? false
 );
 
+// ── Xendit Payment Modal ─────────────────────────────────────────────────────
+const showXenditModal = ref(false);
+const xenditCheckoutUrl = ref('');
+const xenditOrderId = ref<number | null>(null);
+const xenditPickupQuery = ref<Record<string, string> | null>(null);
+const isPollingPayment = ref(false);
+
+const openXenditModal = (url: string, orderId: number, pickupQuery: Record<string, string> | null = null) => {
+  xenditCheckoutUrl.value = url;
+  xenditOrderId.value = orderId;
+  xenditPickupQuery.value = pickupQuery;
+  showXenditModal.value = true;
+  startPaymentPolling(orderId);
+};
+
+const closeXenditModal = () => {
+  showXenditModal.value = false;
+  stopPaymentPolling();
+  if (xenditOrderId.value) {
+    // Jika pickup: ke waiting-payment dulu (pembayaran belum tentu selesai)
+    router.push(`/waiting-payment/${xenditOrderId.value}`);
+  }
+};
+
+let paymentPollInterval: ReturnType<typeof setInterval> | null = null;
+
+const startPaymentPolling = (orderId: number) => {
+  isPollingPayment.value = true;
+  paymentPollInterval = setInterval(async () => {
+    try {
+      const { data } = await apiClient.get(`/orders/${orderId}`);
+      const status = data?.status || data?.data?.status;
+      if (status && !['unpaid', 'pending'].includes(status.toLowerCase())) {
+        stopPaymentPolling();
+        showXenditModal.value = false;
+        showToast('Pembayaran berhasil! Pesanan sedang diproses.', 'success');
+        // Jika pickup: redirect ke halaman booking setelah pembayaran lunas
+        if (xenditPickupQuery.value) {
+          router.push({ path: '/appointment', query: xenditPickupQuery.value });
+        } else {
+          router.push(`/orders/${orderId}`);
+        }
+      }
+    } catch (e: any) {
+      // Stop polling jika 401 (user tidak terautentikasi) atau 404 (order tidak ditemukan)
+      if (e?.response?.status === 401 || e?.response?.status === 404) {
+        stopPaymentPolling();
+      }
+      // Error lain (network, 500) — biarkan polling lanjut
+    }
+  }, 3000);
+};
+
+const stopPaymentPolling = () => {
+  isPollingPayment.value = false;
+  if (paymentPollInterval) {
+    clearInterval(paymentPollInterval);
+    paymentPollInterval = null;
+  }
+};
+
 // State Diskon
 const couponCode = ref('');
 const appliedDiscount = ref<any>(null);
@@ -99,6 +163,19 @@ const selectedLoyaltyPoints = computed(() =>
 );
 const loyaltyDiscountAmount = computed(() => {
   return selectedLoyaltyPoints.value * 1000;
+});
+const shippingProtectionOpted = ref(false);
+const shippingProtectionFee = computed(() => Number(cartStore.calculatedData?.shipping_protection_fee || 0));
+const shippingProtectionSummary = computed(() => {
+  if (!selectedShipping.value) {
+    return 'Pilih layanan kirim terlebih dahulu untuk melihat biaya proteksi.';
+  }
+
+  if (!shippingProtectionOpted.value) {
+    return 'Opsional. Tambahkan proteksi jika ingin ada perlindungan tambahan saat barang hilang atau rusak di pengiriman.';
+  }
+
+  return `Proteksi aktif dengan biaya Rp ${shippingProtectionFee.value.toLocaleString('id-ID')}.`;
 });
 
 const applyCoupon = async () => {
@@ -134,7 +211,14 @@ const handlePromoSelect = async (promoId: number) => {
   const targetId = cartStore.appliedPromoId === promoId ? null : promoId;
   
   try {
-    await cartStore.setPromo(targetId, appliedDiscount.value?.id, selectedShippingCost.value, selectedLoyaltyPoints.value, form.value.id);
+    await cartStore.setPromo(
+      targetId,
+      appliedDiscount.value?.id,
+      selectedShippingCost.value,
+      selectedLoyaltyPoints.value,
+      form.value.id,
+      shippingProtectionOpted.value,
+    );
     if (targetId) {
       showToast('Promo berhasil diterapkan!', 'success');
     } else {
@@ -205,7 +289,14 @@ const selectAddress = async (addr: any) => {
 
 const calculateCheckoutTotals = async (shippingCost = selectedShippingCost.value) => {
   try {
-    await cartStore.calculateCart(appliedDiscount.value?.id, shippingCost, selectedLoyaltyPoints.value, form.value.id);
+    await cartStore.calculateCart(
+      appliedDiscount.value?.id,
+      fulfillmentMethod.value === 'store_pickup' ? 0 : shippingCost,
+      selectedLoyaltyPoints.value,
+      fulfillmentMethod.value === 'store_pickup' ? null : form.value.id,
+      fulfillmentMethod.value === 'store_pickup' ? false : shippingProtectionOpted.value,
+      fulfillmentMethod.value,
+    );
   } catch (error: any) {
     checkoutError.value = error?.response?.data?.message || 'Gagal menghitung total checkout.';
   }
@@ -272,6 +363,16 @@ watch(() => form.value.selected_service, async (newVal) => {
 
 watch(selectedLoyaltyPoints, async () => {
   await calculateCheckoutTotals(selectedShippingCost.value);
+});
+
+watch(shippingProtectionOpted, async () => {
+  if (!selectedShipping.value) return;
+  await calculateCheckoutTotals(selectedShippingCost.value);
+});
+
+// Recalculate saat metode pemenuhan berubah
+watch(fulfillmentMethod, async () => {
+  await calculateCheckoutTotals(0);
 });
 
 // Watchers
@@ -354,6 +455,9 @@ watch([
 });
 
 const isAddressComplete = computed(() => {
+  // Saat ambil di toko, alamat tidak diperlukan
+  if (fulfillmentMethod.value === 'store_pickup') return true;
+
   return !!(
     form.value.recipient_name.trim() &&
     form.value.phone.trim() &&
@@ -422,6 +526,7 @@ const selectedShipping = computed(() => {
 });
 
 const selectedShippingCost = computed(() => {
+  if (fulfillmentMethod.value === 'store_pickup') return 0;
   return selectedShipping.value ? selectedShipping.value.cost : 0;
 });
 
@@ -431,7 +536,7 @@ const grandTotal = computed(() => {
     return Math.max(0, cartStore.calculatedData.total_price);
   }
   const subtotalAfterDiscount = Math.max(0, cartStore.cartTotal - discountAmount.value);
-  return Math.max(0, subtotalAfterDiscount + selectedShippingCost.value - levelDiscountAmount.value - loyaltyDiscountAmount.value);
+  return Math.max(0, subtotalAfterDiscount + selectedShippingCost.value + shippingProtectionFee.value - levelDiscountAmount.value - loyaltyDiscountAmount.value);
 });
 
 const submitOrder = async () => {
@@ -447,42 +552,48 @@ const submitOrder = async () => {
     return;
   }
 
-  const selected = selectedShipping.value;
-  if (!selected) {
-    showToast('Pilih layanan pengiriman terlebih dahulu.', 'error');
-    return;
+  const isPickup = fulfillmentMethod.value === 'store_pickup';
+
+  if (!isPickup) {
+    const selected = selectedShipping.value;
+    if (!selected) {
+      showToast('Pilih layanan pengiriman terlebih dahulu.', 'error');
+      return;
+    }
   }
 
   isSubmitting.value = true;
   try {
-    let shippingAddressId = form.value.id;
+    let shippingAddressId: number | null = null;
 
-    if (!shippingAddressId) {
-        const addressPayload = {
-            recipient_name: form.value.recipient_name.trim(),
-            phone: form.value.phone.trim(),
-            province: form.value.province.trim(),
-            province_id: String(form.value.province_id).trim(),
-            city: form.value.city.trim(),
-            city_id: String(form.value.city_id).trim(),
-            district: form.value.district.trim(),
-            district_id: String(form.value.district_id).trim(),
-            postal_code: form.value.postal_code.trim(),
-            address: form.value.address.trim(),
-            is_default: true
-        };
+    if (!isPickup) {
+      shippingAddressId = form.value.id;
 
-        const addressResponse = await apiClient.post('/addresses', addressPayload);
-         shippingAddressId = addressResponse.data.id;
+      if (!shippingAddressId) {
+          const addressPayload = {
+              recipient_name: form.value.recipient_name.trim(),
+              phone: form.value.phone.trim(),
+              province: form.value.province.trim(),
+              province_id: String(form.value.province_id).trim(),
+              city: form.value.city.trim(),
+              city_id: String(form.value.city_id).trim(),
+              district: form.value.district.trim(),
+              district_id: String(form.value.district_id).trim(),
+              postal_code: form.value.postal_code.trim(),
+              address: form.value.address.trim(),
+              is_default: true
+          };
+
+          const addressResponse = await apiClient.post('/addresses', addressPayload);
+          shippingAddressId = addressResponse.data.id;
+      }
     }
 
+    const selected = selectedShipping.value;
     const itemsPayload = cartStore.buildCheckoutItemsPayload();
 
-    const payload = {
-      shipping_address_id: shippingAddressId,
-      courier: selected.courier,
-      courier_service: selected.service,
-      shipping_cost: selected.cost,
+    const payload: any = {
+      fulfillment_method: fulfillmentMethod.value,
       payment_method_id: selectedPaymentMethodId.value,
       bank_id: needsBankSelection.value ? selectedBankId.value : null,
       discount_id: appliedDiscount.value?.id || null,
@@ -492,13 +603,38 @@ const submitOrder = async () => {
       notes: ''
     };
 
+    if (!isPickup && shippingAddressId) {
+      payload.shipping_address_id = shippingAddressId;
+      payload.courier = selected!.courier;
+      payload.courier_service = selected!.service;
+      payload.shipping_cost = selected!.cost;
+      payload.shipping_protection_opted = shippingProtectionOpted.value;
+    }
+
     const orderResponse: any = await orderRepository.createOrder(payload);
     cartStore.clearCart();
+
+    // Query params untuk redirect ke booking setelah pembayaran (hanya saat pickup)
+    const pickupQuery = isPickup ? {
+      service: 'pickup',
+      order_id: String(orderResponse.id),
+      order_number: orderResponse.order_number,
+      source_label: `Pesanan #${orderResponse.order_number}`,
+    } : null;
+
     if (orderResponse.payment?.checkout_url) {
-      window.location.href = orderResponse.payment.checkout_url;
+      // Xendit: buka modal pembayaran. Setelah selesai, WaitingPayment/callback
+      // akan menangani redirect ke booking jika pickup.
+      openXenditModal(orderResponse.payment.checkout_url, orderResponse.id, pickupQuery);
     } else if (isManualPayment.value) {
       showToast('Pesanan berhasil! Silakan selesaikan pembayaran.', 'success');
+      // Untuk pickup + manual: ke waiting-payment dulu, setelah lunas baru booking
       router.push(`/waiting-payment/${orderResponse.id}`);
+    } else if (isPickup) {
+      // Metode bayar yang tidak butuh konfirmasi (misal COD/bayar di toko):
+      // langsung ke booking
+      showToast('Pesanan berhasil! Silakan booking jadwal pengambilan di toko.', 'success');
+      router.push({ path: '/appointment', query: pickupQuery! });
     } else {
       showToast('Pesanan berhasil dibuat!', 'success');
       router.push('/orders');
@@ -572,8 +708,68 @@ const submitOrder = async () => {
         <!-- Left Column: Forms -->
         <div class="w-full lg:w-3/5 xl:w-2/3 flex flex-col gap-8">
           
-          <!-- Shipping Destination Section -->
-          <section class="bg-white p-8 rounded-none shadow-sm border border-stone-200 group relative">
+          <!-- ── Pilihan Metode Pemenuhan ─────────────────────────────────── -->
+          <section class="bg-white p-8 rounded-none shadow-sm border border-stone-200">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-10 h-10 rounded-none bg-stone-100 flex items-center justify-center text-stone-600">
+                <span class="material-symbols-outlined">package_2</span>
+              </div>
+              <div>
+                <h2 class="text-xl font-bold text-stone-900" style="font-family: 'Outfit', sans-serif;">Cara Mendapatkan Pesanan</h2>
+                <p class="text-xs text-stone-500">Pilih apakah pesanan dikirim atau diambil langsung di toko</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Opsi: Dikirim ke Alamat -->
+              <label
+                class="flex items-start gap-4 p-5 border-2 rounded-none cursor-pointer transition-all hover:bg-stone-50"
+                :class="fulfillmentMethod === 'delivery' ? 'border-[#c19a51] bg-amber-50/30 ring-1 ring-[#c19a51]/40' : 'border-stone-200'"
+              >
+                <input type="radio" v-model="fulfillmentMethod" value="delivery" class="accent-amber-700 w-5 h-5 mt-0.5 shrink-0" />
+                <div>
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="material-symbols-outlined text-lg" style="color: #c19a51;">local_shipping</span>
+                    <p class="font-bold text-sm text-stone-900">Dikirim ke Alamat</p>
+                  </div>
+                  <p class="text-xs text-stone-500 leading-relaxed">Pesanan dikirim ke alamat tujuan Anda. Biaya ongkir sesuai kurir yang dipilih.</p>
+                </div>
+              </label>
+
+              <!-- Opsi: Ambil di Toko -->
+              <label
+                class="flex items-start gap-4 p-5 border-2 rounded-none cursor-pointer transition-all hover:bg-stone-50"
+                :class="fulfillmentMethod === 'store_pickup' ? 'border-[#c19a51] bg-amber-50/30 ring-1 ring-[#c19a51]/40' : 'border-stone-200'"
+              >
+                <input type="radio" v-model="fulfillmentMethod" value="store_pickup" class="accent-amber-700 w-5 h-5 mt-0.5 shrink-0" />
+                <div>
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="material-symbols-outlined text-lg" style="color: #c19a51;">storefront</span>
+                    <p class="font-bold text-sm text-stone-900">Ambil di Toko</p>
+                    <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded" style="background: rgba(34,197,94,0.12); color: #15803d;">Gratis Ongkir</span>
+                  </div>
+                  <p class="text-xs text-stone-500 leading-relaxed">Beli online, ambil langsung di toko kami. Tidak ada biaya pengiriman. Setelah checkout, Anda akan diarahkan untuk booking jadwal pengambilan.</p>
+                </div>
+              </label>
+            </div>
+
+            <!-- Info banner saat pickup dipilih -->
+            <div v-if="fulfillmentMethod === 'store_pickup'" class="mt-5 p-4 flex items-start gap-3 rounded-none" style="background: rgba(193,154,81,0.08); border: 1px solid rgba(193,154,81,0.3);">
+              <span class="material-symbols-outlined text-xl shrink-0 mt-0.5" style="color: #c19a51;">info</span>
+              <div class="text-xs leading-relaxed" style="color: #7a6230;">
+                <p class="font-bold mb-1">Cara kerja Ambil di Toko:</p>
+                <ol class="list-decimal list-inside space-y-1">
+                  <li>Selesaikan pembayaran online seperti biasa.</li>
+                  <li>Setelah pesanan dikonfirmasi, Anda akan diarahkan untuk booking jadwal pengambilan.</li>
+                  <li>Datang ke toko sesuai jadwal yang dipilih dan tunjukkan nomor pesanan.</li>
+                </ol>
+                <p class="mt-2 font-semibold">Harga yang berlaku adalah harga online. Promo dan diskon online tetap berlaku.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Shipping Destination Section (hanya tampil saat delivery) -->
+          <section v-if="fulfillmentMethod === 'delivery'" class="bg-white p-8 rounded-none shadow-sm border border-stone-200 group relative">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-none bg-stone-100 flex items-center justify-center text-stone-600">
@@ -713,7 +909,7 @@ const submitOrder = async () => {
           </section>
 
           <!-- Delivery Method Section -->
-          <section v-if="form.district_id" class="bg-white p-8 rounded-none shadow-sm border border-stone-200">
+          <section v-if="fulfillmentMethod === 'delivery' && form.district_id" class="bg-white p-8 rounded-none shadow-sm border border-stone-200">
             <div class="flex items-center gap-3 mb-8">
               <div class="w-10 h-10 rounded-none bg-stone-100 flex items-center justify-center text-stone-600">
                 <span class="material-symbols-outlined">local_shipping</span>
@@ -788,6 +984,28 @@ const submitOrder = async () => {
               </label>
             </div>
 
+            <div class="mt-6 pt-6 border-t border-stone-100">
+              <div class="flex items-start justify-between gap-4 p-4 border border-stone-200 bg-stone-50">
+                <div class="min-w-0">
+                  <p class="text-sm font-bold" style="color: #1a1209;">Proteksi Pengiriman</p>
+                  <p class="text-xs leading-relaxed text-stone-500 mt-1">
+                    {{ shippingProtectionSummary }}
+                  </p>
+                </div>
+                <label class="shrink-0 inline-flex items-center gap-3 cursor-pointer">
+                  <span class="text-xs font-bold text-stone-700">
+                    {{ shippingProtectionOpted ? 'Aktif' : 'Tidak' }}
+                  </span>
+                  <input
+                    v-model="shippingProtectionOpted"
+                    type="checkbox"
+                    class="h-4 w-4 accent-amber-700"
+                    :disabled="!selectedShipping"
+                  />
+                </label>
+              </div>
+            </div>
+
             <!-- Bank Account Selection -->
             <div v-if="needsBankSelection && bankAccounts.length > 0" class="mt-6 pt-6 border-t border-stone-100">
               <p class="text-sm font-bold mb-3" style="color: #1a1209;">Rekening Tujuan Transfer</p>
@@ -850,7 +1068,13 @@ const submitOrder = async () => {
               </div>
               <div class="flex justify-between text-stone-500">
                 <span>Ongkos Kirim</span>
-                <span class="font-bold text-stone-900">Rp {{ selectedShippingCost.toLocaleString('id-ID') }}</span>
+                <span class="font-bold" :class="fulfillmentMethod === 'store_pickup' ? 'text-green-600' : 'text-stone-900'">
+                  {{ fulfillmentMethod === 'store_pickup' ? 'Gratis (Ambil di Toko)' : 'Rp ' + selectedShippingCost.toLocaleString('id-ID') }}
+                </span>
+              </div>
+              <div v-if="shippingProtectionOpted" class="flex justify-between text-stone-500">
+                <span>Proteksi Pengiriman</span>
+                <span class="font-bold text-stone-900">Rp {{ shippingProtectionFee.toLocaleString('id-ID') }}</span>
               </div>
               <div v-if="cartStore.calculatedData && cartStore.calculatedData.discount_amount > 0" class="flex justify-between text-green-600">
                 <span>Diskon Promo Code</span>
@@ -927,12 +1151,12 @@ const submitOrder = async () => {
 
             <button 
               @click="submitOrder" 
-              :disabled="isSubmitting || !form.selected_service || !isAddressComplete" 
+              :disabled="isSubmitting || (fulfillmentMethod === 'delivery' && !form.selected_service) || !isAddressComplete" 
               class="w-full bg-[#1a1209] text-white py-4 rounded-none font-bold text-sm transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2 shadow-xl shadow-stone-200"
             >
               <span v-if="isSubmitting" class="material-symbols-outlined animate-spin">sync</span>
-              {{ isSubmitting ? 'Memproses...' : 'Bayar Sekarang' }}
-              <span v-if="!isSubmitting" class="material-symbols-outlined text-lg">arrow_forward</span>
+              {{ isSubmitting ? 'Memproses...' : (fulfillmentMethod === 'store_pickup' ? 'Bayar & Booking Pengambilan' : 'Bayar Sekarang') }}
+              <span v-if="!isSubmitting" class="material-symbols-outlined text-lg">{{ fulfillmentMethod === 'store_pickup' ? 'storefront' : 'arrow_forward' }}</span>
             </button>
             
             <div v-if="checkoutError" class="mt-4 text-xs text-red-600 bg-red-50 p-3 rounded-none text-center">
@@ -974,6 +1198,78 @@ const submitOrder = async () => {
         </div>
       </div>
     </Teleport>
+
+    <!-- ╔══════════════════════════════════════════════════╗ -->
+    <!-- ║         XENDIT PAYMENT MODAL OVERLAY            ║ -->
+    <!-- ╚══════════════════════════════════════════════════╝ -->
+    <Teleport to="body">
+      <div
+        v-if="showXenditModal"
+        class="fixed inset-0 z-[9999] flex items-center justify-center"
+        style="background: rgba(10,8,5,0.75); backdrop-filter: blur(20px);"
+      >
+        <div
+          class="relative w-full flex flex-col"
+          style="max-width: 520px; max-height: 92vh; background: #faf8f5; border: 1px solid rgba(193,154,81,0.2); box-shadow: 0 30px 80px rgba(0,0,0,0.35);"
+        >
+          <!-- Header -->
+          <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color: rgba(193,154,81,0.15);">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 flex items-center justify-center" style="background: rgba(193,154,81,0.1);">
+                <span class="material-symbols-outlined text-base" style="color: #c19a51;">lock</span>
+              </div>
+              <div>
+                <p class="text-xs font-black uppercase tracking-[0.2em]" style="color: #1a1209;">Pembayaran Aman</p>
+                <p class="text-[10px]" style="color: #8a7a60;">Diproses oleh Xendit · SSL Terenkripsi</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <!-- Polling indicator -->
+              <div v-if="isPollingPayment" class="flex items-center gap-1.5">
+                <div class="w-1.5 h-1.5 rounded-full animate-pulse" style="background: #c19a51;"></div>
+                <span class="text-[10px]" style="color: #8a7a60;">Menunggu pembayaran...</span>
+              </div>
+              <button
+                @click="closeXenditModal"
+                class="w-9 h-9 flex items-center justify-center transition-all hover:opacity-70"
+                style="background: rgba(193,154,81,0.1); color: #7a6230;"
+                title="Tutup dan lanjutkan nanti"
+              >
+                <span class="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Iframe Xendit -->
+          <div class="flex-1 relative" style="min-height: 500px;">
+            <iframe
+              v-if="xenditCheckoutUrl"
+              :src="xenditCheckoutUrl"
+              class="w-full h-full border-0"
+              style="min-height: 500px;"
+              allow="payment"
+              title="Xendit Payment"
+            ></iframe>
+            <div v-else class="flex items-center justify-center h-full">
+              <div class="w-8 h-8 rounded-none border-4 border-t-transparent animate-spin" style="border-color: rgba(193,154,81,0.25); border-top-color: #c19a51;"></div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="px-6 py-3 border-t flex items-center justify-between" style="border-color: rgba(193,154,81,0.15); background: rgba(245,242,238,0.6);">
+            <p class="text-[10px]" style="color: #8a7a60;">Tutup jendela ini untuk melanjutkan pembayaran nanti dari halaman pesanan.</p>
+            <button
+              @click="closeXenditModal"
+              class="text-[10px] font-black uppercase tracking-wider underline flex-shrink-0 ml-4"
+              style="color: #8a7a60;"
+            >
+              Bayar Nanti
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
   </div>
 </template>
 

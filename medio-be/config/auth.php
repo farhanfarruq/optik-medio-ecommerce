@@ -42,6 +42,13 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // Guard terpisah untuk Filament admin panel
+        // Menggunakan session key berbeda agar tidak tercampur dengan session user frontend
+        'admin' => [
+            'driver' => 'session',
+            'provider' => 'users',
+        ],
     ],
 
     /*

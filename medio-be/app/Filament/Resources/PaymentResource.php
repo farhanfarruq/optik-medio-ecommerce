@@ -29,17 +29,17 @@ class PaymentResource extends Resource
                 Forms\Components\TextInput::make('payment_method')
                     ->disabled(),
                 Forms\Components\TextInput::make('gross_amount')
-                    ->label('Amount')
+                    ->label('Jumlah')
                     ->numeric()
                     ->disabled(),
                 Forms\Components\Select::make('status')
                     ->options([
-                        'pending' => 'Pending',
-                        'success' => 'Paid',
-                        'failed' => 'Failed',
-                        'expired' => 'Expired',
-                        'cancelled' => 'Cancelled',
-                        'refund' => 'Refund',
+                        'pending' => 'Menunggu',
+                        'success' => 'Lunas',
+                        'failed' => 'Gagal',
+                        'expired' => 'Kedaluwarsa',
+                        'cancelled' => 'Dibatalkan',
+                        'refund' => 'Dana Kembali',
                     ])
                     ->required(),
                 Forms\Components\DateTimePicker::make('paid_at'),
@@ -148,12 +148,12 @@ class PaymentResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'pending'   => '⏳ Pending',
-                        'success'   => '✅ Sukses',
+                        'pending'   => '⏳ Menunggu',
+                        'success'   => '✅ Lunas',
                         'failed'    => '❌ Gagal',
-                        'expired'   => '⏰ Expired',
+                        'expired'   => '⏰ Kedaluwarsa',
                         'cancelled' => '🚫 Dibatalkan',
-                        'refund'    => '↩️ Refund',
+                        'refund'    => '↩️ Dana Kembali',
                     ])
                     ->multiple(),
                 Tables\Filters\Filter::make('xendit_pending')

@@ -65,7 +65,16 @@ class OrderRepository implements OrderRepositoryInterface
             $paymentMethodCode = $paymentMethod?->code;
 
             if ($paymentProvider === 'xendit') {
-                $checkoutUrl = $this->xenditService->createInvoice($order);
+                // Untuk store_pickup: setelah bayar redirect ke halaman booking
+                $successRedirectUrl = null;
+                if (($orderData['fulfillment_method'] ?? 'delivery') === 'store_pickup') {
+                    $successRedirectUrl = config('app.frontend_url')
+                        . '/appointment?service=pickup'
+                        . '&order_id=' . $order->id
+                        . '&order_number=' . $order->order_number
+                        . '&source_label=' . urlencode('Pesanan #' . $order->order_number);
+                }
+                $checkoutUrl = $this->xenditService->createInvoice($order, $successRedirectUrl);
             }
 
             Payment::create([

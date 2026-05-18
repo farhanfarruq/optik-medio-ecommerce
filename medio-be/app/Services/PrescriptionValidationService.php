@@ -65,21 +65,27 @@ class PrescriptionValidationService
         if ($osCyl !== null && ($osCyl < -8 || $osCyl > 8)) {
             $warnings[] = "Cylinder kiri ({$osCyl}) tidak biasa. Periksa kembali.";
         }
-        if ($odAxis !== null && ($odAxis < 0 || $odAxis > 180)) {
-            $errors[] = "Axis kanan ({$odAxis}) harus antara 0 dan 180.";
+        if ($odAxis !== null && ($odAxis < 1 || $odAxis > 180)) {
+            $errors[] = "Axis kanan ({$odAxis}) harus antara 1 dan 180.";
         }
-        if ($osAxis !== null && ($osAxis < 0 || $osAxis > 180)) {
-            $errors[] = "Axis kiri ({$osAxis}) harus antara 0 dan 180.";
+        if ($osAxis !== null && ($osAxis < 1 || $osAxis > 180)) {
+            $errors[] = "Axis kiri ({$osAxis}) harus antara 1 dan 180.";
         }
-        if ($pdSingle !== null && ($pdSingle < 50 || $pdSingle > 80)) {
-            $warnings[] = "PD ({$pdSingle}mm) di luar rentang normal (50-80mm). Periksa kembali.";
+        if ($pdSingle !== null && ($pdSingle < 50 || $pdSingle > 75)) {
+            $warnings[] = "PD ({$pdSingle}mm) di luar rentang normal PD tunggal (50-75mm). Periksa kembali.";
+        }
+        if ($pdRight !== null && ($pdRight < 25 || $pdRight > 38)) {
+            $warnings[] = "PD kanan ({$pdRight}mm) di luar rentang normal PD ganda (25-38mm). Periksa kembali.";
+        }
+        if ($pdLeft !== null && ($pdLeft < 25 || $pdLeft > 38)) {
+            $warnings[] = "PD kiri ({$pdLeft}mm) di luar rentang normal PD ganda (25-38mm). Periksa kembali.";
         }
 
         // ── Lens recommendations ────────────────────────────────────────────
         $maxSph = max(abs($odSph ?? 0), abs($osSph ?? 0));
         $maxCyl = max(abs($odCyl ?? 0), abs($osCyl ?? 0));
 
-        if ($maxSph > 6 || $maxCyl > 2) {
+        if ($maxSph >= 4 || $maxCyl > 2) {
             $recommendations[] = [
                 'type'   => 'high_index',
                 'label'  => 'Lensa High Index (1.67 atau 1.74)',

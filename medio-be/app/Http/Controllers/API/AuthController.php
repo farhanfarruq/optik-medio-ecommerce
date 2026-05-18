@@ -32,14 +32,22 @@ class AuthController extends Controller
             'phone'                  => 'nullable|string|max:20',
             'password'               => 'required|string|min:8|confirmed',
             'register_as_affiliator' => 'nullable|boolean',
-            'referral_code'          => 'nullable|string|max:50|exists:user_affiliators,affiliate_code',
+            'referral_code'          => 'nullable|string|max:50',
         ]);
 
         $referringAffiliator = null;
         if ($request->filled('referral_code')) {
+            $referralCode = Str::upper($request->string('referral_code')->trim()->toString());
             $referringAffiliator = UserAffiliator::query()
-                ->where('affiliate_code', $request->string('referral_code')->trim()->toString())
+                ->where('affiliate_code', $referralCode)
+                ->where('status', UserAffiliatorStatus::Approved->value)
                 ->first();
+
+            if (! $referringAffiliator) {
+                throw ValidationException::withMessages([
+                    'referral_code' => 'Kode affiliator tidak valid atau belum aktif.',
+                ]);
+            }
         }
 
         $user = DB::transaction(function () use ($request, $referringAffiliator) {

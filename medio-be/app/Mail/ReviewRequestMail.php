@@ -18,7 +18,7 @@ class ReviewRequestMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Bagaimana Pengalaman Belanja Anda? — Optik Medio',
+            subject: "Pesanan #{$this->order->order_number} Selesai — Bagikan Ulasan Anda",
         );
     }
 

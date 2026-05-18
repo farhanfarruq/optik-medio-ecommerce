@@ -166,9 +166,9 @@ const drawerTop = computed(() => {
 const mobileNavItems = [
   { to: '/products', label: 'Produk', icon: 'storefront' },
   { to: '/face-shape-quiz', label: 'Quiz Bentuk Wajah', icon: 'quiz' },
-  { to: '/virtual-try-on', label: 'Virtual Try-On', icon: 'face_retouching_natural' },
+  { to: '/virtual-try-on', label: 'Coba Virtual', icon: 'face_retouching_natural' },
   { to: '/compare', label: 'Bandingkan Produk', icon: 'compare' },
-  { to: '/appointment', label: 'Booking Appointment', icon: 'calendar_today' },
+  { to: '/appointment', label: 'Booking Konsultasi', icon: 'calendar_today' },
   { to: '/blog', label: 'Blog & Artikel', icon: 'menu_book' },
 ];
 </script>
@@ -270,14 +270,14 @@ const mobileNavItems = [
           class="text-xs font-black uppercase tracking-widest transition-colors"
           :class="isScrolled ? 'text-stone-700 hover:text-stone-950' : 'text-white/85 hover:text-white'"
         >
-          Try-On
+          Coba Virtual
         </router-link>
         <router-link
           to="/compare"
           class="text-xs font-black uppercase tracking-widest transition-colors"
           :class="isScrolled ? 'text-stone-700 hover:text-stone-950' : 'text-white/85 hover:text-white'"
         >
-          Compare
+          Bandingkan
         </router-link>
       </div>
 
@@ -384,7 +384,7 @@ const mobileNavItems = [
             to="/appointment"
             class="hidden md:flex w-10 h-10 rounded-none items-center justify-center transition-all hover:scale-110 active:scale-95"
             :class="isScrolled ? 'hover:bg-stone-100 text-stone-800' : 'hover:bg-white/15 text-white'"
-            title="Booking Appointment"
+            title="Booking Konsultasi"
           >
             <span class="material-symbols-outlined text-2xl">calendar_today</span>
           </router-link>

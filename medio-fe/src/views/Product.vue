@@ -20,6 +20,17 @@ const { showToast } = useToast();
 const products = ref<Product[]>([]);
 const lensShowcaseProducts = ref<Product[]>([]);
 const categories = ref<Category[]>([]);
+
+// State untuk toggle kategori tersembunyi
+const showAllCategories = ref(false);
+const isMobileView = ref(window.innerWidth < 768);
+
+// Update isMobileView saat resize
+if (typeof window !== 'undefined') {
+  window.addEventListener('resize', () => {
+    isMobileView.value = window.innerWidth < 768;
+  });
+}
 const brands = ref<string[]>([]);
 const productFilters = ref<ProductFilters | null>(null);
 const isLoading = ref(true);
@@ -506,47 +517,61 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div class="flex flex-wrap items-center gap-2.5 mb-8" style="padding-top: 80px;">
-      <button
-        @click="goToCategory(null)"
-        class="flex items-center gap-2 px-4 py-2 rounded-none text-xs font-black uppercase tracking-wider transition-all hover:shadow-md active:scale-95"
-        :style="!categorySlug
-          ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white; box-shadow: 0 4px 14px rgba(26,18,9,0.25);'
-          : 'background: rgba(193,154,81,0.08); color: #7a6230; border: 1px solid rgba(193,154,81,0.3);'"
-      >
-        <span class="material-symbols-outlined text-sm">apps</span>
-        Semua
-      </button>
+    <div class="mb-8" style="padding-top: 80px;">
+      <!-- Baris utama: Semua + Promo + kategori yang terlihat -->
+      <div class="flex flex-wrap items-center gap-2.5">
+        <button
+          @click="goToCategory(null)"
+          class="flex items-center gap-2 px-4 py-2 rounded-none text-xs font-black uppercase tracking-wider transition-all hover:shadow-md active:scale-95"
+          :style="!categorySlug
+            ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white; box-shadow: 0 4px 14px rgba(26,18,9,0.25);'
+            : 'background: rgba(193,154,81,0.08); color: #7a6230; border: 1px solid rgba(193,154,81,0.3);'"
+        >
+          <span class="material-symbols-outlined text-sm">apps</span>
+          Semua
+        </button>
 
-      <button
-        @click="togglePromoFilter"
-        class="flex items-center gap-2 px-4 py-2 rounded-none text-xs font-black uppercase tracking-wider transition-all hover:shadow-md active:scale-95"
-        :style="hasPromo
-          ? 'background: linear-gradient(135deg, #ef4444, #991b1b); color: white; box-shadow: 0 4px 14px rgba(239,68,68,0.25);'
-          : 'background: rgba(193,154,81,0.08); color: #ef4444; border: 1px solid rgba(239,68,68,0.3);'"
-      >
-        <span class="material-symbols-outlined text-sm">sell</span>
-        Promo %
-      </button>
+        <button
+          @click="togglePromoFilter"
+          class="flex items-center gap-2 px-4 py-2 rounded-none text-xs font-black uppercase tracking-wider transition-all hover:shadow-md active:scale-95"
+          :style="hasPromo
+            ? 'background: linear-gradient(135deg, #ef4444, #991b1b); color: white; box-shadow: 0 4px 14px rgba(239,68,68,0.25);'
+            : 'background: rgba(193,154,81,0.08); color: #ef4444; border: 1px solid rgba(239,68,68,0.3);'"
+        >
+          <span class="material-symbols-outlined text-sm">sell</span>
+          Promo %
+        </button>
 
+        <!-- Kategori yang selalu terlihat (aktif atau 4 pertama di desktop, 2 di mobile) -->
+        <template v-for="(cat, idx) in categories" :key="cat.id">
+          <button
+            v-if="categorySlug === cat.slug || (showAllCategories ? true : idx < (isMobileView ? 2 : 4))"
+            @click="goToCategory(cat.slug)"
+            class="flex items-center gap-2 px-4 py-2 rounded-none text-xs font-black uppercase tracking-wider transition-all hover:shadow-md active:scale-95"
+            :style="categorySlug === cat.slug
+              ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white; box-shadow: 0 4px 14px rgba(26,18,9,0.25);'
+              : 'background: rgba(193,154,81,0.08); color: #7a6230; border: 1px solid rgba(193,154,81,0.3);'"
+          >
+            {{ cat.name }}
+            <span
+              v-if="cat.products_count !== undefined"
+              class="text-[9px] px-1.5 py-0.5 rounded-none"
+              :style="categorySlug === cat.slug ? 'background: rgba(255,255,255,0.2); color: rgba(255,255,255,0.8);' : 'background: rgba(193,154,81,0.15); color: #c19a51;'"
+            >{{ cat.products_count }}</span>
+          </button>
+        </template>
 
-
-      <button
-        v-for="cat in categories"
-        :key="cat.id"
-        @click="goToCategory(cat.slug)"
-        class="flex items-center gap-2 px-4 py-2 rounded-none text-xs font-black uppercase tracking-wider transition-all hover:shadow-md active:scale-95"
-        :style="categorySlug === cat.slug
-          ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white; box-shadow: 0 4px 14px rgba(26,18,9,0.25);'
-          : 'background: rgba(193,154,81,0.08); color: #7a6230; border: 1px solid rgba(193,154,81,0.3);'"
-      >
-        {{ cat.name }}
-        <span
-          v-if="cat.products_count !== undefined"
-          class="text-[9px] px-1.5 py-0.5 rounded-none"
-          :style="categorySlug === cat.slug ? 'background: rgba(255,255,255,0.2); color: rgba(255,255,255,0.8);' : 'background: rgba(193,154,81,0.15); color: #c19a51;'"
-        >{{ cat.products_count }}</span>
-      </button>
+        <!-- Tombol toggle semua kategori -->
+        <button
+          v-if="categories.length > (isMobileView ? 2 : 4)"
+          @click="showAllCategories = !showAllCategories"
+          class="flex items-center gap-1.5 px-4 py-2 rounded-none text-xs font-black uppercase tracking-wider transition-all hover:shadow-md active:scale-95"
+          style="background: rgba(193,154,81,0.08); color: #7a6230; border: 1px solid rgba(193,154,81,0.3);"
+        >
+          <span class="material-symbols-outlined text-sm transition-transform" :style="showAllCategories ? 'transform: rotate(180deg)' : ''">expand_more</span>
+          {{ showAllCategories ? 'Sembunyikan' : `+${categories.length - (isMobileView ? 2 : 4)} Kategori` }}
+        </button>
+      </div>
     </div>
 
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-4 border-b border-stone-200">

@@ -8,7 +8,7 @@ import { apiClient } from '../core/api/axiosclient';
 import { useToast } from '../composables/useToast';
 import { resolveImageUrl } from '../core/utils/image';
 import { useWishlistStore } from '../stores/wishlistStore';
-import { affiliateRepository, type AffiliateProfile, type AffiliateSummary, type AffiliateCommission } from '../repositories/AffiliateRepository';
+import { affiliateRepository, type AffiliateProfile, type AffiliateSummary, type AffiliateCommission, type AffiliateEarning } from '../repositories/AffiliateRepository';
 import { prescriptionRepository, type PrescriptionPayload, type PrescriptionProfile } from '../repositories/PrescriptionRepository';
 import WarrantyPage from './WarrantyPage.vue';
 
@@ -28,34 +28,97 @@ const lastOrderPage = ref(1);
 const isLoadingMoreOrders = ref(false);
 const canLoadMoreOrders = computed(() => currentOrderPage.value < lastOrderPage.value);
 const orderStatusFilter = ref<string>('all');
-const orderStatusTabs = [
-  { label: 'Semua', value: 'all' },
-  { label: 'Menunggu Bayar', value: 'WaitingPayment' },
-  { label: 'Dikemas', value: 'Processing' },
-  { label: 'Dikirim', value: 'Shipped' },
-  { label: 'Selesai', value: 'Completed' },
-  { label: 'Dibatalkan', value: 'Cancelled' },
+const orderStatusTabs: Array<{ label: string; value: string; statuses: string[] }> = [
+  { label: 'Semua', value: 'all', statuses: [] },
+  { label: 'Menunggu Bayar', value: 'unpaid', statuses: ['unpaid'] },
+  { label: 'Dikemas', value: 'processing', statuses: ['paid', 'waiting_prescription_review', 'prescription_verified', 'lens_processing', 'processing'] },
+  { label: 'Dikirim', value: 'shipped', statuses: ['shipped'] },
+  { label: 'Selesai', value: 'completed', statuses: ['delivered', 'completed'] },
+  { label: 'Dibatalkan', value: 'cancelled', statuses: ['cancelled', 'refunded'] },
 ];
 const filteredOrders = computed(() => {
   if (orderStatusFilter.value === 'all') return orders.value;
-  return orders.value.filter((o: any) => o.status === orderStatusFilter.value);
+  const selectedTab = orderStatusTabs.find((tab) => tab.value === orderStatusFilter.value);
+  if (!selectedTab) return orders.value;
+  return orders.value.filter((order: any) => selectedTab.statuses.includes(normalizeOrderStatus(order.status)));
 });
 const affiliateProfile = ref<AffiliateProfile | null>(null);
 const affiliateSummary = ref<AffiliateSummary | null>(null);
 const affiliateCommissions = ref<AffiliateCommission[]>([]);
+const affiliateEarnings = ref<AffiliateEarning[]>([]);
 const isLoadingAffiliate = ref(false);
 const isApplyingAffiliate = ref(false);
 const isRequestingPayout = ref(false);
+const isSavingPayoutProfile = ref(false);
 const payoutAmount = ref<number>(0);
+const payoutProfileForm = ref({
+  payout_method: 'bank_transfer' as const,
+  payout_bank_name: '',
+  payout_account_number: '',
+  payout_account_name: '',
+  payout_notes: '',
+});
+const hasCompletePayoutProfile = computed(() =>
+  Boolean(
+    payoutProfileForm.value.payout_bank_name.trim()
+      && payoutProfileForm.value.payout_account_number.trim()
+      && payoutProfileForm.value.payout_account_name.trim(),
+  ),
+);
 const prescriptions = ref<PrescriptionProfile[]>([]);
 const isLoadingPrescriptions = ref(false);
 const editingPrescriptionId = ref<number | null>(null);
 const prescriptionEditForm = ref({ label: '', notes: '' });
 
+const formatMoney = (value: number | string | null | undefined) => new Intl.NumberFormat('id-ID', {
+  style: 'currency',
+  currency: 'IDR',
+  maximumFractionDigits: 0,
+}).format(Number(value || 0));
+
+const normalizeOrderStatus = (status: string | null | undefined) => String(status || '').toLowerCase();
+
+const orderStatusLabel = (status: string | null | undefined) => {
+  const normalized = normalizeOrderStatus(status);
+  return ({
+    unpaid: 'Menunggu Bayar',
+    paid: 'Dibayar',
+    waiting_prescription_review: 'Review Resep',
+    prescription_verified: 'Resep Terverifikasi',
+    lens_processing: 'Proses Lensa',
+    processing: 'Dikemas',
+    shipped: 'Dikirim',
+    delivered: 'Diterima',
+    completed: 'Selesai',
+    cancelled: 'Dibatalkan',
+    refunded: 'Refund',
+  } as Record<string, string>)[normalized] || status || '-';
+};
+
+const orderStatusClass = (status: string | null | undefined) => {
+  const normalized = normalizeOrderStatus(status);
+  if (['paid', 'delivered', 'completed'].includes(normalized)) return 'bg-green-100 text-green-800';
+  if (['shipped'].includes(normalized)) return 'bg-blue-100 text-blue-800';
+  if (['cancelled', 'refunded'].includes(normalized)) return 'bg-red-100 text-red-800';
+  if (['processing', 'waiting_prescription_review', 'prescription_verified', 'lens_processing'].includes(normalized)) return 'bg-amber-100 text-amber-800';
+  return 'bg-secondary-fixed/30 text-secondary';
+};
+
+const syncPayoutProfileForm = (profile: AffiliateProfile | null) => {
+  payoutProfileForm.value = {
+    payout_method: 'bank_transfer',
+    payout_bank_name: profile?.payout_bank_name || '',
+    payout_account_number: profile?.payout_account_number || '',
+    payout_account_name: profile?.payout_account_name || '',
+    payout_notes: profile?.payout_notes || '',
+  };
+};
+
 // Form tambah resep baru
 const showCreatePrescriptionForm = ref(false);
 const isCreatingPrescription = ref(false);
 const newPrescriptionFile = ref<File | null>(null);
+const newPrescriptionPdMode = ref<'single' | 'dual'>('single');
 const newPrescriptionForm = ref({
   label: '',
   lens_type: 'single_vision',
@@ -73,6 +136,33 @@ const newPrescriptionForm = ref({
   notes: '',
   is_default: false,
 });
+const lensTypesWithAdd = ['progressive'];
+const supportsAddForNewPrescription = computed(() =>
+  lensTypesWithAdd.includes(newPrescriptionForm.value.lens_type),
+);
+const usesRightAxis = computed(() => Number(newPrescriptionForm.value.right_cylinder || 0) !== 0);
+const usesLeftAxis = computed(() => Number(newPrescriptionForm.value.left_cylinder || 0) !== 0);
+
+const formatLensTypeLabel = (lensType?: string | null) => {
+  switch (lensType) {
+    case 'single_vision':
+      return 'Single Vision';
+    case 'progressive':
+      return 'Progresif / Bifokal';
+    case 'reading':
+      return 'Single Vision Baca';
+    case 'blue_light':
+      return 'Blue Light';
+    case 'photochromic':
+      return 'Photochromic';
+    case 'high_index':
+      return 'High Index';
+    case 'anti_radiation':
+      return 'Anti Radiasi';
+    default:
+      return lensType || '-';
+  }
+};
 const isSharingWishlist = ref(false);
 const currentSection = computed(() => {
   switch (route.name) {
@@ -91,6 +181,44 @@ const currentSection = computed(() => {
     default:
       return 'profile';
   }
+});
+
+watch(
+  () => newPrescriptionForm.value.lens_type,
+  (lensType) => {
+    if (!lensTypesWithAdd.includes(lensType)) {
+      newPrescriptionForm.value.right_add = null;
+      newPrescriptionForm.value.left_add = null;
+    }
+  },
+);
+
+watch(
+  () => newPrescriptionForm.value.right_cylinder,
+  (cylinder) => {
+    if (Number(cylinder || 0) === 0) {
+      newPrescriptionForm.value.right_axis = null;
+    }
+  },
+);
+
+watch(
+  () => newPrescriptionForm.value.left_cylinder,
+  (cylinder) => {
+    if (Number(cylinder || 0) === 0) {
+      newPrescriptionForm.value.left_axis = null;
+    }
+  },
+);
+
+watch(newPrescriptionPdMode, (mode) => {
+  if (mode === 'single') {
+    newPrescriptionForm.value.pd_right = null;
+    newPrescriptionForm.value.pd_left = null;
+    return;
+  }
+
+  newPrescriptionForm.value.pd_single = null;
 });
 
 const loadOrders = async (page = 1, append = false) => {
@@ -204,16 +332,88 @@ const appendPrescriptionValue = (formData: FormData, key: string, value: unknown
   formData.append(key, typeof value === 'boolean' ? (value ? '1' : '0') : String(value));
 };
 
+const buildNewPrescriptionPayload = () => {
+  const payload = {
+    ...newPrescriptionForm.value,
+  } as Record<string, unknown>;
+
+  if (!supportsAddForNewPrescription.value) {
+    payload.right_add = null;
+    payload.left_add = null;
+  }
+
+  if (!usesRightAxis.value) {
+    payload.right_axis = null;
+  }
+
+  if (!usesLeftAxis.value) {
+    payload.left_axis = null;
+  }
+
+  if (newPrescriptionPdMode.value === 'single') {
+    payload.pd_right = null;
+    payload.pd_left = null;
+  } else {
+    payload.pd_single = null;
+  }
+
+  return payload;
+};
+
+const validateNewPrescriptionInput = () => {
+  if (usesRightAxis.value) {
+    const axis = Number(newPrescriptionForm.value.right_axis);
+    if (!Number.isInteger(axis) || axis < 1 || axis > 180) {
+      return 'Axis kanan wajib diisi dengan angka 1 sampai 180 jika CYL kanan diisi.';
+    }
+  }
+
+  if (usesLeftAxis.value) {
+    const axis = Number(newPrescriptionForm.value.left_axis);
+    if (!Number.isInteger(axis) || axis < 1 || axis > 180) {
+      return 'Axis kiri wajib diisi dengan angka 1 sampai 180 jika CYL kiri diisi.';
+    }
+  }
+
+  if (newPrescriptionPdMode.value === 'single') {
+    const pdSingle = Number(newPrescriptionForm.value.pd_single);
+    if (!Number.isFinite(pdSingle) || pdSingle < 50 || pdSingle > 75) {
+      return 'PD tunggal wajib diisi dalam rentang 50 sampai 75 mm.';
+    }
+
+    return null;
+  }
+
+  const pdRight = Number(newPrescriptionForm.value.pd_right);
+  const pdLeft = Number(newPrescriptionForm.value.pd_left);
+
+  if (!Number.isFinite(pdRight) || pdRight < 25 || pdRight > 38) {
+    return 'PD kanan wajib diisi dalam rentang 25 sampai 38 mm.';
+  }
+
+  if (!Number.isFinite(pdLeft) || pdLeft < 25 || pdLeft > 38) {
+    return 'PD kiri wajib diisi dalam rentang 25 sampai 38 mm.';
+  }
+
+  return null;
+};
+
 const createNewPrescription = async () => {
   if (!newPrescriptionForm.value.label.trim()) {
     showToast('Nama resep wajib diisi.', 'error');
     return;
   }
 
+  const validationMessage = validateNewPrescriptionInput();
+  if (validationMessage) {
+    showToast(validationMessage, 'error');
+    return;
+  }
+
   isCreatingPrescription.value = true;
   try {
     const formData = new FormData();
-    const formValues = newPrescriptionForm.value as Record<string, unknown>;
+    const formValues = buildNewPrescriptionPayload();
     Object.entries(formValues).forEach(([key, value]) => {
       appendPrescriptionValue(formData, key, value);
     });
@@ -228,6 +428,7 @@ const createNewPrescription = async () => {
     // Reset form
     showCreatePrescriptionForm.value = false;
     newPrescriptionFile.value = null;
+    newPrescriptionPdMode.value = 'single';
     newPrescriptionForm.value = {
       label: '', lens_type: 'single_vision',
       right_sphere: null, right_cylinder: null, right_axis: null, right_add: null,
@@ -315,9 +516,14 @@ const fetchAffiliateData = async () => {
     const data = await affiliateRepository.getDashboard();
     affiliateProfile.value = data.profile;
     affiliateSummary.value = data.summary;
+    syncPayoutProfileForm(data.profile);
     if (data.profile) {
       const commData = await affiliateRepository.getCommissions();
       affiliateCommissions.value = commData.data;
+      affiliateEarnings.value = await affiliateRepository.getEarnings();
+    } else {
+      affiliateCommissions.value = [];
+      affiliateEarnings.value = [];
     }
   } catch (error) { console.warn('Failed affiliate data', error); }
   finally { isLoadingAffiliate.value = false; }
@@ -326,12 +532,44 @@ const applyAffiliate = async () => {
   try {
     isApplyingAffiliate.value = true;
     affiliateProfile.value = await affiliateRepository.apply();
+    syncPayoutProfileForm(affiliateProfile.value);
     showToast('Pendaftaran affiliator berhasil!', 'success');
   } catch (err: any) { showToast(err.response?.data?.message || 'Gagal mendaftar.', 'error'); }
   finally { isApplyingAffiliate.value = false; }
 };
+const savePayoutProfile = async () => {
+  if (!hasCompletePayoutProfile.value) {
+    showToast('Lengkapi nama bank, nomor rekening, dan nama pemilik rekening.', 'error');
+    return;
+  }
+
+  try {
+    isSavingPayoutProfile.value = true;
+    affiliateProfile.value = await affiliateRepository.updatePayoutProfile({
+      payout_method: 'bank_transfer',
+      payout_bank_name: payoutProfileForm.value.payout_bank_name.trim(),
+      payout_account_number: payoutProfileForm.value.payout_account_number.trim(),
+      payout_account_name: payoutProfileForm.value.payout_account_name.trim(),
+      payout_notes: payoutProfileForm.value.payout_notes.trim(),
+    });
+    syncPayoutProfileForm(affiliateProfile.value);
+    showToast('Rekening pencairan berhasil disimpan.', 'success');
+  } catch (err: any) {
+    showToast(err.response?.data?.message || 'Gagal menyimpan rekening.', 'error');
+  } finally {
+    isSavingPayoutProfile.value = false;
+  }
+};
 const requestPayout = async () => {
+  if (!hasCompletePayoutProfile.value) {
+    showToast('Lengkapi rekening pencairan komisi terlebih dahulu.', 'error');
+    return;
+  }
   if (!payoutAmount.value || payoutAmount.value <= 0) { showToast('Masukkan jumlah yang valid.', 'error'); return; }
+  if (affiliateSummary.value && payoutAmount.value > affiliateSummary.value.available_balance) {
+    showToast('Jumlah pencairan melebihi saldo komisi tersedia.', 'error');
+    return;
+  }
   try {
     isRequestingPayout.value = true;
     await affiliateRepository.requestPayout(payoutAmount.value);
@@ -794,13 +1032,11 @@ const deleteAddress = async (id: number) => {
                 <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">Tipe Lensa</label>
                 <select v-model="newPrescriptionForm.lens_type" class="w-full border px-3 py-2 text-sm focus:outline-none" style="border-color: #e5e0d8;">
                   <option value="single_vision">Single Vision</option>
-                  <option value="progressive">Progressive</option>
-                  <option value="reading">Reading</option>
-                  <option value="blue_light">Blue Light</option>
-                  <option value="photochromic">Photochromic</option>
-                  <option value="high_index">High Index</option>
-                  <option value="anti_radiation">Anti Radiasi</option>
+                  <option value="progressive">Progresif / Bifokal</option>
                 </select>
+                <p class="text-[11px] mt-2" style="color: #8a7a60;">
+                  Fitur lensa seperti Blue Light, Photochromic, dan High Index dipilih saat checkout, bukan di resep dasar.
+                </p>
               </div>
             </div>
 
@@ -813,7 +1049,13 @@ const deleteAddress = async (id: number) => {
                     <th class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider" style="color: #8a7a60;">SPH</th>
                     <th class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider" style="color: #8a7a60;">CYL</th>
                     <th class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider" style="color: #8a7a60;">Axis</th>
-                    <th class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider" style="color: #8a7a60;">ADD</th>
+                    <th
+                      v-if="supportsAddForNewPrescription"
+                      class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider"
+                      style="color: #8a7a60;"
+                    >
+                      ADD
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -821,33 +1063,52 @@ const deleteAddress = async (id: number) => {
                     <td class="py-2 pr-4 font-black text-xs" style="color: #1a1209;">OD (Kanan)</td>
                     <td class="py-2 px-2"><input v-model="newPrescriptionForm.right_sphere" type="number" step="0.25" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
                     <td class="py-2 px-2"><input v-model="newPrescriptionForm.right_cylinder" type="number" step="0.25" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
-                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.right_axis" type="number" min="0" max="180" placeholder="0" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
-                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.right_add" type="number" step="0.25" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
+                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.right_axis" :disabled="!usesRightAxis" type="number" min="1" max="180" placeholder="—" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none disabled:bg-stone-100 disabled:text-stone-400 disabled:cursor-not-allowed" style="border-color: #e5e0d8;" /></td>
+                    <td v-if="supportsAddForNewPrescription" class="py-2 px-2"><input v-model="newPrescriptionForm.right_add" type="number" step="0.25" min="0" max="5" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
                   </tr>
                   <tr>
                     <td class="py-2 pr-4 font-black text-xs" style="color: #1a1209;">OS (Kiri)</td>
                     <td class="py-2 px-2"><input v-model="newPrescriptionForm.left_sphere" type="number" step="0.25" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
                     <td class="py-2 px-2"><input v-model="newPrescriptionForm.left_cylinder" type="number" step="0.25" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
-                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.left_axis" type="number" min="0" max="180" placeholder="0" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
-                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.left_add" type="number" step="0.25" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
+                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.left_axis" :disabled="!usesLeftAxis" type="number" min="1" max="180" placeholder="—" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none disabled:bg-stone-100 disabled:text-stone-400 disabled:cursor-not-allowed" style="border-color: #e5e0d8;" /></td>
+                    <td v-if="supportsAddForNewPrescription" class="py-2 px-2"><input v-model="newPrescriptionForm.left_add" type="number" step="0.25" min="0" max="5" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
             <!-- PD -->
-            <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">PD Tunggal (mm)</label>
-                <input v-model="newPrescriptionForm.pd_single" type="number" step="0.5" placeholder="64" class="w-full border px-3 py-2 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+            <div class="mt-4">
+              <div class="flex items-center gap-6 mb-4">
+                <label class="flex items-center gap-2 cursor-pointer text-sm" style="color: #5a5248;">
+                  <input type="radio" v-model="newPrescriptionPdMode" value="single" class="accent-amber-700" />
+                  PD Tunggal
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer text-sm" style="color: #5a5248;">
+                  <input type="radio" v-model="newPrescriptionPdMode" value="dual" class="accent-amber-700" />
+                  PD Ganda
+                </label>
               </div>
-              <div>
-                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">PD Kanan (mm)</label>
-                <input v-model="newPrescriptionForm.pd_right" type="number" step="0.5" placeholder="32" class="w-full border px-3 py-2 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+
+              <div v-if="newPrescriptionPdMode === 'single'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">PD Tunggal (mm)</label>
+                  <input v-model="newPrescriptionForm.pd_single" type="number" min="50" max="75" step="0.5" placeholder="64" class="w-full border px-3 py-2 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+                  <p class="text-[10px] mt-1" style="color: #b0a590;">Rentang umum 50 - 75 mm.</p>
+                </div>
               </div>
-              <div>
-                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">PD Kiri (mm)</label>
-                <input v-model="newPrescriptionForm.pd_left" type="number" step="0.5" placeholder="32" class="w-full border px-3 py-2 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+
+              <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">PD Kanan (mm)</label>
+                  <input v-model="newPrescriptionForm.pd_right" type="number" min="25" max="38" step="0.5" placeholder="32" class="w-full border px-3 py-2 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+                  <p class="text-[10px] mt-1" style="color: #b0a590;">Rentang umum 25 - 38 mm.</p>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">PD Kiri (mm)</label>
+                  <input v-model="newPrescriptionForm.pd_left" type="number" min="25" max="38" step="0.5" placeholder="32" class="w-full border px-3 py-2 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+                  <p class="text-[10px] mt-1" style="color: #b0a590;">Rentang umum 25 - 38 mm.</p>
+                </div>
               </div>
             </div>
 
@@ -920,9 +1181,9 @@ const deleteAddress = async (id: number) => {
                       <span v-if="profile.is_default" class="ml-2 text-[10px] bg-secondary-fixed/30 text-secondary px-2 py-0.5 rounded-none uppercase">Default</span>
                       <span v-if="profile.verification_status === 'approved'" class="ml-2 text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-none uppercase">Disetujui</span>
                       <span v-else-if="profile.verification_status === 'rejected'" class="ml-2 text-[10px] bg-red-100 text-red-800 px-2 py-0.5 rounded-none uppercase">Ditolak</span>
-                      <span v-else-if="profile.verified_at" class="ml-2 text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-none uppercase">Verified</span>
+                      <span v-else-if="profile.verified_at" class="ml-2 text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-none uppercase">Terverifikasi</span>
                     </p>
-                    <p class="text-sm text-on-surface-variant mt-1">{{ profile.lens_type || 'single_vision' }}</p>
+                    <p class="text-sm text-on-surface-variant mt-1">{{ formatLensTypeLabel(profile.lens_type || 'single_vision') }}</p>
                     <!-- Admin notes jika ada -->
                     <div v-if="profile.admin_notes" class="mt-2 p-2 text-xs rounded" :style="profile.verification_status === 'rejected' ? 'background: rgba(239,68,68,0.06); color: #dc2626;' : 'background: rgba(22,163,74,0.06); color: #16a34a;'">
                       <strong>Catatan Admin:</strong> {{ profile.admin_notes }}
@@ -973,6 +1234,10 @@ const deleteAddress = async (id: number) => {
           </div>
           
           <div v-else class="flex flex-col gap-4">
+            <div v-if="filteredOrders.length === 0" class="text-center py-10 bg-surface-container-low rounded-none">
+              <p class="text-on-surface-variant">Tidak ada pesanan pada status ini.</p>
+            </div>
+            <template v-else>
             <div v-for="order in filteredOrders" :key="order.id" class="bg-surface-container-low p-6 rounded-none border border-outline-variant/15 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:shadow-md transition-shadow">
               <div class="flex items-center gap-4">
                 <!-- Product Thumbnail Preview -->
@@ -994,15 +1259,11 @@ const deleteAddress = async (id: number) => {
               </div>
               
               <div class="flex items-center gap-3 flex-wrap justify-end">
-                <span :class="['px-3 py-1 rounded text-xs font-medium uppercase', 
-                  order.status?.toUpperCase() === 'PAID' ? 'bg-green-100 text-green-800' : 
-                  order.status?.toUpperCase() === 'SHIPPED' ? 'bg-blue-100 text-blue-800' : 
-                  order.status?.toUpperCase() === 'DELIVERED' ? 'bg-purple-100 text-purple-800' :
-                  'bg-secondary-fixed/30 text-secondary']">
-                  {{ order.status }}
+                <span :class="['px-3 py-1 rounded text-xs font-medium uppercase', orderStatusClass(order.status)]">
+                  {{ orderStatusLabel(order.status) }}
                 </span>
                 <button
-                  v-if="order.status?.toUpperCase() === 'SHIPPED'"
+                  v-if="normalizeOrderStatus(order.status) === 'shipped'"
                   @click="confirmDelivery(order.id)"
                   :disabled="confirmingOrderId === order.id"
                   class="px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wide bg-primary text-white hover:bg-primary-container transition-colors disabled:opacity-50"
@@ -1014,6 +1275,7 @@ const deleteAddress = async (id: number) => {
                 </button>
               </div>
             </div>
+            </template>
 
             <button
               v-if="canLoadMoreOrders"
@@ -1112,16 +1374,72 @@ const deleteAddress = async (id: number) => {
               </div>
               <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="text-center p-3 border border-stone-100"><p class="text-2xl font-black" style="color: #1a1209;">{{ affiliateSummary?.referrals_count || 0 }}</p><p class="text-[10px] uppercase text-stone-500 mt-1">Referral</p></div>
-                <div class="text-center p-3 border border-stone-100"><p class="text-2xl font-black" style="color: #16a34a;">{{ affiliateSummary?.total_success || 0 }}</p><p class="text-[10px] uppercase text-stone-500 mt-1">Berhasil</p></div>
-                <div class="text-center p-3 border border-stone-100"><p class="text-2xl font-black" style="color: #d97706;">{{ affiliateSummary?.total_pending || 0 }}</p><p class="text-[10px] uppercase text-stone-500 mt-1">Pending</p></div>
+                <div class="text-center p-3 border border-stone-100"><p class="text-lg font-black" style="color: #16a34a;">{{ formatMoney(affiliateSummary?.available_balance) }}</p><p class="text-[10px] uppercase text-stone-500 mt-1">Saldo</p></div>
+                <div class="text-center p-3 border border-stone-100"><p class="text-lg font-black" style="color: #d97706;">{{ formatMoney(affiliateSummary?.locked_balance) }}</p><p class="text-[10px] uppercase text-stone-500 mt-1">Diproses</p></div>
                 <div class="text-center p-3 border border-stone-100"><p class="text-lg font-black" style="color: #c19a51;">{{ affiliateProfile.commission_rate_percentage }}%</p><p class="text-[10px] uppercase text-stone-500 mt-1">Komisi</p></div>
+              </div>
+            </div>
+            <div class="bg-white p-6 border border-stone-200">
+              <div class="flex items-start justify-between gap-4 mb-4">
+                <div>
+                  <h3 class="font-black text-base" style="color: #1a1209;">Rekening Pencairan</h3>
+                  <p class="text-xs text-stone-500 mt-1">Dipakai admin untuk transfer komisi. Data ini akan disalin ke setiap request pencairan.</p>
+                </div>
+                <span class="text-[10px] font-black uppercase px-2 py-1" :style="hasCompletePayoutProfile ? 'background: rgba(22,163,74,0.1); color: #16a34a;' : 'background: rgba(245,158,11,0.1); color: #d97706;'">
+                  {{ hasCompletePayoutProfile ? 'Lengkap' : 'Belum Lengkap' }}
+                </span>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-xs font-black uppercase tracking-widest text-stone-500 mb-2">Bank / E-Wallet</label>
+                  <input v-model="payoutProfileForm.payout_bank_name" type="text" placeholder="BCA, BRI, Mandiri, DANA" class="w-full border px-4 py-3 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+                </div>
+                <div>
+                  <label class="block text-xs font-black uppercase tracking-widest text-stone-500 mb-2">Nomor Rekening / Akun</label>
+                  <input v-model="payoutProfileForm.payout_account_number" type="text" placeholder="Nomor rekening" class="w-full border px-4 py-3 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+                </div>
+                <div>
+                  <label class="block text-xs font-black uppercase tracking-widest text-stone-500 mb-2">Nama Pemilik</label>
+                  <input v-model="payoutProfileForm.payout_account_name" type="text" placeholder="Nama sesuai rekening" class="w-full border px-4 py-3 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+                </div>
+                <div class="md:col-span-3">
+                  <label class="block text-xs font-black uppercase tracking-widest text-stone-500 mb-2">Catatan</label>
+                  <textarea v-model="payoutProfileForm.payout_notes" rows="2" placeholder="Opsional, misalnya cabang bank atau catatan admin" class="w-full border px-4 py-3 text-sm focus:outline-none" style="border-color: #e5e0d8;"></textarea>
+                </div>
+              </div>
+              <div class="mt-4 flex justify-end">
+                <button @click="savePayoutProfile" :disabled="isSavingPayoutProfile || !hasCompletePayoutProfile" class="px-6 py-3 text-sm font-black text-white uppercase disabled:opacity-50" style="background: linear-gradient(135deg, #1a1209, #3d2c0e);">
+                  {{ isSavingPayoutProfile ? 'Menyimpan...' : 'Simpan Rekening' }}
+                </button>
               </div>
             </div>
             <div v-if="affiliateProfile.status === 'approved'" class="bg-white p-6 border border-stone-200">
               <h3 class="font-black text-base mb-4" style="color: #1a1209;">Request Pencairan</h3>
+              <p class="text-xs text-stone-500 mb-3">Saldo tersedia {{ formatMoney(affiliateSummary?.available_balance) }}. Minimal pencairan {{ formatMoney(affiliateSummary?.minimum_payout_amount || 10000) }}.</p>
               <div class="flex gap-3">
-                <input v-model.number="payoutAmount" type="number" min="1" placeholder="Jumlah pencairan (Rp)" class="flex-grow border px-4 py-3 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
-                <button @click="requestPayout" :disabled="isRequestingPayout" class="px-6 py-3 text-sm font-black text-white uppercase disabled:opacity-50" style="background: linear-gradient(135deg, #1a1209, #3d2c0e);">{{ isRequestingPayout ? 'Proses...' : 'Request' }}</button>
+                <input v-model.number="payoutAmount" type="number" :min="affiliateSummary?.minimum_payout_amount || 10000" :max="affiliateSummary?.available_balance || 0" placeholder="Jumlah pencairan (Rp)" class="flex-grow border px-4 py-3 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+                <button @click="requestPayout" :disabled="isRequestingPayout || !hasCompletePayoutProfile || !payoutAmount || payoutAmount > (affiliateSummary?.available_balance || 0)" class="px-6 py-3 text-sm font-black text-white uppercase disabled:opacity-50" style="background: linear-gradient(135deg, #1a1209, #3d2c0e);">{{ isRequestingPayout ? 'Proses...' : 'Request' }}</button>
+              </div>
+              <p v-if="!hasCompletePayoutProfile" class="text-xs text-red-600 mt-3">Lengkapi rekening pencairan sebelum membuat request.</p>
+            </div>
+            <div class="bg-white p-6 border border-stone-200">
+              <div class="flex items-center justify-between gap-3 mb-4">
+                <h3 class="font-black text-base" style="color: #1a1209;">Order Komisi</h3>
+                <span class="text-xs font-black uppercase tracking-widest" style="color: #c19a51;">{{ affiliateEarnings.length }} order</span>
+              </div>
+              <div v-if="affiliateEarnings.length === 0" class="text-center py-6 text-stone-400 text-sm">Belum ada order referral yang selesai.</div>
+              <div v-else class="flex flex-col gap-3">
+                <div v-for="earning in affiliateEarnings" :key="earning.order_id" class="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 border border-stone-100">
+                  <div>
+                    <p class="font-black text-sm" style="color: #1a1209;">{{ earning.order_number }}</p>
+                    <p class="text-xs text-stone-500">{{ earning.customer_name }} · {{ earning.delivered_at ? new Date(earning.delivered_at).toLocaleDateString('id-ID') : earning.status }}</p>
+                  </div>
+                  <div class="grid grid-cols-3 gap-3 text-right">
+                    <div><p class="text-[10px] uppercase tracking-widest text-stone-400">Order</p><p class="font-bold text-xs" style="color: #1a1209;">{{ formatMoney(earning.base_amount) }}</p></div>
+                    <div><p class="text-[10px] uppercase tracking-widest text-stone-400">Komisi</p><p class="font-bold text-xs" style="color: #16a34a;">{{ formatMoney(earning.total_commission) }}</p></div>
+                    <div><p class="text-[10px] uppercase tracking-widest text-stone-400">Tersedia</p><p class="font-bold text-xs" :style="earning.is_available_for_payout ? 'color: #16a34a;' : 'color: #8a7a60;'">{{ formatMoney(earning.remaining_commission) }}</p></div>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="bg-white p-6 border border-stone-200">

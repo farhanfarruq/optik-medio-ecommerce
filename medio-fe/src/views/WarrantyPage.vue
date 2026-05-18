@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { apiClient } from '../core/api/axiosclient';
+import { apiClient, apiOrigin } from '../core/api/axiosclient';
 import { useAuthStore } from '../stores/authStore';
 import { useToast } from '../composables/useToast';
 import { useSeoMeta } from '../composables/useSeoMeta';
@@ -38,8 +38,6 @@ const claimTypes = [
   { value: 'other', icon: 'receipt_long', label: 'Lainnya' },
 ];
 
-const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-const apiOrigin = new URL(apiBaseUrl, window.location.origin).origin;
 const lockedClaimStatuses = ['submitted', 'reviewing', 'approved', 'in_progress', 'completed'];
 
 const breadcrumbs = [

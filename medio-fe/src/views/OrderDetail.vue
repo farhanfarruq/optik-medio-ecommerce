@@ -29,6 +29,7 @@ const isSubmittingReturn = ref(false);
 const hasSubmittedReturn = ref(false);
 const reviewDrafts = ref<Record<number, ReviewDraft>>({});
 const existingComplain = ref<any>(null);
+const existingShippingProtectionClaim = ref<any>(null);
 
 const returnForm = ref({
   reason: RETURN_REASONS[0]?.value || '',
@@ -72,7 +73,8 @@ onMounted(async () => {
   // Load komplain terkait pesanan ini (jika ada)
   try {
     const id = Number(route.params.id);
-    existingComplain.value = await complaintRepository.getComplaintByOrder(id);
+    existingComplain.value = await complaintRepository.getComplaintByOrder(id, 'general');
+    existingShippingProtectionClaim.value = await complaintRepository.getComplaintByOrder(id, 'shipping_protection');
   } catch {
     // tidak ada komplain, biarkan null
   }
@@ -83,6 +85,31 @@ const isOrderClosed = computed(() => ['CANCELLED', 'REFUNDED', 'EXPIRED'].includ
 const canConfirmDelivery = computed(() => normalizedStatus.value === 'SHIPPED');
 const currentReturnRequest = computed(() => order.value?.return_request || order.value?.returnRequest || null);
 const canSubmitReturn = computed(() => normalizedStatus.value === 'DELIVERED' && !currentReturnRequest.value);
+const hasShippingProtection = computed(() => Boolean(order.value?.shipping_protection_opted));
+const canSubmitShippingProtectionClaim = computed(() => (
+  hasShippingProtection.value
+  && ['SHIPPED', 'DELIVERED', 'COMPLETED'].includes(normalizedStatus.value)
+  && !existingShippingProtectionClaim.value
+));
+const isStorePickupOrder = computed(() => order.value?.fulfillment_method === 'store_pickup');
+const canBookPickup = computed(() => isStorePickupOrder.value && !isOrderClosed.value);
+
+const pickupBookingQuery = computed<Record<string, string>>(() => {
+  const orderId = String(order.value?.id || '');
+  const orderNumber = String(order.value?.order_number || orderId);
+
+  return {
+    service: 'pickup',
+    order_id: orderId,
+    order_number: orderNumber,
+    source_label: `Pesanan #${orderNumber}`,
+  };
+});
+
+const goToPickupBooking = () => {
+  if (!canBookPickup.value) return;
+  router.push({ path: '/appointment', query: pickupBookingQuery.value });
+};
 
 const getReturnStatusConfig = (status?: string) => {
   switch ((status || '').toLowerCase()) {
@@ -106,6 +133,16 @@ const getReturnStatusConfig = (status?: string) => {
       };
   }
 };
+
+const getComplaintStatusLabel = (status?: string) => (
+  status === 'open'
+    ? 'Menunggu'
+    : status === 'in_progress'
+      ? 'Diproses'
+      : status === 'resolved'
+        ? 'Selesai'
+        : 'Ditolak'
+);
 
 const getStatusConfig = (status: string) => {
   switch (status?.toUpperCase()) {
@@ -379,6 +416,32 @@ const submitReview = async (item: any) => {
       </div>
 
       <div
+        v-if="canBookPickup"
+        class="rounded-none border p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+        style="background: rgba(193,154,81,0.08); border-color: rgba(193,154,81,0.24);"
+      >
+        <div class="flex items-start gap-3">
+          <span class="material-symbols-outlined text-3xl shrink-0" style="color: #c19a51;">event_available</span>
+          <div>
+            <p class="text-xs font-black uppercase tracking-[0.2em] mb-2" style="color: #7a6230;">
+              Booking Pengambilan Toko
+            </p>
+            <p class="text-sm leading-relaxed" style="color: #5a5248;">
+              Pesanan ambil di toko bisa dijadwalkan dari sini. Pilih cabang dan waktu pengambilan agar staf menyiapkan pesanan Anda.
+            </p>
+          </div>
+        </div>
+
+        <button
+          @click="goToPickupBooking"
+          class="px-5 py-3 rounded-none font-black text-xs uppercase tracking-[0.18em] text-white transition-all hover:translate-y-[-1px]"
+          style="background: linear-gradient(135deg, #1a1209 0%, #3d2c0e 100%);"
+        >
+          Booking Ambil Pesanan
+        </button>
+      </div>
+
+      <div
         v-if="normalizedStatus === 'SHIPPED'"
         class="rounded-none border p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
         style="background: rgba(59,130,246,0.06); border-color: rgba(59,130,246,0.18);"
@@ -649,6 +712,10 @@ const submitReview = async (item: any) => {
                 <span style="color: #8a7a60;">Ongkir ({{ order.courier?.toUpperCase() }} {{ order.courier_service }})</span>
                 <span class="font-bold" style="color: #1a1209;">{{ formatCurrency(order.shipping_cost || 0) }}</span>
               </div>
+              <div v-if="Number(order.shipping_protection_fee || 0) > 0" class="flex justify-between">
+                <span style="color: #8a7a60;">Proteksi Pengiriman</span>
+                <span class="font-bold" style="color: #1a1209;">{{ formatCurrency(order.shipping_protection_fee || 0) }}</span>
+              </div>
               <div v-if="Number(order.discount_amount || 0) > 0" class="flex justify-between">
                 <span style="color: #8a7a60;">Diskon</span>
                 <span class="font-bold" style="color: #15803d;">-{{ formatCurrency(order.discount_amount || 0) }}</span>
@@ -773,6 +840,69 @@ const submitReview = async (item: any) => {
               >
                 {{ isSubmittingReturn ? 'Mengirim...' : 'Kirim Pengajuan Return' }}
               </button>
+            </div>
+          </div>
+
+          <div
+            v-if="hasShippingProtection && ['SHIPPED', 'DELIVERED', 'COMPLETED'].includes(normalizedStatus)"
+            class="rounded-none border p-6"
+            style="background: white; border-color: rgba(59,130,246,0.16); box-shadow: 0 2px 12px rgba(0,0,0,0.04);"
+          >
+            <div class="flex items-center gap-2 mb-5">
+              <span class="material-symbols-outlined text-lg" style="color: #2563eb;">verified_user</span>
+              <h3 class="font-black text-base" style="color: #1a1209;">Klaim Proteksi Pengiriman</h3>
+            </div>
+
+            <p class="text-sm leading-relaxed mb-4" style="color: #5a5248;">
+              Pesanan ini memakai proteksi pengiriman sebesar {{ formatCurrency(order.shipping_protection_fee || 0) }}.
+              Jika paket rusak, hilang, atau bermasalah saat tiba, Anda bisa mengajukan klaim langsung dari sini.
+            </p>
+
+            <template v-if="existingShippingProtectionClaim">
+              <div class="mb-4 p-4 border" :style="`background: ${existingShippingProtectionClaim.status === 'resolved' ? 'rgba(22,163,74,0.05)' : existingShippingProtectionClaim.status === 'rejected' ? 'rgba(220,38,38,0.05)' : 'rgba(59,130,246,0.05)'}; border-color: rgba(59,130,246,0.18);`">
+                <div class="flex items-start justify-between gap-3 flex-wrap mb-3">
+                  <div>
+                    <p class="text-[10px] font-black uppercase tracking-[0.18em] mb-1" style="color: #2563eb;">Klaim #{{ existingShippingProtectionClaim.id }}</p>
+                    <p class="text-sm font-bold" style="color: #1a1209;">{{ existingShippingProtectionClaim.subject }}</p>
+                  </div>
+                  <span
+                    class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1"
+                    :style="`background: ${existingShippingProtectionClaim.status === 'resolved' ? 'rgba(22,163,74,0.1)' : existingShippingProtectionClaim.status === 'rejected' ? 'rgba(220,38,38,0.1)' : existingShippingProtectionClaim.status === 'in_progress' ? 'rgba(37,99,235,0.1)' : 'rgba(217,119,6,0.1)'}; color: ${existingShippingProtectionClaim.status === 'resolved' ? '#16a34a' : existingShippingProtectionClaim.status === 'rejected' ? '#dc2626' : existingShippingProtectionClaim.status === 'in_progress' ? '#2563eb' : '#d97706'};`"
+                  >
+                    {{ getComplaintStatusLabel(existingShippingProtectionClaim.status) }}
+                  </span>
+                </div>
+
+                <p class="text-sm leading-relaxed" style="color: #1a1209;">
+                  {{ existingShippingProtectionClaim.message }}
+                </p>
+
+                <div v-if="existingShippingProtectionClaim.admin_notes" class="border-t pt-3 mt-3" style="border-color: rgba(59,130,246,0.18);">
+                  <p class="text-[10px] font-black uppercase tracking-[0.18em] mb-2" style="color: #2563eb;">Respons Tim Kami</p>
+                  <p class="text-sm leading-relaxed" style="color: #1a1209;">{{ existingShippingProtectionClaim.admin_notes }}</p>
+                </div>
+              </div>
+
+              <button
+                @click="router.push({ name: 'ComplaintDetail', params: { id: existingShippingProtectionClaim.id } })"
+                class="w-full py-3 rounded-none text-xs font-black uppercase tracking-[0.16em] transition-all"
+                style="background: white; color: #1a1209; border: 1px solid rgba(26,18,9,0.2);"
+              >
+                Lihat Detail Klaim
+              </button>
+            </template>
+
+            <button
+              v-else-if="canSubmitShippingProtectionClaim"
+              @click="router.push({ name: 'Complaint', query: { order_id: order.id, mode: 'shipping_protection' } })"
+              class="w-full py-3 rounded-none text-xs font-black uppercase tracking-[0.16em] transition-all"
+              style="background: rgba(37,99,235,0.08); color: #1d4ed8; border: 1px solid rgba(37,99,235,0.2);"
+            >
+              Ajukan Klaim Proteksi
+            </button>
+
+            <div v-else class="p-3 rounded-none text-sm" style="background: rgba(245,242,238,0.85); color: #8a7a60; border: 1px solid rgba(193,154,81,0.12);">
+              Klaim proteksi belum tersedia untuk status pesanan ini.
             </div>
           </div>
 

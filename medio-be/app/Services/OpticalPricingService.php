@@ -32,7 +32,8 @@ class OpticalPricingService
 
         $prescriptionCompatibility = $this->validatePrescription($lensOption, $prescriptionProfile, $prescription);
         if (!$prescriptionCompatibility['compatible']) {
-            $compatible = false;
+            // Prescription mismatch hanya jadi warning — tidak memblokir order.
+            // Admin akan konfirmasi dengan customer sebelum proses.
             $warnings = [...$warnings, ...$prescriptionCompatibility['warnings']];
         }
 

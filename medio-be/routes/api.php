@@ -59,6 +59,10 @@ Route::get('/banks', [MasterDataController::class, 'banks']);
 Route::get('/payment-methods', [MasterDataController::class, 'paymentMethods']);
 Route::get('/store-status', [MasterDataController::class, 'storeStatus']);
 
+// Data optik publik — tidak butuh login
+Route::get('/optical/lens-coatings', [OpticalController::class, 'coatings']);
+Route::get('/optical/lens-options', [OpticalController::class, 'lensOptions']);
+
 // Auth
 Route::prefix('auth')->group(function () {
     Route::middleware('throttle:3,1')->post('/register', [AuthController::class, 'register']);
@@ -163,8 +167,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/reviews', [ReviewController::class, 'store']);
     Route::delete('/reviews/{id}', [ReviewController::class, 'destroy']);
 
-    // Optical configuration
-    Route::get('/optical/lens-coatings', [OpticalController::class, 'coatings']);
+    // Optical configuration (configure butuh auth, lens-coatings sudah public di atas)
     Route::post('/optical/configure', [OpticalController::class, 'configure']);
 
     // Prescription Profiles
@@ -184,6 +187,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('affiliate')->group(function () {
         Route::get('/dashboard', [AffiliateController::class, 'dashboard']);
         Route::post('/apply', [AffiliateController::class, 'apply']);
+        Route::get('/earnings', [AffiliateController::class, 'earnings']);
+        Route::patch('/payout-profile', [AffiliateController::class, 'updatePayoutProfile']);
         Route::get('/commissions', [AffiliateController::class, 'commissions']);
         Route::post('/commissions/request', [AffiliateController::class, 'requestPayout']);
     });

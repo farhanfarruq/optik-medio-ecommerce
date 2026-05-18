@@ -22,6 +22,11 @@ class UserAffiliator extends Model
         'rejected_at',
         'rejection_reason',
         'notes',
+        'payout_method',
+        'payout_bank_name',
+        'payout_account_number',
+        'payout_account_name',
+        'payout_notes',
     ];
 
     protected $casts = [

@@ -53,6 +53,7 @@ class OrderController extends Controller
             'shipping_address_id'          => 'nullable|exists:shipping_addresses,id',
             'shipping_rate_id'             => 'nullable|exists:shipping_rates,id',
             'shipping_cost'                => 'nullable|numeric|min:0',
+            'shipping_protection_opted'    => 'nullable|boolean',
             'courier'                      => 'nullable|string',
             'courier_service'              => 'nullable|string',
             'payment_method_id'            => 'nullable|exists:payment_methods,id',
@@ -250,6 +251,11 @@ class OrderController extends Controller
         $bank = $this->resolveBank($request, $paymentMethod);
         $shippingSelection = $this->resolveShippingSelection($request);
         $shipping = $shippingSelection['shipping_cost'];
+        $shippingProtectionFee = $this->calculateShippingProtectionFee(
+            $subtotal,
+            $shipping,
+            $request->boolean('shipping_protection_opted'),
+        );
 
         // ── Level Member Discount ──────────────────────────────────────────────
         $levelDiscountAmount = 0;
@@ -277,7 +283,7 @@ class OrderController extends Controller
             $loyaltyPointsToUse = (int) ceil($loyaltyDiscountAmount / 1000);
         }
 
-        $totalPrice = max(0, $subtotal + $shipping - $discountAmount - $promoDiscountAmount - $levelDiscountAmount - $loyaltyDiscountAmount);
+        $totalPrice = max(0, $subtotal + $shipping + $shippingProtectionFee - $discountAmount - $promoDiscountAmount - $levelDiscountAmount - $loyaltyDiscountAmount);
 
         // Add individual item discount info for the UI
         if ($appliedPromo && $appliedPromo->type === 'product_discount') {
@@ -308,6 +314,8 @@ class OrderController extends Controller
         return response()->json([
             'subtotal'                => $subtotal,
             'shipping_cost'           => $shipping,
+            'shipping_protection_opted' => $request->boolean('shipping_protection_opted'),
+            'shipping_protection_fee' => $shippingProtectionFee,
             'discount_amount'         => $discountAmount,
             'promo_discount_amount'   => $promoDiscountAmount,
             'level_discount_amount'   => $levelDiscountAmount,
@@ -326,12 +334,16 @@ class OrderController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $isPickup = $request->input('fulfillment_method') === 'store_pickup';
+
         $request->validate([
-            'shipping_address_id'          => 'required|exists:shipping_addresses,id',
+            'fulfillment_method'           => 'nullable|in:delivery,store_pickup',
+            'shipping_address_id'          => $isPickup ? 'nullable|exists:shipping_addresses,id' : 'required|exists:shipping_addresses,id',
             'shipping_rate_id'             => 'nullable|exists:shipping_rates,id',
             'courier'                      => 'nullable|string',
             'courier_service'              => 'nullable|string',
             'shipping_cost'                => 'nullable|numeric|min:0',
+            'shipping_protection_opted'    => 'nullable|boolean',
             'payment_method_id'            => 'required|exists:payment_methods,id',
             'bank_id'                      => 'nullable|exists:banks,id',
             'items'                        => 'required|array|min:1',
@@ -353,20 +365,32 @@ class OrderController extends Controller
             return response()->json(['message' => 'Hanya bisa menggunakan satu jenis potongan (Promo atau Diskon).'], 422);
         }
 
-        // ── CHKOUT-003: Validasi kepemilikan shipping address ─────────────────
-        $shippingAddress = \App\Models\ShippingAddress::where('id', $request->shipping_address_id)
-            ->where('user_id', $request->user()->id)
-            ->first();
+        // ── CHKOUT-003: Validasi kepemilikan shipping address (hanya untuk delivery) ──
+        if (!$isPickup) {
+            $shippingAddress = \App\Models\ShippingAddress::where('id', $request->shipping_address_id)
+                ->where('user_id', $request->user()->id)
+                ->first();
 
-        if (!$shippingAddress) {
-            return response()->json([
-                'message' => 'Alamat pengiriman tidak ditemukan atau bukan milik Anda.',
-            ], 403);
+            if (!$shippingAddress) {
+                return response()->json([
+                    'message' => 'Alamat pengiriman tidak ditemukan atau bukan milik Anda.',
+                ], 403);
+            }
         }
 
         $paymentMethod = $this->resolvePaymentMethod($request, true);
         $bank = $this->resolveBank($request, $paymentMethod);
-        $shippingSelection = $this->resolveShippingSelection($request, true);
+
+        // Untuk store_pickup: ongkir selalu 0, tidak perlu resolveShippingSelection
+        if ($isPickup) {
+            $shippingSelection = [
+                'shipping_cost'    => 0,
+                'courier'          => null,
+                'courier_service'  => null,
+            ];
+        } else {
+            $shippingSelection = $this->resolveShippingSelection($request, true);
+        }
 
         $items    = [];
         $subtotal = 0;
@@ -552,12 +576,21 @@ class OrderController extends Controller
             $loyaltyPointsToUse = (int) ceil($loyaltyDiscountAmount / 1000);
         }
 
+        $shippingProtectionFee = $isPickup ? 0 : $this->calculateShippingProtectionFee(
+            $subtotal,
+            $shippingSelection['shipping_cost'],
+            $request->boolean('shipping_protection_opted'),
+        );
+
         $orderData = [
             'user_id'                 => $request->user()->id,
-            'shipping_address_id'     => $request->shipping_address_id,
+            'shipping_address_id'     => $isPickup ? null : $request->shipping_address_id,
+            'fulfillment_method'      => $isPickup ? 'store_pickup' : 'delivery',
             'status'                  => 'unpaid',
             'subtotal'                => $subtotal,
             'shipping_cost'           => $shippingSelection['shipping_cost'],
+            'shipping_protection_opted' => $isPickup ? false : $request->boolean('shipping_protection_opted'),
+            'shipping_protection_fee' => $shippingProtectionFee,
             'discount_id'             => $request->discount_id,
             'discount_amount'         => $discountAmount,
             'promo_id'                => $promoId,
@@ -565,25 +598,32 @@ class OrderController extends Controller
             'level_discount_amount'   => $levelDiscountAmount,
             'loyalty_points_used'     => $loyaltyPointsToUse,
             'loyalty_discount_amount' => $loyaltyDiscountAmount,
-            'total_price'             => max(0, $subtotal + $shippingSelection['shipping_cost'] - $discountAmount - $promoDiscountAmount - $levelDiscountAmount - $loyaltyDiscountAmount),
+            'total_price'             => max(0, $subtotal + $shippingSelection['shipping_cost'] + $shippingProtectionFee - $discountAmount - $promoDiscountAmount - $levelDiscountAmount - $loyaltyDiscountAmount),
             'courier'                 => $shippingSelection['courier'],
             'courier_service'         => $shippingSelection['courier_service'],
             'notes'                   => $request->notes,
             'bank_id'                 => $bank?->id,
+            'payment_channel'         => $bank ? $bank->name : (
+                strtolower($paymentMethod->code ?? '') === 'cod' ? 'COD' : (
+                    str_contains(strtolower($paymentMethod->code ?? ''), 'xendit') ? 'Xendit' : ($paymentMethod->name ?? null)
+                )
+            ),
             'payment_method_model'    => $paymentMethod,
         ];
 
-        // ── SHIP-002: Validasi berat total item di backend ────────────────────
-        $totalWeight = 0;
-        foreach ($items as $item) {
-            if (!isset($item['linked_item_index'])) {
-                $totalWeight += ($item['weight'] ?? 0) * $item['quantity'];
+        // ── SHIP-002: Validasi berat total item di backend (hanya untuk delivery) ─
+        if (!$isPickup) {
+            $totalWeight = 0;
+            foreach ($items as $item) {
+                if (!isset($item['linked_item_index'])) {
+                    $totalWeight += ($item['weight'] ?? 0) * $item['quantity'];
+                }
             }
-        }
-        if ($totalWeight <= 0) {
-            return response()->json([
-                'message' => 'Total berat produk tidak valid. Pastikan semua produk memiliki data berat.',
-            ], 422);
+            if ($totalWeight <= 0) {
+                return response()->json([
+                    'message' => 'Total berat produk tidak valid. Pastikan semua produk memiliki data berat.',
+                ], 422);
+            }
         }
 
         $order = DB::transaction(function () use ($request, $orderData, $items, $promoId, $loyaltyPointsToUse, $discountToRecord) {
@@ -984,6 +1024,23 @@ class OrderController extends Controller
         }
 
         return ['qty' => $qty, 'total_price' => $totalPrice];
+    }
+
+    private function calculateShippingProtectionFee(float|int $subtotal, float|int $shippingCost, bool $isSelected): float
+    {
+        if (! $isSelected) {
+            return 0;
+        }
+
+        $insuredValue = max(0, (float) $subtotal + (float) $shippingCost);
+
+        if ($insuredValue <= 0) {
+            return 0;
+        }
+
+        $rawFee = $insuredValue * 0.005;
+
+        return (float) max(2000, ceil($rawFee / 500) * 500);
     }
 
     private function resolvePaymentMethod(Request $request, bool $strict = false): ?PaymentMethod

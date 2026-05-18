@@ -31,6 +31,7 @@ export interface Product {
     description: string;
     images: string[];
     image_url: string;
+    resolved_images?: Array<string | { url?: string; image_url?: string; image_path?: string; path?: string }>;
     brand: string;
     gender?: string | null;
     frame_shape?: string | null;

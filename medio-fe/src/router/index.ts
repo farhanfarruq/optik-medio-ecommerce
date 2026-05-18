@@ -27,12 +27,12 @@ const routes = [
     path: '/',
     component: DefaultLayout,
     children: [
-      { path: '', name: 'Home', component: Home, meta: { title: 'Optik Medio | Curated Lens Experience' } },
+      { path: '', name: 'Home', component: Home, meta: { title: 'Optik Medio | Pengalaman Belanja Optik' } },
       { path: 'products', name: 'Products', component: Home, meta: { title: 'Produk | Optik Medio' } },
       { path: 'products/category/:slug', name: 'ProductsByCategory', component: Home, meta: { title: 'Kategori Produk | Optik Medio' } },
-      { path: 'compare', name: 'ProductCompare', component: ProductCompare, meta: { title: 'Compare Produk | Optik Medio' } },
-      { path: 'face-shape-quiz', name: 'FaceShapeQuiz', component: FaceShapeQuiz, meta: { title: 'Face Shape Quiz | Optik Medio' } },
-      { path: 'virtual-try-on', name: 'VirtualTryOn', component: VirtualTryOn, meta: { title: 'Virtual Try-On | Optik Medio' } },
+      { path: 'compare', name: 'ProductCompare', component: ProductCompare, meta: { title: 'Bandingkan Produk | Optik Medio' } },
+      { path: 'face-shape-quiz', name: 'FaceShapeQuiz', component: FaceShapeQuiz, meta: { title: 'Kuis Bentuk Wajah | Optik Medio' } },
+      { path: 'virtual-try-on', name: 'VirtualTryOn', component: VirtualTryOn, meta: { title: 'Coba Virtual | Optik Medio' } },
       { path: 'products/:slug', name: 'ProductDetail', component: ProductDetail, meta: { title: 'Detail Produk | Optik Medio' } },
       { path: 'login', name: 'Login', component: Login, meta: { title: 'Masuk | Optik Medio' } },
       { path: 'register', name: 'Register', component: Register, meta: { title: 'Daftar | Optik Medio' } },
@@ -41,10 +41,10 @@ const routes = [
       { path: 'addresses', name: 'Addresses', component: Profile, meta: { title: 'Alamat | Optik Medio' } },
       { path: 'prescriptions', name: 'Prescriptions', component: Profile, meta: { title: 'Resep Optik | Optik Medio' } },
       { path: 'orders', name: 'Orders', component: Profile, meta: { title: 'Pesanan | Optik Medio' } },
-      { path: 'affiliate', name: 'AffiliateDashboard', component: Profile, meta: { title: 'Affiliate | Optik Medio' } },
-      { path: 'wishlist/shared/:token', name: 'SharedWishlist', component: SharedWishlist, meta: { title: 'Shared Wishlist | Optik Medio' } },
+      { path: 'affiliate', name: 'AffiliateDashboard', component: Profile, meta: { title: 'Afiliasi | Optik Medio' } },
+      { path: 'wishlist/shared/:token', name: 'SharedWishlist', component: SharedWishlist, meta: { title: 'Wishlist Dibagikan | Optik Medio' } },
       { path: 'wishlist', name: 'Wishlist', component: Profile, meta: { title: 'Wishlist | Optik Medio' } },
-      { path: 'checkout', name: 'Checkout', component: CheckoutView, meta: { title: 'Checkout | Optik Medio' } },
+      { path: 'checkout', name: 'Checkout', component: CheckoutView, meta: { title: 'Pembayaran | Optik Medio' } },
       { path: 'waiting-payment/:id', name: 'WaitingPayment', component: WaitingPayment, meta: { title: 'Menunggu Pembayaran | Optik Medio' } },
       { path: 'tracking/:id', name: 'Tracking', component: Tracking, meta: { title: 'Pelacakan Pesanan | Optik Medio' } },
       { path: 'complaints/new', name: 'Complaint', component: Complaint, meta: { title: 'Komplain | Optik Medio' } },
@@ -61,12 +61,12 @@ const routes = [
       { path: 'referral', name: 'Referral', component: () => import('../views/ReferralPage.vue'), meta: { title: 'Program Referral | Optik Medio' } },
       { path: 'referral/:code', name: 'ReferralLanding', component: () => import('../views/ReferralPage.vue'), meta: { title: 'Bergabung dengan Referral | Optik Medio' } },
       // Appointment & Warranty
-      { path: 'appointment', name: 'Appointment', component: () => import('../views/AppointmentPage.vue'), meta: { title: 'Booking Appointment | Optik Medio' } },
+      { path: 'appointment', name: 'Appointment', component: () => import('../views/AppointmentPage.vue'), meta: { title: 'Booking Konsultasi | Optik Medio' } },
       { path: 'warranty', name: 'Warranty', component: Profile, meta: { title: 'Garansi & Servis | Optik Medio' } },
       // Category, Brand, Loyalty landing pages
       { path: 'c/:slug', name: 'CategoryLanding', component: () => import('../views/CategoryLanding.vue'), meta: { title: 'Kategori | Optik Medio' } },
       { path: 'brand/:brand', name: 'BrandLanding', component: () => import('../views/BrandLanding.vue'), meta: { title: 'Merek | Optik Medio' } },
-      { path: 'loyalty', name: 'Loyalty', component: () => import('../views/LoyaltyPage.vue'), meta: { title: 'Loyalty Points | Optik Medio' } },
+      { path: 'loyalty', name: 'Loyalty', component: () => import('../views/LoyaltyPage.vue'), meta: { title: 'Poin Loyalitas | Optik Medio' } },
     ]
   },
 ];
@@ -88,7 +88,9 @@ router.beforeEach(async (to, _from, next) => {
     try {
       await authStore.fetchUser();
     } catch {
-      await authStore.logout({ silent: true });
+      // fetchUser sudah handle 401 dengan set user = null di dalam fungsinya.
+      // Error lain (network, 500) — anggap tidak terautentikasi, jangan logout.
+      // hasInitialized sudah di-set di finally dalam fetchUser.
     }
   }
 
@@ -117,7 +119,7 @@ router.beforeEach(async (to, _from, next) => {
 });
 
 router.afterEach((to) => {
-  document.title = (to.meta.title as string | undefined) || 'Optik Medio | Curated Lens Experience';
+  document.title = (to.meta.title as string | undefined) || 'Optik Medio | Pengalaman Belanja Optik';
 });
 
 export default router;

@@ -56,15 +56,31 @@ const breadcrumbs = computed(() => [
   { label: isCod.value ? 'Konfirmasi COD' : 'Selesaikan Pembayaran' },
 ]);
 
+const pickupBookingQuery = (targetOrder: any): Record<string, string> => ({
+  service: 'pickup',
+  order_id: String(targetOrder.id),
+  order_number: String(targetOrder.order_number || targetOrder.id),
+  source_label: `Pesanan #${targetOrder.order_number || targetOrder.id}`,
+});
+
+const redirectAfterPayment = (targetOrder: any) => {
+  if (targetOrder?.fulfillment_method === 'store_pickup') {
+    router.push({ path: '/appointment', query: pickupBookingQuery(targetOrder) });
+    return;
+  }
+
+  router.push(`/orders/${targetOrder.id}`);
+};
+
 const loadOrder = async () => {
   isLoading.value = true;
   try {
     order.value = await orderRepository.getOrderDetails(Number(route.params.id));
 
     // Jika sudah paid/processing/dll, langsung redirect
-    if (['paid', 'processing', 'shipped', 'delivered', 'completed'].includes(order.value?.status)) {
+    if (['paid', 'lens_processing', 'processing', 'shipped', 'delivered', 'completed'].includes(order.value?.status)) {
       showToast('Pembayaran berhasil dikonfirmasi!', 'success');
-      router.push(`/orders/${order.value.id}`);
+      redirectAfterPayment(order.value);
       return;
     }
 
@@ -104,7 +120,11 @@ const startPolling = () => {
       if (status.should_redirect) {
         stopPolling();
         showToast('Pembayaran berhasil dikonfirmasi!', 'success');
-        router.push(`/orders/${status.order_id}`);
+        redirectAfterPayment({
+          ...order.value,
+          id: status.order_id,
+          order_number: status.order_number,
+        });
         return;
       }
 
@@ -138,9 +158,9 @@ const syncPaymentManual = async () => {
   try {
     paymentStatusMsg.value = 'Menyinkronkan status pembayaran...';
     const result = await orderRepository.syncPayment(order.value.id);
-    if (['paid', 'processing', 'shipped', 'delivered'].includes(result.status)) {
+    if (['paid', 'lens_processing', 'processing', 'shipped', 'delivered'].includes(result.status)) {
       showToast('Pembayaran berhasil dikonfirmasi!', 'success');
-      router.push(`/orders/${order.value.id}`);
+      redirectAfterPayment(result.order || order.value);
     } else if (result.status === 'cancelled') {
       isExpired.value = true;
       paymentStatusMsg.value = 'Pembayaran telah kedaluwarsa atau dibatalkan.';

@@ -2,6 +2,7 @@ import { apiClient } from '../core/api/axiosclient';
 
 export interface ComplaintPayload {
   order_id?: number | null;
+  complaint_type?: 'general' | 'shipping_protection';
   subject: string;
   message: string;
   contact_phone?: string;
@@ -19,10 +20,10 @@ class ComplaintRepository {
     return data.data;
   }
 
-  async getComplaintByOrder(orderId: number): Promise<any | null> {
+  async getComplaintByOrder(orderId: number, complaintType?: 'general' | 'shipping_protection'): Promise<any | null> {
     const result = await this.getComplaints(1);
     const items: any[] = result?.data ?? [];
-    return items.find((c: any) => c.order_id === orderId) ?? null;
+    return items.find((c: any) => c.order_id === orderId && (!complaintType || c.complaint_type === complaintType)) ?? null;
   }
 
   async createComplaint(payload: ComplaintPayload): Promise<any> {
@@ -32,6 +33,10 @@ class ComplaintRepository {
 
     if (payload.order_id) {
       formData.append('order_id', String(payload.order_id));
+    }
+
+    if (payload.complaint_type) {
+      formData.append('complaint_type', payload.complaint_type);
     }
 
     if (payload.contact_phone) {

@@ -61,6 +61,7 @@ class InventoryResource extends Resource
                     ->placeholder('-'),
                 Tables\Columns\TextColumn::make('category.name')
                     ->label('Kategori')
+                    ->searchable()
                     ->badge()
                     ->color('gray'),
                 Tables\Columns\TextColumn::make('stock')
@@ -99,7 +100,9 @@ class InventoryResource extends Resource
                     ->query(fn (Builder $query) => $query->where('stock', '<=', 0)),
                 Tables\Filters\SelectFilter::make('category')
                     ->relationship('category', 'name')
-                    ->label('Kategori'),
+                    ->label('Kategori')
+                    ->searchable()
+                    ->preload(),
             ])
             ->actions([
                 \Filament\Actions\Action::make('adjust_stock')

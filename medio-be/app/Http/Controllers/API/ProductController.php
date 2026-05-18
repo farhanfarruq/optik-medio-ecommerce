@@ -130,6 +130,17 @@ class ProductController extends Controller
             ->where('slug', $slug)
             ->firstOrFail();
 
+        $categoryContext = strtolower(trim(($product->category?->slug ?? '') . ' ' . ($product->category?->name ?? '')));
+        $isFrameProduct = str_contains($categoryContext, 'frame')
+            || filled($product->frame_shape)
+            || filled($product->frame_material)
+            || filled($product->frame_color)
+            || filled($product->face_size_fit)
+            || filled($product->lens_width)
+            || filled($product->bridge_width)
+            || filled($product->temple_length)
+            || filled($product->frame_width);
+
         $product->load([
             'compatibleLensOptions' => fn ($query) => $query
                 ->where('is_active', true)
@@ -193,20 +204,6 @@ class ProductController extends Controller
             return $score;
         };
 
-        $similarFrames = $similarCandidates
-            ->sortByDesc($score)
-            ->take(8)
-            ->values();
-
-        $compatibleLenses = (clone $candidateQuery)
-            ->where(function ($query) {
-                $query->whereHas('category', fn ($categoryQuery) => $categoryQuery->where('slug', 'like', '%lensa%'))
-                    ->orWhere('name', 'like', '%lensa%')
-                    ->orWhere('description', 'like', '%lensa%');
-            })
-            ->limit(8)
-            ->get();
-
         $relatedProducts = (clone $candidateQuery)
             ->where('category_id', $product->category_id)
             ->orderByDesc('recommendation_priority')
@@ -214,6 +211,22 @@ class ProductController extends Controller
             ->orderByDesc('is_new')
             ->limit(8)
             ->get();
+
+        $similarFrames = $isFrameProduct
+            ? $similarCandidates
+                ->sortByDesc($score)
+                ->take(8)
+                ->values()
+            : collect();
+
+        $compatibleLenses = $isFrameProduct
+            ? (clone $candidateQuery)
+                ->whereHas('category', fn ($categoryQuery) => $categoryQuery
+                    ->where('slug', 'like', '%lensa%')
+                    ->orWhere('name', 'like', '%lensa%'))
+                ->limit(8)
+                ->get()
+            : collect();
 
         $frequentlyBoughtIds = OrderItem::query()
             ->selectRaw('product_id, SUM(quantity) as bought_count')

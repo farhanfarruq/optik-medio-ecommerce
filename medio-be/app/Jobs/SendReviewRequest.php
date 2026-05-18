@@ -19,38 +19,39 @@ class SendReviewRequest implements ShouldQueue
     public int $tries   = 3;
     public int $backoff = 120;
 
-    /**
-     * Kirim email request review untuk order yang delivered 3 hari lalu
-     * dan belum pernah dikirim review request.
-     */
     public function handle(): void
     {
-        $targetDate = now()->subDays(3)->toDateString();
+        $cutoff = now()->subDays(3);
 
         $orders = Order::with(['user', 'items'])
             ->where('status', 'delivered')
-            ->whereDate('delivered_at', $targetDate)
-            ->whereNull('review_requested_at')
+            ->whereNotNull('delivered_at')
+            ->where('delivered_at', '<=', $cutoff)
+            ->where('updated_at', '<=', $cutoff)
+            ->whereDoesntHave('returnRequest', fn ($query) => $query
+                ->whereIn('status', ['pending', 'approved']))
+            ->whereDoesntHave('complains', fn ($query) => $query
+                ->whereIn('status', ['open', 'in_progress']))
             ->get();
 
         foreach ($orders as $order) {
             try {
+                $order->update(['status' => 'completed']);
+
                 $email = $order->user?->email;
-                if (! $email || $order->items->isEmpty()) {
-                    continue;
+                if ($email && $order->items->isNotEmpty() && $order->review_requested_at === null) {
+                    Mail::to($email, $order->user->name)
+                        ->send(new ReviewRequestMail($order));
+
+                    $order->update(['review_requested_at' => now()]);
                 }
 
-                Mail::to($email, $order->user->name)
-                    ->send(new ReviewRequestMail($order));
-
-                $order->update(['review_requested_at' => now()]);
-
-                Log::info('Review request sent', [
+                Log::info('Delivered order auto-completed', [
                     'order_id' => $order->id,
                     'email'    => $email,
                 ]);
             } catch (\Throwable $e) {
-                Log::error('Failed to send review request', [
+                Log::error('Failed to auto-complete delivered order', [
                     'order_id' => $order->id,
                     'error'    => $e->getMessage(),
                 ]);

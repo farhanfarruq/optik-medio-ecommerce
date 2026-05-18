@@ -18,28 +18,78 @@ class OrderResource extends Resource
     protected static ?string $model = Order::class;
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-shopping-cart';
     protected static string | \UnitEnum | null $navigationGroup = 'Penjualan';
-    protected static ?string $navigationLabel = 'Order';
+    protected static ?string $navigationLabel = 'Pesanan';
     protected static ?int $navigationSort = 1;
+
+    public static function getNavigationBadge(): ?string
+    {
+        $needsAction = \App\Models\Order::query()
+            ->where(function ($q) {
+                $q->whereIn('status', ['unpaid', 'paid'])
+                  ->orWhere(function ($q2) {
+                      $q2->whereNotNull('payment_proof_image')
+                         ->where('is_payment_verified', false);
+                  });
+            })
+            ->count();
+
+        return $needsAction > 0 ? (string) $needsAction : null;
+    }
+
+    public static function getNavigationBadgeColor(): string | array | null
+    {
+        return 'danger';
+    }
+
+    protected static function statusFilterOptions(): array
+    {
+        $icons = [
+            'unpaid'                      => '⏳',
+            'paid'                        => '💰',
+            'waiting_prescription_review' => '📝',
+            'prescription_verified'       => '🔎',
+            'lens_processing'             => '🧪',
+            'processing'                  => '🔄',
+            'shipped'                     => '🚚',
+            'delivered'                   => '✅',
+            'completed'                   => '✅',
+            'cancelled'                   => '❌',
+            'refunded'                    => '↩️',
+        ];
+
+        return collect(Order::statusOptions())
+            ->mapWithKeys(fn (string $label, string $status): array => [
+                $status => ($icons[$status] ?? '•') . ' ' . $label,
+            ])
+            ->all();
+    }
+
+    protected static function updateOrderStatus(Order $record, string $status): void
+    {
+        if (! Order::hasStatus($status) || $record->status === $status) {
+            return;
+        }
+
+        if ($status === 'cancelled' && in_array($record->status, ['unpaid', 'paid', 'processing'], true)) {
+            foreach ($record->items as $item) {
+                if (! $item->parent_item_id) {
+                    Product::where('id', $item->product_id)->increment('stock', $item->quantity);
+                }
+            }
+        }
+
+        $record->update([
+            'status' => $status,
+            ...Order::statusTimestampPayload($status),
+        ]);
+    }
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
                 Forms\Components\Select::make('status')
-                    ->options([
-                        'unpaid'                      => 'Unpaid',
-                        'paid'                        => 'Paid',
-                        'processing'                  => 'Processing',
-                        'waiting_prescription_review' => 'Menunggu Review Resep',
-                        'prescription_verified'       => 'Resep Diverifikasi',
-                        'lens_processing'             => 'Proses Lensa',
-                        'ready_to_ship'               => 'Siap Kirim',
-                        'shipped'                     => 'Shipped',
-                        'delivered'                   => 'Delivered',
-                        'completed'                   => 'Completed',
-                        'cancelled'                   => 'Cancelled',
-                        'refunded'                    => 'Refunded',
-                    ])
+                    ->options(Order::statusOptions())
                     ->required(),
                 Forms\Components\Select::make('bank_id')
                     ->label('Bank Tujuan')
@@ -53,6 +103,13 @@ class OrderResource extends Resource
                     ->numeric()
                     ->disabled(),
                 Forms\Components\TextInput::make('shipping_cost')
+                    ->numeric()
+                    ->disabled(),
+                Forms\Components\Toggle::make('shipping_protection_opted')
+                    ->label('Proteksi Pengiriman')
+                    ->disabled(),
+                Forms\Components\TextInput::make('shipping_protection_fee')
+                    ->label('Biaya Proteksi Pengiriman')
                     ->numeric()
                     ->disabled(),
                 Forms\Components\TextInput::make('total_price')
@@ -152,10 +209,54 @@ class OrderResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('user.phone')
                     ->label('Telepon')
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('bank.name')
-                    ->label('Bank Tujuan')
                     ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('payment_channel_label')
+                    ->label('Metode Pembayaran')
+                    ->getStateUsing(function (Order $record): string {
+                        // Prioritas 1: kolom payment_channel yang sudah di-backfill
+                        if (filled($record->payment_channel)) {
+                            return $record->payment_channel;
+                        }
+
+                        // Prioritas 2: transfer manual via bank_id
+                        if ($record->bank_id && $record->bank) {
+                            return $record->bank->name;
+                        }
+
+                        // Prioritas 3: dari relasi payment → paymentMethod
+                        $record->loadMissing('payment.paymentMethod');
+                        $methodCode = strtolower($record->payment?->paymentMethod?->code ?? '');
+                        $methodName = $record->payment?->paymentMethod?->name ?? '';
+                        $provider   = strtolower($record->payment?->provider ?? '');
+
+                        if ($methodCode === 'cod') {
+                            return 'COD';
+                        }
+
+                        if (str_contains($methodCode, 'xendit') || $provider === 'xendit') {
+                            return 'Xendit';
+                        }
+
+                        if ($methodName) {
+                            return $methodName;
+                        }
+
+                        return '—';
+                    })
+                    ->badge()
+                    ->color(fn (string $state): string => match (true) {
+                        $state === 'COD'                  => 'warning',
+                        str_starts_with($state, 'Xendit') => 'info',
+                        $state === '—'                    => 'gray',
+                        default                           => 'success', // bank transfer
+                    })
+                    ->searchable(query: function ($query, string $search) {
+                        $query->where('payment_channel', 'like', "%{$search}%")
+                              ->orWhereHas('bank', fn ($q) => $q->where('name', 'like', "%{$search}%"))
+                              ->orWhereHas('payment.paymentMethod', fn ($q) => $q->where('name', 'like', "%{$search}%")
+                                  ->orWhere('code', 'like', "%{$search}%"));
+                    })
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('items.product_name')
                     ->label('Produk')
@@ -163,28 +264,52 @@ class OrderResource extends Resource
                     ->bulleted()
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\IconColumn::make('shipping_protection_opted')
+                    ->label('Proteksi')
+                    ->boolean(),
                 Tables\Columns\TextColumn::make('total_price')->money('IDR')->sortable(),
+                Tables\Columns\TextColumn::make('fulfillment_method')
+                    ->label('Metode')
+                    ->badge()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'store_pickup' => 'success',
+                        default        => 'info',
+                    })
+                    ->icon(fn (?string $state): string => match ($state) {
+                        'store_pickup' => 'heroicon-o-building-storefront',
+                        default        => 'heroicon-o-truck',
+                    })
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'store_pickup' => 'Ambil di Toko',
+                        default        => 'Dikirim',
+                    }),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'unpaid'     => 'warning',
-                        'paid'       => 'info',
-                        'processing' => 'primary',
-                        'shipped'    => 'info',
-                        'delivered'  => 'success',
-                        'cancelled'  => 'danger',
-                        'refunded'   => 'gray',
-                        default      => 'gray',
+                        'unpaid'                      => 'warning',
+                        'paid'                        => 'info',
+                        'waiting_prescription_review' => 'warning',
+                        'prescription_verified'       => 'info',
+                        'lens_processing'             => 'primary',
+                        'processing'                  => 'primary',
+                        'shipped'                     => 'info',
+                        'delivered', 'completed'      => 'success',
+                        'cancelled'                   => 'danger',
+                        'refunded'                    => 'gray',
+                        default                       => 'gray',
                     })
                     ->icon(fn (string $state): string => match ($state) {
-                        'unpaid'     => 'heroicon-o-clock',
-                        'paid'       => 'heroicon-o-banknotes',
-                        'processing' => 'heroicon-o-cog',
-                        'shipped'    => 'heroicon-o-truck',
-                        'delivered'  => 'heroicon-o-check-circle',
-                        'cancelled'  => 'heroicon-o-x-circle',
-                        'refunded'   => 'heroicon-o-arrow-uturn-left',
-                        default      => 'heroicon-o-question-mark-circle',
+                        'unpaid'                      => 'heroicon-o-clock',
+                        'paid'                        => 'heroicon-o-banknotes',
+                        'waiting_prescription_review' => 'heroicon-o-document-magnifying-glass',
+                        'prescription_verified'       => 'heroicon-o-shield-check',
+                        'lens_processing'             => 'heroicon-o-cog-6-tooth',
+                        'processing'                  => 'heroicon-o-cog',
+                        'shipped'                     => 'heroicon-o-truck',
+                        'delivered', 'completed'      => 'heroicon-o-check-circle',
+                        'cancelled'                   => 'heroicon-o-x-circle',
+                        'refunded'                    => 'heroicon-o-arrow-uturn-left',
+                        default                       => 'heroicon-o-question-mark-circle',
                     }),
                 Tables\Columns\IconColumn::make('is_payment_verified')
                     ->label('Bayar Terverifikasi')
@@ -204,17 +329,45 @@ class OrderResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
-                    ->options([
-                        'unpaid'     => '⏳ Belum Bayar',
-                        'paid'       => '💰 Sudah Bayar',
-                        'processing' => '🔄 Diproses',
-                        'shipped'    => '🚚 Dikirim',
-                        'delivered'  => '✅ Diterima',
-                        'cancelled'  => '❌ Dibatalkan',
-                        'refunded'   => '↩️ Refund',
-                    ])
+                    ->options(self::statusFilterOptions())
                     ->multiple()
                     ->label('Filter Status'),
+                Tables\Filters\SelectFilter::make('user_id')
+                    ->label('Pelanggan')
+                    ->relationship('user', 'name')
+                    ->searchable()
+                    ->preload(),
+                Tables\Filters\SelectFilter::make('payment_method_filter')
+                    ->label('Metode Pembayaran')
+                    ->options(function () {
+                        $options = [];
+                        // Bank transfer manual
+                        \App\Models\Bank::where('is_active', true)->orderBy('name')->each(function ($bank) use (&$options) {
+                            $options['bank_' . $bank->id] = '🏦 ' . $bank->name;
+                        });
+                        // COD & Xendit dari payment_methods
+                        \App\Models\PaymentMethod::where('is_active', true)->orderBy('sort_order')->each(function ($pm) use (&$options) {
+                            if (strtolower($pm->code) === 'cod') {
+                                $options['pm_' . $pm->id] = '🚚 COD';
+                            } elseif (str_contains(strtolower($pm->code), 'xendit')) {
+                                $options['pm_' . $pm->id] = '💳 Xendit — ' . $pm->name;
+                            } else {
+                                $options['pm_' . $pm->id] = '💳 ' . $pm->name;
+                            }
+                        });
+                        return $options;
+                    })
+                    ->query(function ($query, array $data) {
+                        $value = $data['value'] ?? null;
+                        if (! $value) return;
+                        if (str_starts_with($value, 'bank_')) {
+                            $bankId = (int) substr($value, 5);
+                            $query->where('bank_id', $bankId);
+                        } elseif (str_starts_with($value, 'pm_')) {
+                            $pmId = (int) substr($value, 3);
+                            $query->whereHas('payment', fn ($q) => $q->where('payment_method_id', $pmId));
+                        }
+                    }),
                 Tables\Filters\Filter::make('needs_action')
                     ->label('Perlu Tindakan (Paid → Processing)')
                     ->query(fn ($query) => $query->where('status', 'paid')),
@@ -226,6 +379,18 @@ class OrderResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
+                \Filament\Actions\Action::make('update_status')
+                    ->label('Ubah Status')
+                    ->icon('heroicon-o-adjustments-horizontal')
+                    ->color('gray')
+                    ->form([
+                        \Filament\Forms\Components\Select::make('status')
+                            ->label('Status Pesanan')
+                            ->options(Order::statusOptions())
+                            ->default(fn (Order $record): string => $record->status)
+                            ->required(),
+                    ])
+                    ->action(fn (Order $record, array $data) => self::updateOrderStatus($record, $data['status'])),
                 \Filament\Actions\Action::make('process')
                     ->label('Proses')
                     ->icon('heroicon-o-cog')
@@ -382,6 +547,23 @@ class OrderResource extends Resource
             ])
             ->bulkActions([
                 \Filament\Actions\BulkActionGroup::make([
+                    \Filament\Actions\BulkAction::make('bulk_update_status')
+                        ->label('Ubah Status Pesanan')
+                        ->icon('heroicon-o-adjustments-horizontal')
+                        ->color('gray')
+                        ->form([
+                            \Filament\Forms\Components\Select::make('status')
+                                ->label('Status Pesanan')
+                                ->options(Order::statusOptions())
+                                ->required(),
+                        ])
+                        ->requiresConfirmation()
+                        ->action(function ($records, array $data): void {
+                            foreach ($records as $record) {
+                                self::updateOrderStatus($record, $data['status']);
+                            }
+                        })
+                        ->deselectRecordsAfterCompletion(),
                     \Filament\Actions\BulkAction::make('mark_processing')
                         ->label('Tandai: Processing')
                         ->icon('heroicon-o-cog')

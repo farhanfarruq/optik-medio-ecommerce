@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, nextTick, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { apiClient } from '../core/api/axiosclient';
 import { useAuthStore } from '../stores/authStore';
 import { useToast } from '../composables/useToast';
 import { useSeoMeta } from '../composables/useSeoMeta';
 import PageHero from '../components/layout/PageHero.vue';
 
+const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const { showToast } = useToast();
@@ -64,6 +65,24 @@ const loadData = async () => {
     showToast('Gagal memuat data cabang.', 'error');
   } finally {
     isLoading.value = false;
+  }
+};
+
+const applyPrefillFromQuery = async () => {
+  const requestedService = typeof route.query.service === 'string' ? route.query.service : '';
+  const sourceLabel = typeof route.query.source_label === 'string' ? route.query.source_label : '';
+
+  if (requestedService && serviceOptions.some((option) => option.value === requestedService)) {
+    form.value.service_type = requestedService;
+  }
+
+  if (sourceLabel && !form.value.notes) {
+    form.value.notes = `Booking dari produk: ${sourceLabel}`;
+  }
+
+  if (requestedService || sourceLabel) {
+    await nextTick();
+    bookingFormRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 };
 
@@ -192,7 +211,7 @@ onMounted(() => {
     title: 'Booking Appointment',
     description: 'Booking appointment untuk tes mata, fitting frame, konsultasi, atau ambil pesanan di cabang Optik Medio terdekat.',
   });
-  loadData();
+  loadData().then(() => applyPrefillFromQuery());
 });
 </script>
 

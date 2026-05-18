@@ -150,7 +150,8 @@ class ArticleResource extends Resource
                     ->limit(50)
                     ->weight('bold'),
                 Tables\Columns\TextColumn::make('author.name')
-                    ->label('Penulis'),
+                    ->label('Penulis')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('tags')
                     ->label('Tags')
                     ->badge()

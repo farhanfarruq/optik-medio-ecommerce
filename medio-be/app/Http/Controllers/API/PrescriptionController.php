@@ -7,6 +7,7 @@ use App\Models\PrescriptionProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 class PrescriptionController extends Controller
@@ -102,25 +103,66 @@ class PrescriptionController extends Controller
     private function validatedPayload(Request $request, bool $partial = false): array
     {
         $required = $partial ? 'sometimes' : 'required';
+        $lensType = $request->input('lens_type');
+        $allowsAdd = in_array($lensType, ['progressive', 'reading'], true);
+        $payload = array_merge($request->except('attachment'), $request->allFiles());
 
-        $validated = $request->validate([
-            'label' => [$required, 'string', 'max:255'],
-            'lens_type' => ['nullable', 'string', 'in:single_vision,progressive,reading,blue_light,photochromic,high_index,anti_radiation'],
-            'right_sphere' => ['nullable', 'numeric', 'between:-30,30'],
-            'right_cylinder' => ['nullable', 'numeric', 'between:-10,10'],
-            'right_axis' => ['nullable', 'integer', 'between:0,180'],
-            'right_add' => ['nullable', 'numeric', 'between:0,5'],
-            'left_sphere' => ['nullable', 'numeric', 'between:-30,30'],
-            'left_cylinder' => ['nullable', 'numeric', 'between:-10,10'],
-            'left_axis' => ['nullable', 'integer', 'between:0,180'],
-            'left_add' => ['nullable', 'numeric', 'between:0,5'],
-            'pd_single' => ['nullable', 'numeric', 'between:20,80'],
-            'pd_right' => ['nullable', 'numeric', 'between:10,45'],
-            'pd_left' => ['nullable', 'numeric', 'between:10,45'],
-            'notes' => ['nullable', 'string', 'max:2000'],
-            'attachment' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:4096'],
-            'is_default' => ['boolean'],
-        ]);
+        if (!$allowsAdd) {
+            unset($payload['right_add'], $payload['left_add']);
+        }
+
+        $validated = Validator::make(
+            $payload,
+            [
+                'label' => [$required, 'string', 'max:255'],
+                'lens_type' => ['nullable', 'string', 'in:single_vision,progressive,reading,blue_light,photochromic,high_index,anti_radiation'],
+                'right_sphere' => ['nullable', 'numeric', 'between:-30,30'],
+                'right_cylinder' => ['nullable', 'numeric', 'between:-10,10'],
+                'right_axis' => ['nullable', 'integer', 'between:1,180'],
+                'right_add' => ['nullable', 'numeric', 'between:0,5'],
+                'left_sphere' => ['nullable', 'numeric', 'between:-30,30'],
+                'left_cylinder' => ['nullable', 'numeric', 'between:-10,10'],
+                'left_axis' => ['nullable', 'integer', 'between:1,180'],
+                'left_add' => ['nullable', 'numeric', 'between:0,5'],
+                'pd_single' => ['nullable', 'numeric', 'between:50,75'],
+                'pd_right' => ['nullable', 'numeric', 'between:25,38'],
+                'pd_left' => ['nullable', 'numeric', 'between:25,38'],
+                'notes' => ['nullable', 'string', 'max:2000'],
+                'attachment' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:4096'],
+                'is_default' => ['boolean'],
+            ],
+            [
+                'required' => ':attribute wajib diisi.',
+                'string' => ':attribute harus berupa teks.',
+                'numeric' => ':attribute harus berupa angka.',
+                'integer' => ':attribute harus berupa angka bulat.',
+                'between.numeric' => ':attribute harus di antara :min sampai :max.',
+                'between.integer' => ':attribute harus di antara :min sampai :max.',
+                'in' => ':attribute tidak valid.',
+                'max.string' => ':attribute maksimal :max karakter.',
+                'max.file' => ':attribute maksimal :max KB.',
+                'mimes' => ':attribute harus berupa file dengan format: :values.',
+                'boolean' => ':attribute tidak valid.',
+            ],
+            [
+                'label' => 'Nama resep',
+                'lens_type' => 'Tipe lensa',
+                'right_sphere' => 'SPH kanan',
+                'right_cylinder' => 'CYL kanan',
+                'right_axis' => 'Axis kanan',
+                'right_add' => 'ADD kanan',
+                'left_sphere' => 'SPH kiri',
+                'left_cylinder' => 'CYL kiri',
+                'left_axis' => 'Axis kiri',
+                'left_add' => 'ADD kiri',
+                'pd_single' => 'PD tunggal',
+                'pd_right' => 'PD kanan',
+                'pd_left' => 'PD kiri',
+                'notes' => 'Catatan',
+                'attachment' => 'Lampiran resep',
+                'is_default' => 'Resep utama',
+            ],
+        )->validate();
 
         $this->validateOpticalRules($validated);
         unset($validated['attachment']);
@@ -131,12 +173,17 @@ class PrescriptionController extends Controller
     /**
      * @param array<string, mixed> $validated
      */
-    private function validateOpticalRules(array $validated): void
+    private function validateOpticalRules(array &$validated): void
     {
         foreach (['right', 'left'] as $side) {
             $cylinder = (float) ($validated["{$side}_cylinder"] ?? 0);
 
-            if ($cylinder !== 0.0 && !isset($validated["{$side}_axis"])) {
+            if ($cylinder === 0.0) {
+                unset($validated["{$side}_axis"]);
+                continue;
+            }
+
+            if (!isset($validated["{$side}_axis"])) {
                 throw ValidationException::withMessages([
                     "{$side}_axis" => 'Axis wajib diisi jika cylinder diisi.',
                 ]);

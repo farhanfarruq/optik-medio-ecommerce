@@ -18,22 +18,22 @@ class UserAffiliatorResource extends Resource
     protected static ?string $model = UserAffiliator::class;
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-user-group';
     protected static string | \UnitEnum | null $navigationGroup = 'Afiliasi';
-    protected static ?string $navigationLabel = 'Affiliator';
+    protected static ?string $navigationLabel = 'Afiliator';
     protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            \Filament\Schemas\Components\Section::make('Profil Affiliator')
+            \Filament\Schemas\Components\Section::make('Profil Afiliator')
                 ->schema([
                     Forms\Components\Select::make('user_id')->relationship('user', 'name')->required()->searchable()->preload(),
                     Forms\Components\TextInput::make('affiliate_code')->required()->unique(ignoreRecord: true),
                     Forms\Components\Select::make('status')
                         ->options([
-                            'pending' => 'Pending',
-                            'approved' => 'Approved',
-                            'rejected' => 'Rejected',
-                            'suspended' => 'Suspended',
+                            'pending' => 'Menunggu',
+                            'approved' => 'Disetujui',
+                            'rejected' => 'Ditolak',
+                            'suspended' => 'Ditangguhkan',
                         ])
                         ->required(),
                     Forms\Components\TextInput::make('commission_rate_percentage')->numeric()->required()->default(0),
@@ -44,6 +44,24 @@ class UserAffiliatorResource extends Resource
                     Forms\Components\Textarea::make('notes')->columnSpanFull(),
                 ])
                 ->columns(2),
+            \Filament\Schemas\Components\Section::make('Rekening Pencairan')
+                ->schema([
+                    Forms\Components\Select::make('payout_method')
+                        ->label('Metode Pencairan')
+                        ->options([
+                            'bank_transfer' => 'Transfer Bank',
+                        ]),
+                    Forms\Components\TextInput::make('payout_bank_name')
+                        ->label('Bank / E-Wallet'),
+                    Forms\Components\TextInput::make('payout_account_number')
+                        ->label('Nomor Rekening / Akun'),
+                    Forms\Components\TextInput::make('payout_account_name')
+                        ->label('Nama Pemilik Rekening'),
+                    Forms\Components\Textarea::make('payout_notes')
+                        ->label('Catatan Rekening')
+                        ->columnSpanFull(),
+                ])
+                ->columns(2),
         ]);
     }
 
@@ -52,15 +70,17 @@ class UserAffiliatorResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
-                Tables\Columns\TextColumn::make('user.name')->label('User')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('user.name')->label('Pengguna')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('affiliate_code')->searchable()->copyable(),
+                Tables\Columns\TextColumn::make('payout_bank_name')->label('Bank')->placeholder('-')->toggleable(),
+                Tables\Columns\TextColumn::make('payout_account_number')->label('No. Rekening')->placeholder('-')->copyable()->toggleable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->formatStateUsing(fn (UserAffiliatorStatus | string | null $state): string => match (self::resolveStatusValue($state)) {
-                        UserAffiliatorStatus::Approved->value => 'Approved',
-                        UserAffiliatorStatus::Pending->value => 'Pending',
-                        UserAffiliatorStatus::Rejected->value => 'Rejected',
-                        UserAffiliatorStatus::Suspended->value => 'Suspended',
+                        UserAffiliatorStatus::Approved->value => 'Disetujui',
+                        UserAffiliatorStatus::Pending->value => 'Menunggu',
+                        UserAffiliatorStatus::Rejected->value => 'Ditolak',
+                        UserAffiliatorStatus::Suspended->value => 'Ditangguhkan',
                         default => '-',
                     })
                     ->color(fn (UserAffiliatorStatus | string | null $state) => match (self::resolveStatusValue($state)) {
@@ -75,7 +95,7 @@ class UserAffiliatorResource extends Resource
             ])
             ->actions([
                 \Filament\Actions\Action::make('approve')
-                    ->label('Approve')
+                    ->label('Setujui')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(fn (UserAffiliator $record) => $record->status !== UserAffiliatorStatus::Approved)
@@ -88,7 +108,7 @@ class UserAffiliatorResource extends Resource
                         'rejection_reason' => null,
                     ])),
                 \Filament\Actions\Action::make('reject')
-                    ->label('Reject')
+                    ->label('Tolak')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->visible(fn (UserAffiliator $record) => $record->status !== UserAffiliatorStatus::Rejected)

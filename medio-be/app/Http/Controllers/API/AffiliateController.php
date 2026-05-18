@@ -7,12 +7,17 @@ use App\Enums\UserAffiliatorStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Commission;
 use App\Models\UserAffiliator;
+use App\Services\AffiliateCommissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class AffiliateController extends Controller
 {
+    public function __construct(private AffiliateCommissionService $commissionService)
+    {
+    }
+
     public function dashboard(Request $request): JsonResponse
     {
         $affiliator = $request->user()
@@ -101,7 +106,7 @@ class AffiliateController extends Controller
         }
 
         $commissions = Commission::query()
-            ->with('details')
+            ->with(['details.order', 'details.sourceUser'])
             ->where('user_affiliator_id', $affiliator->id)
             ->latest()
             ->paginate(10);
@@ -110,6 +115,60 @@ class AffiliateController extends Controller
             'success' => true,
             'message' => 'Riwayat komisi berhasil diambil.',
             'data' => $commissions,
+        ]);
+    }
+
+    public function earnings(Request $request): JsonResponse
+    {
+        $affiliator = $request->user()->affiliateProfile;
+
+        if (! $affiliator) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Belum ada data order komisi karena user belum menjadi affiliator.',
+                'data' => [],
+            ]);
+        }
+
+        if ($affiliator->status !== UserAffiliatorStatus::Approved) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun affiliator Anda belum disetujui. Data order komisi tersedia setelah akun aktif.',
+                'data' => [],
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data order komisi berhasil diambil.',
+            'data' => $this->commissionService->earningsForResponse($affiliator),
+        ]);
+    }
+
+    public function updatePayoutProfile(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'payout_method' => 'required|in:bank_transfer',
+            'payout_bank_name' => 'required|string|max:100',
+            'payout_account_number' => 'required|string|max:50',
+            'payout_account_name' => 'required|string|max:100',
+            'payout_notes' => 'nullable|string|max:500',
+        ]);
+
+        $affiliator = $request->user()->affiliateProfile;
+
+        if (! $affiliator) {
+            return response()->json([
+                'message' => 'Anda belum memiliki profil affiliator.',
+            ], 422);
+        }
+
+        $affiliator->update($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Rekening pencairan berhasil disimpan.',
+            'data' => $affiliator->fresh(),
         ]);
     }
 
@@ -134,9 +193,15 @@ class AffiliateController extends Controller
             ], 422);
         }
 
+        if (! $this->hasCompletePayoutProfile($affiliator)) {
+            return response()->json([
+                'message' => 'Lengkapi rekening pencairan komisi terlebih dahulu.',
+            ], 422);
+        }
+
         $hasOpenRequest = Commission::query()
             ->where('user_affiliator_id', $affiliator->id)
-            ->whereIn('status', [CommissionStatus::Pending, CommissionStatus::Processing])
+            ->whereIn('status', [CommissionStatus::Pending->value, CommissionStatus::Processing->value])
             ->exists();
 
         if ($hasOpenRequest) {
@@ -146,7 +211,7 @@ class AffiliateController extends Controller
         }
 
         $summary = $this->buildSummary($affiliator);
-        $availableBalance = $summary['total_success'] - ($summary['total_pending'] + $summary['total_processing']);
+        $availableBalance = $summary['available_balance'];
 
         if ($request->input('requested_amount') > $availableBalance) {
             return response()->json([
@@ -154,14 +219,11 @@ class AffiliateController extends Controller
             ], 422);
         }
 
-        $commission = Commission::create([
-            'user_affiliator_id' => $affiliator->id,
-            'requested_amount' => $request->input('requested_amount'),
-            'approved_amount' => null,
-            'status' => CommissionStatus::Pending,
-            'requested_at' => now(),
-            'admin_notes' => $request->input('admin_notes'),
-        ]);
+        $commission = $this->commissionService->requestPayout(
+            $affiliator,
+            (float) $request->input('requested_amount'),
+            $request->input('admin_notes'),
+        );
 
         return response()->json([
             'success' => true,
@@ -172,33 +234,7 @@ class AffiliateController extends Controller
 
     private function buildSummary(UserAffiliator $affiliator): array
     {
-        $commissions = Commission::query()
-            ->where('user_affiliator_id', $affiliator->id)
-            ->get();
-
-        // ── AFIL-004: Hitung komisi hanya dari order yang sudah selesai ───────
-        $eligibleCommissionIds = \App\Models\CommissionDetail::query()
-            ->whereHas('order', fn ($q) => $q->whereIn('status', ['delivered', 'completed']))
-            ->pluck('commission_id')
-            ->unique();
-
-        return [
-            'referrals_count' => $affiliator->referrals_count ?? $affiliator->referrals()->count(),
-            'total_requests' => (float) $commissions->sum('requested_amount'),
-            'total_success' => (float) $commissions
-                ->where('status', CommissionStatus::Success)
-                ->sum(fn (Commission $commission) => $commission->approved_amount ?? $commission->requested_amount),
-            'total_pending' => (float) $commissions
-                ->where('status', CommissionStatus::Pending)
-                ->sum('requested_amount'),
-            'total_processing' => (float) $commissions
-                ->where('status', CommissionStatus::Processing)
-                ->sum('requested_amount'),
-            'total_cancelled' => (float) $commissions
-                ->where('status', CommissionStatus::Cancelled)
-                ->sum('requested_amount'),
-            'eligible_commission_ids' => $eligibleCommissionIds->values(),
-        ];
+        return $this->commissionService->summary($affiliator);
     }
 
     private function emptySummary(): array
@@ -206,10 +242,17 @@ class AffiliateController extends Controller
         return [
             'referrals_count' => 0,
             'total_requests' => 0,
+            'total_earned' => 0,
+            'available_balance' => 0,
+            'locked_balance' => 0,
+            'paid_out' => 0,
             'total_success' => 0,
             'total_pending' => 0,
             'total_processing' => 0,
             'total_cancelled' => 0,
+            'eligible_orders_count' => 0,
+            'available_orders_count' => 0,
+            'minimum_payout_amount' => AffiliateCommissionService::MIN_PAYOUT_AMOUNT,
         ];
     }
 
@@ -231,5 +274,13 @@ class AffiliateController extends Controller
         } while (UserAffiliator::query()->where('affiliate_code', $code)->exists());
 
         return $code;
+    }
+
+    private function hasCompletePayoutProfile(UserAffiliator $affiliator): bool
+    {
+        return filled($affiliator->payout_method)
+            && filled($affiliator->payout_bank_name)
+            && filled($affiliator->payout_account_number)
+            && filled($affiliator->payout_account_name);
     }
 }

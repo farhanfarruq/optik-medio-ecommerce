@@ -71,6 +71,14 @@ class ReferralController extends Controller
 
         // Beri reward invitee langsung (poin)
         $invitee = $request->user();
+        $affiliateProfile = $referral->user?->affiliateProfile;
+
+        if ($affiliateProfile && ! $invitee->referred_by_affiliator_id) {
+            $invitee->update([
+                'referred_by_affiliator_id' => $affiliateProfile->id,
+            ]);
+        }
+
         if ($referral->reward_invitee > 0) {
             DB::transaction(function () use ($invitee, $referral, $userId) {
                 $invitee->addLoyaltyPoints(

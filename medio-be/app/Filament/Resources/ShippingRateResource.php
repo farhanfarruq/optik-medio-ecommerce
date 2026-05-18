@@ -58,7 +58,11 @@ class ShippingRateResource extends Resource
                 Tables\Columns\IconColumn::make('is_active')->boolean(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('expedition_id')->relationship('expedition', 'name')->label('Ekspedisi'),
+                Tables\Filters\SelectFilter::make('expedition_id')
+                    ->relationship('expedition', 'name')
+                    ->label('Ekspedisi')
+                    ->searchable()
+                    ->preload(),
             ])
             ->actions([\Filament\Actions\EditAction::make()])
             ->bulkActions([

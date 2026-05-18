@@ -13,20 +13,37 @@ class Order extends Model
 {
     use SoftDeletes;
 
+    public const STATUS_OPTIONS = [
+        'unpaid'                      => 'Belum Bayar',
+        'paid'                        => 'Sudah Bayar',
+        'waiting_prescription_review' => 'Menunggu Review Resep',
+        'prescription_verified'       => 'Resep Diverifikasi',
+        'lens_processing'             => 'Proses Lensa',
+        'processing'                  => 'Diproses',
+        'shipped'                     => 'Dikirim',
+        'delivered'                   => 'Diterima',
+        'completed'                   => 'Selesai',
+        'cancelled'                   => 'Dibatalkan',
+        'refunded'                    => 'Dikembalikan',
+    ];
+
     protected $fillable = [
-        'order_number', 'user_id', 'shipping_address_id', 'status',
-        'subtotal', 'shipping_cost', 'total_price', 'courier',
+        'order_number', 'user_id', 'shipping_address_id', 'fulfillment_method', 'status',
+        'subtotal', 'shipping_cost', 'shipping_protection_opted', 'shipping_protection_fee', 'total_price', 'courier',
         'courier_service', 'tracking_number', 'notes',
         'paid_at', 'shipped_at', 'delivered_at',
         'discount_id', 'discount_amount',
-        'promo_id', 'promo_discount_amount', 'bank_id',
+        'promo_id', 'promo_discount_amount', 'bank_id', 'payment_channel',
         'level_discount_amount', 'loyalty_points_used', 'loyalty_discount_amount',
         'payment_proof_image', 'is_payment_verified', 'verified_by', 'payment_verified_at',
+        'review_requested_at',
     ];
 
     protected $casts = [
         'subtotal'        => 'decimal:2',
         'shipping_cost'   => 'decimal:2',
+        'shipping_protection_opted' => 'boolean',
+        'shipping_protection_fee' => 'decimal:2',
         'total_price'     => 'decimal:2',
         'discount_amount'       => 'decimal:2',
         'promo_discount_amount' => 'decimal:2',
@@ -35,9 +52,29 @@ class Order extends Model
         'paid_at'         => 'datetime',
         'shipped_at'      => 'datetime',
         'delivered_at'    => 'datetime',
+        'review_requested_at' => 'datetime',
         'is_payment_verified' => 'boolean',
         'payment_verified_at' => 'datetime',
     ];
+
+    public static function statusOptions(): array
+    {
+        return self::STATUS_OPTIONS;
+    }
+
+    public static function hasStatus(string $status): bool
+    {
+        return array_key_exists($status, self::STATUS_OPTIONS);
+    }
+
+    public static function statusTimestampPayload(string $status): array
+    {
+        return match ($status) {
+            'shipped' => ['shipped_at' => now()],
+            'delivered', 'completed' => ['delivered_at' => now()],
+            default => [],
+        };
+    }
 
     protected static function booted(): void
     {

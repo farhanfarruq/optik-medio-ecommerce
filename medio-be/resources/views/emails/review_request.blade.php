@@ -25,7 +25,7 @@
                 Halo <strong>{{ $order->user->name }}</strong>,
               </p>
               <p style="margin: 0 0 24px; color: #5a5248; font-size: 15px; line-height: 1.6;">
-                Pesanan <strong>#{{ $order->order_number }}</strong> Anda sudah diterima. Kami harap produk yang Anda terima sesuai harapan!
+                Pesanan <strong>#{{ $order->order_number }}</strong> sudah otomatis kami tandai selesai karena telah melewati 3 hari sejak diterima dan tidak ada komplain atau pengajuan retur aktif.
               </p>
               <p style="margin: 0 0 24px; color: #5a5248; font-size: 15px; line-height: 1.6;">
                 Luangkan 1 menit untuk memberikan ulasan. Ulasan Anda sangat membantu pelanggan lain dalam memilih produk terbaik.

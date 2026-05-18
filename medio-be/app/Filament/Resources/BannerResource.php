@@ -79,8 +79,8 @@ class BannerResource extends Resource
                 Tables\Columns\ImageColumn::make('image_path')->label('Banner'),
                 Tables\Columns\TextColumn::make('title')->searchable()->placeholder('-'),
                 Tables\Columns\TextColumn::make('link_type')->badge(),
-                Tables\Columns\TextColumn::make('product.name')->label('Produk')->placeholder('-'),
-                Tables\Columns\TextColumn::make('category.name')->label('Kategori')->placeholder('-'),
+                Tables\Columns\TextColumn::make('product.name')->label('Produk')->placeholder('-')->searchable(),
+                Tables\Columns\TextColumn::make('category.name')->label('Kategori')->placeholder('-')->searchable(),
                 Tables\Columns\IconColumn::make('is_active')->boolean(),
             ])
             ->actions([\Filament\Actions\EditAction::make()])

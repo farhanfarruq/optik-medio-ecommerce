@@ -17,7 +17,7 @@ import Tracking from '../views/Tracking.vue';
 import Complaint from '../views/Complaint.vue';
 
 // Rute yang memerlukan autentikasi
-const AUTH_REQUIRED_ROUTES = ['Profile', 'Addresses', 'Prescriptions', 'Orders', 'Wishlist', 'Checkout', 'OrderDetail', 'AffiliateDashboard', 'WaitingPayment', 'Tracking', 'Complaint'];
+const AUTH_REQUIRED_ROUTES = ['Profile', 'Addresses', 'Prescriptions', 'Orders', 'Wishlist', 'Warranty', 'Checkout', 'OrderDetail', 'AffiliateDashboard', 'WaitingPayment', 'Tracking', 'Complaint'];
 
 // Rute yang hanya bisa diakses saat BELUM login
 const GUEST_ONLY_ROUTES = ['Login', 'Register'];
@@ -62,7 +62,7 @@ const routes = [
       { path: 'referral/:code', name: 'ReferralLanding', component: () => import('../views/ReferralPage.vue'), meta: { title: 'Bergabung dengan Referral | Optik Medio' } },
       // Appointment & Warranty
       { path: 'appointment', name: 'Appointment', component: () => import('../views/AppointmentPage.vue'), meta: { title: 'Booking Appointment | Optik Medio' } },
-      { path: 'warranty', name: 'Warranty', component: () => import('../views/WarrantyPage.vue'), meta: { title: 'Garansi & Servis | Optik Medio' } },
+      { path: 'warranty', name: 'Warranty', component: Profile, meta: { title: 'Garansi & Servis | Optik Medio' } },
       // Category, Brand, Loyalty landing pages
       { path: 'c/:slug', name: 'CategoryLanding', component: () => import('../views/CategoryLanding.vue'), meta: { title: 'Kategori | Optik Medio' } },
       { path: 'brand/:brand', name: 'BrandLanding', component: () => import('../views/BrandLanding.vue'), meta: { title: 'Merek | Optik Medio' } },

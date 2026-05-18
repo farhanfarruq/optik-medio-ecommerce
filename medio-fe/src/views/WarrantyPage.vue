@@ -7,6 +7,10 @@ import { useToast } from '../composables/useToast';
 import { useSeoMeta } from '../composables/useSeoMeta';
 import PageHero from '../components/layout/PageHero.vue';
 
+const props = withDefaults(defineProps<{ embedded?: boolean }>(), {
+  embedded: false,
+});
+
 const router = useRouter();
 const authStore = useAuthStore();
 const { showToast } = useToast();
@@ -187,9 +191,9 @@ onMounted(() => {
 
 <template>
   <div>
-    <PageHero title="Garansi & Servis" subtitle="Kelola garansi dan klaim servis produk Anda" :breadcrumbs="breadcrumbs" />
+    <PageHero v-if="!props.embedded" title="Garansi & Servis" subtitle="Kelola garansi dan klaim servis produk Anda" :breadcrumbs="breadcrumbs" />
 
-    <main class="max-w-4xl mx-auto px-6 py-12">
+    <main :class="props.embedded ? 'w-full' : 'max-w-4xl mx-auto px-6 py-12'">
 
       <div v-if="!isLoggedIn" class="text-center py-16 border" style="background: #fffdf7; border-color: rgba(193,154,81,0.2);">
         <span class="material-symbols-outlined text-5xl mb-4 block" style="color: #c19a51;">shield</span>

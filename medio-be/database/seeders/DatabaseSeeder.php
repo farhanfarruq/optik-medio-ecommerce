@@ -67,6 +67,7 @@ class DatabaseSeeder extends Seeder
         $this->call(PaymentMethodSeeder::class);
         $this->call(AdminShowcaseSeeder::class);
         $this->call(ProductCatalogSeeder::class);
+        $this->call(ProductPhotoSeeder::class);
         $this->call(OpticalConfigurationSeeder::class);
         $this->call(ShippingRateSeeder::class);
 

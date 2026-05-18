@@ -762,7 +762,7 @@ const deleteAddress = async (id: number) => {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="md:col-span-2">
             <label class="block text-sm font-semibold text-on-surface-variant mb-2">Recipient Name</label>
-            <input v-model="addressForm.recipient_name" type="text" class="w-full bg-surface-container-highest p-4 rounded-none border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all" placeholder="e.g. John Doe" />
+            <input v-model="addressForm.recipient_name" type="text" class="w-full bg-surface-container-highest p-4 rounded-none border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all" placeholder="e.g. Farhan" />
           </div>
           <div>
             <label class="block text-sm font-semibold text-on-surface-variant mb-2">Phone Number</label>

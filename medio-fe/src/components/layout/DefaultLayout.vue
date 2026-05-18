@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import TopNavBar from './TopNavBar.vue';
+import BottomTabBar from './BottomTabBar.vue';
 import Footer from './Footer.vue';
 import PromoBanner from '../PromoBanner.vue';
 import ToastContainer from '../ui/ToastContainer.vue';
@@ -56,6 +57,7 @@ const headerHeight = computed(() => cartStore.isPromoBannerVisible ? '136px' : '
       <router-view :key="route.fullPath" />
     </div>
 
-    <Footer v-if="!isAuthPage" class="relative z-10" />
+    <Footer v-if="!isAuthPage" class="relative z-10 mb-16 md:mb-0" />
+    <BottomTabBar v-if="!isAuthPage" />
   </div>
 </template>

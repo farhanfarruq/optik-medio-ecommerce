@@ -117,6 +117,20 @@ export const useCartStore = defineStore('cart', () => {
     calculatedData.value = null;
   }
 
+  function isStaleCartValidationError(err: any) {
+    const errors = err?.response?.data?.errors || {};
+    const keys = Object.keys(errors);
+
+    return keys.some((key) => (
+      /^items\.\d+\.(product_id|lens_option_id|lens_coating_id|prescription_profile_id)$/.test(key)
+    ));
+  }
+
+  function isPromoUsageLimitError(err: any) {
+    const message = String(err?.response?.data?.message || '').toLowerCase();
+    return message.includes('batas pemakaian') || message.includes('usage limit');
+  }
+
   function buildCheckoutItemsPayload() {
     const frameItems = items.value.filter((item: any) => !item.parent_item_id);
 
@@ -147,6 +161,20 @@ export const useCartStore = defineStore('cart', () => {
     });
   }
 
+  function buildCalculatePayload(discountId?: number, shippingCost?: number, loyaltyPointsUsed = 0, shippingAddressId?: number | null) {
+    const payload: any = {
+      items: buildCheckoutItemsPayload(),
+    };
+
+    if (appliedPromoId.value && !discountId) payload.promo_id = appliedPromoId.value;
+    if (discountId) payload.discount_id = discountId;
+    if (shippingCost !== undefined) payload.shipping_cost = shippingCost;
+    if (loyaltyPointsUsed > 0) payload.loyalty_points_used = loyaltyPointsUsed;
+    if (shippingAddressId) payload.shipping_address_id = shippingAddressId;
+
+    return payload;
+  }
+
   async function fetchPromos() {
     try {
       const response = await apiClient.get('/promos');
@@ -166,26 +194,25 @@ export const useCartStore = defineStore('cart', () => {
     
     isCalculating.value = true;
     try {
-      const payload: any = {
-        items: buildCheckoutItemsPayload(),
-        promo_id: appliedPromoId.value
-      };
-
-      if (discountId) payload.discount_id = discountId;
-      if (shippingCost !== undefined) payload.shipping_cost = shippingCost;
-      if (loyaltyPointsUsed > 0) payload.loyalty_points_used = loyaltyPointsUsed;
-      if (shippingAddressId) payload.shipping_address_id = shippingAddressId;
-
-      const response = await apiClient.post('/orders/calculate', payload);
+      const response = await apiClient.post('/orders/calculate', buildCalculatePayload(discountId, shippingCost, loyaltyPointsUsed, shippingAddressId));
       calculatedData.value = response.data;
-
-      // Only auto-set promo if none is currently applied AND user hasn't explicitly cleared it
-      if (response.data.applied_promo && !appliedPromoId.value && !isPromoExplicitlyCleared.value) {
-        appliedPromoId.value = response.data.applied_promo.id;
-      }
     } catch (err: any) {
       console.error('Calculate failed', err);
       if (err.response?.status === 422) {
+        if (isStaleCartValidationError(err)) {
+          clearCart();
+          err.response.data.message = 'Keranjang berisi produk lama yang sudah tidak tersedia. Keranjang sudah dikosongkan, silakan pilih produk lagi.';
+        }
+
+        if (appliedPromoId.value && isPromoUsageLimitError(err)) {
+          appliedPromoId.value = null;
+          isPromoExplicitlyCleared.value = true;
+
+          const response = await apiClient.post('/orders/calculate', buildCalculatePayload(discountId, shippingCost, loyaltyPointsUsed, shippingAddressId));
+          calculatedData.value = response.data;
+          return;
+        }
+
         throw err;
       }
     } finally {
@@ -200,6 +227,16 @@ export const useCartStore = defineStore('cart', () => {
     
     try {
       await calculateCart(discountId, shippingCost, loyaltyPointsUsed, shippingAddressId);
+
+      if (promoId && appliedPromoId.value !== promoId) {
+        const error: any = new Error('Anda telah mencapai batas pemakaian untuk promo ini.');
+        error.response = {
+          data: {
+            message: 'Anda telah mencapai batas pemakaian untuk promo ini.',
+          },
+        };
+        throw error;
+      }
     } catch (err) {
       appliedPromoId.value = previousPromoId;
       throw err;
@@ -218,6 +255,7 @@ export const useCartStore = defineStore('cart', () => {
     calculatedData, 
     isCalculating,
     isPromoBannerDismissed,
+    isPromoExplicitlyCleared,
     isPromoBannerVisible,
     applicablePromos,
     addToCart, 
@@ -234,6 +272,6 @@ export const useCartStore = defineStore('cart', () => {
   persist: {
     key: 'optik-medio-cart',
     storage: localStorage,
-    paths: ['items', 'activePromos', 'appliedPromoId', 'calculatedData'],
+    paths: ['items', 'activePromos', 'appliedPromoId', 'calculatedData', 'isPromoExplicitlyCleared'],
   },
 });

@@ -10,6 +10,7 @@ import { resolveImageUrl } from '../core/utils/image';
 import { useWishlistStore } from '../stores/wishlistStore';
 import { affiliateRepository, type AffiliateProfile, type AffiliateSummary, type AffiliateCommission } from '../repositories/AffiliateRepository';
 import { prescriptionRepository, type PrescriptionPayload, type PrescriptionProfile } from '../repositories/PrescriptionRepository';
+import WarrantyPage from './WarrantyPage.vue';
 
 const { showToast } = useToast();
 
@@ -1081,6 +1082,10 @@ const deleteAddress = async (id: number) => {
           </div>
         </div>
 
+        <div v-if="currentSection === 'warranty'">
+          <WarrantyPage embedded />
+        </div>
+
         <!-- Affiliate Section -->
         <div v-if="currentSection === 'affiliate'" class="space-y-6">
           <h2 class="font-black text-2xl" style="color: #1a1209; font-family: Outfit, sans-serif;">Afiliasi &amp; Komisi</h2>
@@ -1151,7 +1156,7 @@ const deleteAddress = async (id: number) => {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="md:col-span-2">
             <label class="block text-sm font-semibold text-on-surface-variant mb-2">Recipient Name</label>
-            <input v-model="addressForm.recipient_name" type="text" class="w-full bg-surface-container-highest p-4 rounded-none border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all" placeholder="e.g. John Doe" />
+            <input v-model="addressForm.recipient_name" type="text" class="w-full bg-surface-container-highest p-4 rounded-none border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all" placeholder="e.g. Farhan" />
           </div>
           <div>
             <label class="block text-sm font-semibold text-on-surface-variant mb-2">Phone Number</label>

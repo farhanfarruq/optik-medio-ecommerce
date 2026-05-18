@@ -13,9 +13,18 @@ const router = useRouter();
 
 const storeStatus = ref<{ is_closed: boolean; current_close: any | null } | null>(null);
 
+const refreshCartCalculation = async () => {
+  try {
+    await cartStore.calculateCart();
+  } catch (err: any) {
+    const msg = err.response?.data?.message || 'Gagal menghitung keranjang.';
+    showToast(msg, 'error');
+  }
+};
+
 onMounted(async () => {
   await cartStore.fetchPromos();
-  await cartStore.calculateCart();
+  await refreshCartCalculation();
   try {
     storeStatus.value = await masterDataRepository.getStoreStatus();
   } catch (e) {
@@ -24,7 +33,7 @@ onMounted(async () => {
 });
 
 watch(() => cartStore.items.length, () => {
-  cartStore.calculateCart();
+  void refreshCartCalculation();
 });
 
 const groupedCart = computed(() => {

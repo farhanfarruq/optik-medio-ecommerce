@@ -110,7 +110,7 @@ const applyCoupon = async () => {
     appliedDiscount.value = response.data.discount;
     showToast('Kupon berhasil diterapkan!', 'success');
     await cartStore.setPromo(null); // Remove promo if applying discount
-    await cartStore.calculateCart(appliedDiscount.value.id, selectedShippingCost.value, selectedLoyaltyPoints.value, form.value.id);
+    await calculateCheckoutTotals(selectedShippingCost.value);
   } catch (error: any) {
     appliedDiscount.value = null;
     const msg = error.response?.data?.message || 'Gagal menerapkan kupon.';
@@ -123,7 +123,7 @@ const applyCoupon = async () => {
 const removeCoupon = async () => {
   appliedDiscount.value = null;
   couponCode.value = '';
-  await cartStore.calculateCart(undefined, selectedShippingCost.value, selectedLoyaltyPoints.value, form.value.id);
+  await calculateCheckoutTotals(selectedShippingCost.value);
 };
 
 const handlePromoSelect = async (promoId: number) => {
@@ -203,6 +203,14 @@ const selectAddress = async (addr: any) => {
   }
 };
 
+const calculateCheckoutTotals = async (shippingCost = selectedShippingCost.value) => {
+  try {
+    await cartStore.calculateCart(appliedDiscount.value?.id, shippingCost, selectedLoyaltyPoints.value, form.value.id);
+  } catch (error: any) {
+    checkoutError.value = error?.response?.data?.message || 'Gagal menghitung total checkout.';
+  }
+};
+
 // Fetch Data Awal & Pre-fill
 onMounted(async () => {
   // Track checkout started
@@ -234,8 +242,6 @@ onMounted(async () => {
       selectedPaymentMethodId.value = paymentMethods.value[0].id;
     }
 
-    await cartStore.calculateCart(appliedDiscount.value?.id, 0, selectedLoyaltyPoints.value, form.value.id);
-
     const userResponse = await apiClient.get('/auth/me');
     const user = userResponse.data;
     if (user) {
@@ -247,6 +253,8 @@ onMounted(async () => {
           await selectAddress(defaultAddr);
         }
     }
+
+    await calculateCheckoutTotals(0);
   } catch (error) {
     console.error('Failed to initialize checkout', error);
   } finally {
@@ -258,12 +266,12 @@ onMounted(async () => {
 
 watch(() => form.value.selected_service, async (newVal) => {
   if (newVal && selectedShippingCost.value > 0) {
-    await cartStore.calculateCart(appliedDiscount.value?.id, selectedShippingCost.value, selectedLoyaltyPoints.value, form.value.id);
+    await calculateCheckoutTotals(selectedShippingCost.value);
   }
 });
 
 watch(selectedLoyaltyPoints, async () => {
-  await cartStore.calculateCart(appliedDiscount.value?.id, selectedShippingCost.value, selectedLoyaltyPoints.value, form.value.id);
+  await calculateCheckoutTotals(selectedShippingCost.value);
 });
 
 // Watchers
@@ -402,7 +410,7 @@ const calculateShipping = async () => {
     } finally {
       isCalculating.value = false;
       if (shippingResults.value.length > 0) {
-        await cartStore.calculateCart(appliedDiscount.value?.id, shippingResults.value[0].cost, selectedLoyaltyPoints.value, form.value.id);
+        await calculateCheckoutTotals(shippingResults.value[0].cost);
       }
     }
   }

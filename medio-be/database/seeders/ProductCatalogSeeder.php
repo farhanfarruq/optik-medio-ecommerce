@@ -156,7 +156,7 @@ class ProductCatalogSeeder extends Seeder
     {
         foreach ($this->products() as $index => $item) {
             $category = $categories[$item['category_slug']];
-            $imagePath = $this->writeProductSvg($item['slug'], $item['name'], $item['color']);
+            $imagePath = $this->writeProductImage($item['slug'], $item['name'], $item['color']);
             $variants = $this->normalizeVariants($item, $item['variants'] ?? $this->defaultVariants($item));
 
             $product = Product::create([
@@ -427,6 +427,31 @@ class ProductCatalogSeeder extends Seeder
     private function writeCategorySvg(string $slug, string $name): string
     {
         return $this->writeSvg("categories/seed/{$slug}.svg", $name, '#c19a51');
+    }
+
+    private function writeProductImage(string $slug, string $name, string $color): string
+    {
+        $sourcePath = public_path('images/foto_produk/' . $this->productPhotoFileName($name));
+
+        if (! File::exists($sourcePath)) {
+            return $this->writeProductSvg($slug, $name, $color);
+        }
+
+        $relativePath = "products/foto_produk/{$slug}." . pathinfo($sourcePath, PATHINFO_EXTENSION);
+        $targetPath = storage_path('app/public/' . $relativePath);
+
+        File::ensureDirectoryExists(dirname($targetPath));
+        File::copy($sourcePath, $targetPath);
+
+        return $relativePath;
+    }
+
+    private function productPhotoFileName(string $name): string
+    {
+        return match ($name) {
+            'Acuvue Moist 1 Day Clear' => 'Acuve Contact lenses.png',
+            default => $name . '.png',
+        };
     }
 
     private function writeProductSvg(string $slug, string $name, string $color): string

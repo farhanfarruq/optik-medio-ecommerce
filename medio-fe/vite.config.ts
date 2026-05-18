@@ -5,6 +5,17 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
 
+  server: {
+    proxy: {
+      // Proxy /storage requests to Laravel backend to bypass CORS on canvas operations
+      '/storage': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
+
   build: {
     // Target modern browsers untuk output lebih kecil
     target: 'es2020',

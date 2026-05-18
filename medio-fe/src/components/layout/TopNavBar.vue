@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useCartStore } from '../../stores/cartStore';
 import { useAuthStore } from '../../stores/authStore';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
 import { productRepository, type ProductSearchSuggestions } from '../../repositories/ProductRepository';
 import { resolveImageUrl } from '../../core/utils/image';
@@ -10,9 +10,11 @@ import { useAnalytics } from '../../composables/useAnalytics';
 const cartStore = useCartStore();
 const authStore = useAuthStore();
 const router = useRouter();
+const route = useRoute();
 
 const isScrolled = ref(false);
 const isSearchOpen = ref(false);
+const isMobileMenuOpen = ref(false);
 const searchQuery = ref('');
 const windowWidth = ref(window.innerWidth);
 const searchSuggestions = ref<ProductSearchSuggestions>({ products: [], categories: [] });
@@ -36,10 +38,20 @@ const updateWidth = () => {
 const toggleSearch = () => {
   isSearchOpen.value = !isSearchOpen.value;
   if (isSearchOpen.value) {
+    isMobileMenuOpen.value = false;
     setTimeout(() => {
       document.getElementById('search-input')?.focus();
     }, 100);
   }
+};
+
+const toggleMobileMenu = () => {
+  isMobileMenuOpen.value = !isMobileMenuOpen.value;
+  if (isMobileMenuOpen.value) isSearchOpen.value = false;
+};
+
+const closeMobileMenu = () => {
+  isMobileMenuOpen.value = false;
 };
 
 const executeSearch = () => {
@@ -91,6 +103,11 @@ const selectRecentSearch = (query: string) => {
   executeSearch();
 };
 
+// Close mobile menu on route change
+watch(() => route.fullPath, () => {
+  isMobileMenuOpen.value = false;
+});
+
 onMounted(() => {
   window.addEventListener('scroll', handleScroll);
   window.addEventListener('resize', updateWidth);
@@ -117,7 +134,6 @@ watch(searchQuery, (query) => {
       isSuggestionLoading.value = true;
       searchSuggestions.value = await productRepository.getSearchSuggestions(term);
 
-      // Track search no result
       if (
         searchSuggestions.value.products.length === 0 &&
         searchSuggestions.value.categories.length === 0
@@ -139,9 +155,67 @@ const handleUserClick = () => {
   if (authStore.isAuthenticated) router.push('/profile');
   else router.push('/login');
 };
+
+// Computed top offset for drawer — matches navbar height + optional promo banner
+const drawerTop = computed(() => {
+  const bannerH = cartStore.isPromoBannerVisible ? 40 : 0;
+  const navH = isScrolled.value ? 80 : 96;
+  return `${bannerH + navH}px`;
+});
+
+const mobileNavItems = [
+  { to: '/products', label: 'Produk', icon: 'storefront' },
+  { to: '/face-shape-quiz', label: 'Quiz Bentuk Wajah', icon: 'quiz' },
+  { to: '/virtual-try-on', label: 'Virtual Try-On', icon: 'face_retouching_natural' },
+  { to: '/compare', label: 'Bandingkan Produk', icon: 'compare' },
+  { to: '/appointment', label: 'Booking Appointment', icon: 'calendar_today' },
+  { to: '/blog', label: 'Blog & Artikel', icon: 'menu_book' },
+];
 </script>
 
 <template>
+  <!-- Mobile drawer backdrop — starts below navbar -->
+  <Transition name="fade">
+    <div
+      v-if="isMobileMenuOpen"
+      class="md:hidden fixed left-0 right-0 bottom-0 z-40 bg-black/40 backdrop-blur-sm"
+      :style="{ top: drawerTop }"
+      @click="closeMobileMenu"
+    />
+  </Transition>
+
+  <!-- Mobile slide-in drawer — from right, below navbar -->
+  <Transition name="slide-left">
+    <div
+      v-if="isMobileMenuOpen"
+      class="md:hidden fixed right-0 bottom-0 z-50 w-[260px] bg-white shadow-2xl flex flex-col"
+      :style="{ top: drawerTop }"
+    >
+      <!-- Nav items -->
+      <nav class="flex-1 overflow-y-auto py-2">
+        <router-link
+          v-for="item in mobileNavItems"
+          :key="item.to"
+          :to="item.to"
+          class="flex items-center gap-4 px-5 py-3.5 text-sm font-bold transition-colors active:bg-stone-100"
+          :class="route.path === item.to || route.path.startsWith(item.to + '/')
+            ? 'text-amber-700 bg-amber-50'
+            : 'text-stone-700 hover:bg-stone-50 hover:text-stone-950'"
+        >
+          <span
+            class="material-symbols-outlined text-xl shrink-0"
+            :class="route.path === item.to || route.path.startsWith(item.to + '/') ? 'text-amber-600' : 'text-stone-400'"
+          >{{ item.icon }}</span>
+          {{ item.label }}
+          <span
+            v-if="route.path === item.to || route.path.startsWith(item.to + '/')"
+            class="ml-auto w-1.5 h-1.5 rounded-full bg-amber-500"
+          />
+        </router-link>
+      </nav>
+    </div>
+  </Transition>
+
   <nav
     :style="{
       top: cartStore.isPromoBannerVisible ? '40px' : '0',
@@ -154,10 +228,10 @@ const handleUserClick = () => {
         : 'bg-transparent h-24'
     ]"
   >
-    <div class="flex justify-between items-center max-w-[1440px] mx-auto px-8 h-full">
+    <div class="flex justify-between items-center max-w-[1440px] mx-auto px-4 md:px-8 h-full">
 
       <!-- Logo -->
-      <router-link to="/" class="flex items-center gap-3 group">
+      <router-link to="/" class="flex items-center gap-2.5 md:gap-3 group">
         <div
           class="relative overflow-hidden rounded-none group-hover:scale-110 transition-transform duration-300 p-1"
           :class="isScrolled ? 'bg-white shadow-md' : 'bg-white/10 backdrop-blur-sm shadow-xl'"
@@ -175,7 +249,7 @@ const handleUserClick = () => {
         </span>
       </router-link>
       
-      <!-- Center Links (Empty for now to maintain minimalist look) -->
+      <!-- Center Links (desktop only) -->
       <div class="hidden md:flex items-center gap-6 ml-10 flex-grow">
         <router-link
           to="/products"
@@ -209,13 +283,13 @@ const handleUserClick = () => {
 
       <!-- Actions -->
       <div
-        class="flex items-center gap-3 md:gap-6 transition-all duration-300 h-full"
+        class="flex items-center gap-2 md:gap-6 transition-all duration-300 h-full"
         :class="isScrolled ? 'text-stone-800' : 'text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]'"
       >
         <!-- Integrated Search Bar -->
         <div 
           class="relative flex items-center h-12 transition-all duration-500 ease-out"
-          :class="isSearchOpen ? 'w-[200px] md:w-[350px] px-4 bg-white/10 backdrop-blur-md border-b border-amber-500/50' : 'w-10'"
+          :class="isSearchOpen ? 'w-[160px] md:w-[350px] px-4 bg-white/10 backdrop-blur-md border-b border-amber-500/50' : 'w-10'"
           :style="isSearchOpen && isScrolled ? 'background: rgba(0,0,0,0.03);' : ''"
         >
           <button
@@ -304,19 +378,19 @@ const handleUserClick = () => {
           </div>
         </div>
 
-        <!-- User & Cart (Hidden when search is wide on mobile) -->
+        <!-- Desktop only: Appointment, Blog, User, Cart -->
         <div v-if="!isSearchOpen || windowWidth > 768" class="flex items-center gap-2 md:gap-4">
           <router-link
             to="/appointment"
-            class="w-10 h-10 rounded-none inline-flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+            class="hidden md:flex w-10 h-10 rounded-none items-center justify-center transition-all hover:scale-110 active:scale-95"
             :class="isScrolled ? 'hover:bg-stone-100 text-stone-800' : 'hover:bg-white/15 text-white'"
             title="Booking Appointment"
           >
             <span class="material-symbols-outlined text-2xl">calendar_today</span>
           </router-link>
-          <router-link 
-            to="/blog" 
-            class="w-10 h-10 rounded-none flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+          <router-link
+            to="/blog"
+            class="hidden md:flex w-10 h-10 rounded-none items-center justify-center transition-all hover:scale-110 active:scale-95"
             :class="isScrolled ? 'hover:bg-stone-100 text-stone-800' : 'hover:bg-white/15 text-white'"
             title="Blog & Artikel"
           >
@@ -324,15 +398,14 @@ const handleUserClick = () => {
           </router-link>
           <button
             @click="handleUserClick"
-            class="w-10 h-10 rounded-none flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+            class="hidden md:flex w-10 h-10 rounded-none items-center justify-center transition-all hover:scale-110 active:scale-95"
             :class="isScrolled ? 'hover:bg-stone-100' : 'hover:bg-white/15'"
           >
             <span class="material-symbols-outlined text-2xl">person</span>
           </button>
-
           <button
             @click="goToCart"
-            class="relative w-10 h-10 rounded-none flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+            class="hidden md:flex relative w-10 h-10 rounded-none items-center justify-center transition-all hover:scale-110 active:scale-95"
             :class="isScrolled ? 'hover:bg-stone-100' : 'hover:bg-white/15'"
           >
             <span class="material-symbols-outlined text-2xl">shopping_cart</span>
@@ -343,6 +416,16 @@ const handleUserClick = () => {
             >
               {{ cartStore.items.length }}
             </span>
+          </button>
+
+          <!-- Hamburger — mobile only, di kanan search -->
+          <button
+            @click="toggleMobileMenu"
+            class="md:hidden w-10 h-10 flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
+            :class="isScrolled ? 'text-stone-800' : 'text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]'"
+            aria-label="Buka menu"
+          >
+            <span class="material-symbols-outlined text-2xl">menu</span>
           </button>
         </div>
       </div>
@@ -359,4 +442,22 @@ const handleUserClick = () => {
 </template>
 
 <style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Drawer slides in from the RIGHT */
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.slide-left-enter-from,
+.slide-left-leave-to {
+  transform: translateX(100%);
+}
 </style>

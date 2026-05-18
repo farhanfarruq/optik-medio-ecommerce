@@ -95,38 +95,38 @@ onMounted(() => {
       :breadcrumbs="breadcrumbs"
     />
 
-    <main class="max-w-4xl mx-auto px-6 py-12">
+    <main class="container-premium max-w-4xl py-12">
 
       <!-- Loading -->
       <div v-if="isLoading" class="flex justify-center py-20">
-        <span class="material-symbols-outlined animate-spin text-4xl" style="color: #c19a51;">sync</span>
+        <span class="material-symbols-outlined animate-spin text-4xl" style="color: var(--gold);">sync</span>
       </div>
 
       <template v-else>
         <!-- Cara Kerja -->
         <section class="mb-12">
-          <h2 class="text-2xl font-black mb-8" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Cara Kerja</h2>
+          <h2 class="text-2xl font-black mb-8" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Cara Kerja</h2>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="border p-6 text-center" style="background: white; border-color: rgba(193,154,81,0.2);">
-              <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style="background: rgba(193,154,81,0.15);">
-                <span class="material-symbols-outlined" style="color: #c19a51;">share</span>
+            <div class="border p-6 text-center" style="background: white; border-color: rgba(184,138,68,0.2);">
+              <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style="background: rgba(184,138,68,0.15);">
+                <span class="material-symbols-outlined" style="color: var(--gold);">share</span>
               </div>
-              <h3 class="font-bold text-sm mb-2" style="color: #1a1209;">1. Bagikan Kode</h3>
-              <p class="text-xs leading-relaxed" style="color: #8a7a60;">Bagikan kode unik Anda kepada teman yang belum pernah belanja di Optik Medio.</p>
+              <h3 class="font-bold text-sm mb-2" style="color: var(--ink);">1. Bagikan Kode</h3>
+              <p class="text-xs leading-relaxed" style="color: var(--taupe);">Bagikan kode unik Anda kepada teman yang belum pernah belanja di Optik Medio.</p>
             </div>
-            <div class="border p-6 text-center" style="background: white; border-color: rgba(193,154,81,0.2);">
-              <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style="background: rgba(193,154,81,0.15);">
-                <span class="material-symbols-outlined" style="color: #c19a51;">person_add</span>
+            <div class="border p-6 text-center" style="background: white; border-color: rgba(184,138,68,0.2);">
+              <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style="background: rgba(184,138,68,0.15);">
+                <span class="material-symbols-outlined" style="color: var(--gold);">person_add</span>
               </div>
-              <h3 class="font-bold text-sm mb-2" style="color: #1a1209;">2. Teman Daftar</h3>
-              <p class="text-xs leading-relaxed" style="color: #8a7a60;">Teman Anda mendaftar dan memasukkan kode referral saat registrasi atau di halaman ini.</p>
+              <h3 class="font-bold text-sm mb-2" style="color: var(--ink);">2. Teman Daftar</h3>
+              <p class="text-xs leading-relaxed" style="color: var(--taupe);">Teman Anda mendaftar dan memasukkan kode referral saat registrasi atau di halaman ini.</p>
             </div>
-            <div class="border p-6 text-center" style="background: white; border-color: rgba(193,154,81,0.2);">
-              <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style="background: rgba(193,154,81,0.15);">
-                <span class="material-symbols-outlined" style="color: #c19a51;">toll</span>
+            <div class="border p-6 text-center" style="background: white; border-color: rgba(184,138,68,0.2);">
+              <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style="background: rgba(184,138,68,0.15);">
+                <span class="material-symbols-outlined" style="color: var(--gold);">toll</span>
               </div>
-              <h3 class="font-bold text-sm mb-2" style="color: #1a1209;">3. Dapat Poin</h3>
-              <p class="text-xs leading-relaxed" style="color: #8a7a60;">Anda mendapat poin reward setelah teman melakukan pembelian pertama. Teman juga dapat poin!</p>
+              <h3 class="font-bold text-sm mb-2" style="color: var(--ink);">3. Dapat Poin</h3>
+              <p class="text-xs leading-relaxed" style="color: var(--taupe);">Anda mendapat poin reward setelah teman melakukan pembelian pertama. Teman juga dapat poin!</p>
             </div>
           </div>
         </section>
@@ -134,32 +134,32 @@ onMounted(() => {
         <!-- Kode Referral User (jika login) -->
         <template v-if="isLoggedIn && referralData">
           <section class="mb-10">
-            <h2 class="text-xl font-black mb-6" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Kode Referral Anda</h2>
+            <h2 class="text-xl font-black mb-6" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Kode Referral Anda</h2>
 
-            <div class="border p-8" style="background: #fffdf7; border-color: rgba(193,154,81,0.35);">
+            <div class="border p-8" style="background: var(--porcelain); border-color: rgba(184,138,68,0.35);">
               <div class="flex items-center justify-between gap-4 mb-6">
                 <div>
-                  <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-2" style="color: #8a7a60;">Kode Unik Anda</p>
-                  <p class="text-4xl font-black tracking-[0.3em]" style="color: #1a1209; font-family: 'JetBrains Mono', monospace;">
+                  <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-2" style="color: var(--taupe);">Kode Unik Anda</p>
+                  <p class="text-4xl font-black tracking-[0.3em]" style="color: var(--ink); font-family: 'JetBrains Mono', monospace;">
                     {{ referralData.code }}
                   </p>
                 </div>
                 <button
                   @click="copyCode"
-                  class="flex items-center gap-2 px-5 py-3 border text-xs font-black uppercase tracking-wider transition-all hover:bg-stone-50"
-                  style="border-color: rgba(193,154,81,0.4); color: #8a7a60;"
+                  class="flex items-center gap-2 px-5 py-3 border text-xs font-black uppercase tracking-wider transition-all hover:bg-ivory"
+                  style="border-color: rgba(184,138,68,0.4); color: var(--taupe);"
                 >
                   <span class="material-symbols-outlined text-sm">content_copy</span>
                   Salin Kode
                 </button>
               </div>
 
-              <div class="flex items-center gap-3 p-4 mb-6" style="background: rgba(193,154,81,0.06); border: 1px solid rgba(193,154,81,0.2);">
-                <span class="text-xs truncate flex-1" style="color: #5a5248;">{{ shareUrl }}</span>
+              <div class="flex items-center gap-3 p-4 mb-6" style="background: rgba(184,138,68,0.06); border: 1px solid rgba(184,138,68,0.2);">
+                <span class="text-xs truncate flex-1" style="color: var(--graphite);">{{ shareUrl }}</span>
                 <button
                   @click="copyShareUrl"
-                  class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border transition-all hover:bg-stone-50"
-                  style="border-color: rgba(193,154,81,0.3); color: #8a7a60;"
+                  class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border transition-all hover:bg-ivory"
+                  style="border-color: rgba(184,138,68,0.3); color: var(--taupe);"
                 >
                   <span class="material-symbols-outlined text-xs">link</span>
                   Salin Link
@@ -168,16 +168,16 @@ onMounted(() => {
 
               <div class="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <p class="text-2xl font-black" style="color: #c19a51;">{{ referralData.total_uses }}</p>
-                  <p class="text-[10px] uppercase tracking-wider" style="color: #8a7a60;">Total Digunakan</p>
+                  <p class="text-2xl font-black" style="color: var(--gold);">{{ referralData.total_uses }}</p>
+                  <p class="text-[10px] uppercase tracking-wider" style="color: var(--taupe);">Total Digunakan</p>
                 </div>
                 <div>
-                  <p class="text-2xl font-black" style="color: #c19a51;">+{{ referralData.reward_inviter }}</p>
-                  <p class="text-[10px] uppercase tracking-wider" style="color: #8a7a60;">Poin per Referral</p>
+                  <p class="text-2xl font-black" style="color: var(--gold);">+{{ referralData.reward_inviter }}</p>
+                  <p class="text-[10px] uppercase tracking-wider" style="color: var(--taupe);">Poin per Referral</p>
                 </div>
                 <div>
-                  <p class="text-2xl font-black" style="color: #c19a51;">+{{ referralData.reward_invitee }}</p>
-                  <p class="text-[10px] uppercase tracking-wider" style="color: #8a7a60;">Poin untuk Teman</p>
+                  <p class="text-2xl font-black" style="color: var(--gold);">+{{ referralData.reward_invitee }}</p>
+                  <p class="text-[10px] uppercase tracking-wider" style="color: var(--taupe);">Poin untuk Teman</p>
                 </div>
               </div>
             </div>
@@ -185,8 +185,8 @@ onMounted(() => {
 
           <!-- Riwayat Penggunaan -->
           <section v-if="referralData.recent_uses?.length" class="mb-10">
-            <h2 class="text-xl font-black mb-4" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Teman yang Bergabung</h2>
-            <div class="border" style="background: white; border-color: rgba(193,154,81,0.15);">
+            <h2 class="text-xl font-black mb-4" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Teman yang Bergabung</h2>
+            <div class="border" style="background: white; border-color: rgba(184,138,68,0.15);">
               <div
                 v-for="(use, i) in referralData.recent_uses"
                 :key="i"
@@ -194,12 +194,12 @@ onMounted(() => {
                 style="border-color: #f0ece4;"
               >
                 <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background: rgba(193,154,81,0.15);">
-                    <span class="material-symbols-outlined text-sm" style="color: #c19a51;">person</span>
+                  <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background: rgba(184,138,68,0.15);">
+                    <span class="material-symbols-outlined text-sm" style="color: var(--gold);">person</span>
                   </div>
                   <div>
-                    <p class="text-sm font-bold" style="color: #1a1209;">{{ use.invitee_name }}</p>
-                    <p class="text-xs" style="color: #8a7a60;">Bergabung {{ use.joined_at }}</p>
+                    <p class="text-sm font-bold" style="color: var(--ink);">{{ use.invitee_name }}</p>
+                    <p class="text-xs" style="color: var(--taupe);">Bergabung {{ use.joined_at }}</p>
                   </div>
                 </div>
                 <span
@@ -215,16 +215,16 @@ onMounted(() => {
 
         <!-- Gunakan Kode Referral (jika login tapi belum pakai) -->
         <section v-if="isLoggedIn" class="mb-10">
-          <h2 class="text-xl font-black mb-4" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Punya Kode Referral?</h2>
-          <div class="border p-6" style="background: white; border-color: rgba(193,154,81,0.15);">
-            <p class="text-sm mb-4" style="color: #5a5248;">Masukkan kode referral dari teman untuk mendapatkan poin bonus.</p>
+          <h2 class="text-xl font-black mb-4" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Punya Kode Referral?</h2>
+          <div class="border p-6" style="background: white; border-color: rgba(184,138,68,0.15);">
+            <p class="text-sm mb-4" style="color: var(--graphite);">Masukkan kode referral dari teman untuk mendapatkan poin bonus.</p>
             <div class="flex gap-3">
               <input
                 v-model="referralCode"
                 type="text"
                 placeholder="Masukkan kode referral"
                 class="flex-1 border px-4 py-3 text-sm uppercase font-bold tracking-widest focus:outline-none"
-                style="border-color: #e5e0d8; background: #faf9f7;"
+                style="border-color: var(--mist); background: var(--porcelain);"
                 @keyup.enter="applyCode"
                 :disabled="isApplying"
               />
@@ -232,7 +232,7 @@ onMounted(() => {
                 @click="applyCode"
                 :disabled="!referralCode.trim() || isApplying"
                 class="px-6 py-3 text-xs font-black uppercase tracking-wider text-white disabled:opacity-50 transition-all"
-                style="background: linear-gradient(135deg, #1a1209 0%, #3d2c0e 100%);"
+                style="background: linear-gradient(135deg, var(--ink) 0%, var(--graphite) 100%);"
               >
                 {{ isApplying ? 'Memproses...' : 'Gunakan' }}
               </button>
@@ -241,22 +241,22 @@ onMounted(() => {
         </section>
 
         <!-- CTA untuk yang belum login -->
-        <section v-if="!isLoggedIn" class="text-center py-12 border" style="background: #fffdf7; border-color: rgba(193,154,81,0.2);">
-          <span class="material-symbols-outlined text-5xl mb-4 block" style="color: #c19a51;">group_add</span>
-          <h3 class="text-xl font-black mb-3" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Daftar dan Dapatkan Poin</h3>
-          <p class="text-sm mb-6" style="color: #8a7a60;">Login atau daftar untuk mendapatkan kode referral Anda dan mulai mengundang teman.</p>
+        <section v-if="!isLoggedIn" class="text-center py-12 border" style="background: var(--porcelain); border-color: rgba(184,138,68,0.2);">
+          <span class="material-symbols-outlined text-5xl mb-4 block" style="color: var(--gold);">group_add</span>
+          <h3 class="text-xl font-black mb-3" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Daftar dan Dapatkan Poin</h3>
+          <p class="text-sm mb-6" style="color: var(--taupe);">Login atau daftar untuk mendapatkan kode referral Anda dan mulai mengundang teman.</p>
           <div class="flex gap-3 justify-center">
             <button
               @click="router.push('/login')"
-              class="px-6 py-3 border text-xs font-black uppercase tracking-wider transition-all hover:bg-stone-50"
-              style="border-color: #e5e0d8; color: #8a7a60;"
+              class="px-6 py-3 border text-xs font-black uppercase tracking-wider transition-all hover:bg-ivory"
+              style="border-color: var(--mist); color: var(--taupe);"
             >
               Masuk
             </button>
             <button
               @click="router.push('/register')"
               class="px-6 py-3 text-xs font-black uppercase tracking-wider text-white transition-all hover:opacity-90"
-              style="background: linear-gradient(135deg, #1a1209 0%, #3d2c0e 100%);"
+              style="background: linear-gradient(135deg, var(--ink) 0%, var(--graphite) 100%);"
             >
               Daftar Sekarang
             </button>

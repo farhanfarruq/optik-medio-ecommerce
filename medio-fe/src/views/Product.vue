@@ -61,6 +61,7 @@ const activePromoName = ref('');
 const testimonials = ref<Testimonial[]>([]);
 const banners = ref<BannerItem[]>([]);
 const currentBannerIndex = ref(0);
+const activeBanner = computed(() => banners.value[currentBannerIndex.value] || null);
 let bannerTimer: ReturnType<typeof setInterval> | null = null;
 
 const categoryTitle = computed(() => {
@@ -463,14 +464,14 @@ onUnmounted(() => {
         style="transform: scale(1.04); object-position: center 40%;"
       />
       <div class="absolute inset-0" style="background: linear-gradient(160deg, rgba(10,8,5,0.45) 0%, rgba(30,20,10,0.25) 60%, transparent 100%);"></div>
-      <div class="absolute bottom-0 left-0 right-0" style="height: 180px; background: linear-gradient(to bottom, transparent 0%, #F5F2EE 100%);"></div>
-      <div class="absolute" style="bottom: 180px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(193,154,81,0.5), transparent);"></div>
+      <div class="absolute bottom-0 left-0 right-0" style="height: 180px; background: linear-gradient(to bottom, transparent 0%, var(--ivory) 100%);"></div>
+      <div class="absolute" style="bottom: 180px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,138,68,0.5), transparent);"></div>
 
-      <div class="relative z-10 h-full max-w-[1440px] mx-auto px-6 md:px-12 flex flex-col justify-end pb-20 pt-32">
-        <p v-if="categorySlug || searchQuery" class="text-xs font-bold uppercase tracking-[0.3em] mb-3" style="color: rgba(193,154,81,0.95);">
+      <div class="relative z-10 h-full container-premium flex flex-col justify-end pb-20 pt-32">
+        <p v-if="categorySlug || searchQuery" class="text-xs font-bold uppercase tracking-[0.3em] mb-3" style="color: rgba(184,138,68,0.95);">
           {{ searchQuery ? 'Pencarian' : categoryTitle }}
         </p>
-        <h1 class="text-4xl md:text-6xl font-black tracking-tight leading-tight text-white mb-4" style="font-family: 'Outfit', sans-serif; text-shadow: 0 4px 24px rgba(0,0,0,0.3);">
+        <h1 class="text-4xl md:text-6xl font-black tracking-normal leading-tight text-white mb-4" style="font-family: 'Cormorant Garamond', serif; text-shadow: 0 4px 24px rgba(0,0,0,0.3);">
           {{ categoryTitle }}
         </h1>
         <p class="text-sm md:text-base max-w-xl leading-relaxed" style="color: rgba(255,255,255,0.72);">
@@ -480,39 +481,38 @@ onUnmounted(() => {
     </section>
   </div>
 
-  <main class="max-w-[1440px] mx-auto px-6 md:px-12 pt-4 pb-16 w-full flex-grow relative z-10">
+  <main class="container-premium pt-4 pb-16 w-full flex-grow relative z-10">
 
     <!-- Banner Carousel Dinamis -->
-    <div v-if="banners.length > 0" class="relative overflow-hidden mb-8 w-full" style="border-radius: 0; margin-top: 85px;">
-      <div class="relative w-full aspect-[4/5] sm:aspect-[16/9] md:aspect-[21/9] lg:aspect-[21/7] max-h-[600px] overflow-hidden bg-stone-900 shadow-xl">
-        <transition-group name="banner-fade" tag="div" class="relative h-full w-full">
-            <div
-              v-for="(banner, idx) in banners"
-              :key="banner.id"
-              v-show="idx === currentBannerIndex"
-              class="absolute inset-0 flex items-center overflow-hidden"
-            >
-              <img v-if="banner.image_path" :src="resolveImageUrl(banner.image_path)" class="absolute inset-0 w-full h-full object-cover" />
-              <!-- Subtle gradient for text readability -->
-              <div class="absolute inset-0" style="background: linear-gradient(90deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 40%, transparent 100%);"></div>
-            <div class="relative z-10 px-8 md:px-16 py-8">
-              <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-2" style="color: #c19a51;">Penawaran Spesial</p>
-              <h3 class="text-2xl md:text-3xl font-black text-white mb-2" style="font-family: Outfit, sans-serif;">{{ banner.title }}</h3>
-              <p v-if="banner.subtitle" class="text-sm text-stone-300 mb-4">{{ banner.subtitle }}</p>
-              <a
-                v-if="banner.cta_label"
-                :href="banner.external_url || (banner.product ? `/products/${banner.product.slug}` : banner.category ? `/products/category/${banner.category.slug}` : '#')"
-                class="inline-flex items-center gap-2 px-6 py-2 text-xs font-black uppercase tracking-wider text-white border border-white/30 hover:bg-white/10 transition-all"
-              >{{ banner.cta_label }}</a>
-            </div>
+    <div v-if="activeBanner" class="relative mb-8 w-full overflow-hidden" style="border-radius: 0; margin-top: 85px;">
+      <div class="relative w-full overflow-hidden bg-graphite shadow-soft">
+        <img
+          v-if="activeBanner.image_path"
+          :src="resolveImageUrl(activeBanner.image_path)"
+          :alt="activeBanner.title || 'Banner Optik Medio'"
+          class="block w-full h-auto object-contain"
+        />
+        <div v-else class="aspect-[16/7] w-full bg-graphite"></div>
+        <!-- Subtle gradient for text readability without cropping the image -->
+        <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(90deg, rgba(0,0,0,0.58) 0%, rgba(0,0,0,0.22) 42%, rgba(0,0,0,0.04) 100%);"></div>
+        <div class="absolute inset-y-0 left-0 z-10 flex max-w-2xl items-center px-8 py-8 md:px-16">
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-2" style="color: var(--gold);">Penawaran Spesial</p>
+            <h3 class="text-2xl md:text-3xl font-black text-white mb-2" style="font-family: Outfit, sans-serif;">{{ activeBanner.title }}</h3>
+            <p v-if="activeBanner.subtitle" class="text-sm text-white mb-4">{{ activeBanner.subtitle }}</p>
+            <a
+              v-if="activeBanner.cta_label"
+              :href="activeBanner.external_url || (activeBanner.product ? `/products/${activeBanner.product.slug}` : activeBanner.category ? `/products/category/${activeBanner.category.slug}` : '#')"
+              class="inline-flex items-center gap-2 px-6 py-2 text-xs font-black uppercase tracking-wider text-white border border-white/30 hover:bg-porcelain/10 transition-all"
+            >{{ activeBanner.cta_label }}</a>
           </div>
-        </transition-group>
+        </div>
       </div>
       <!-- Dots navigation -->
-      <div v-if="banners.length > 1" class="absolute bottom-3 right-4 flex gap-2">
+      <div v-if="banners.length > 1" class="absolute bottom-3 right-4 z-20 flex gap-2">
         <button v-for="(_, idx) in banners" :key="idx" @click="currentBannerIndex = idx"
           class="w-2 h-2 rounded-full transition-all"
-          :style="idx === currentBannerIndex ? 'background: #c19a51; width: 20px;' : 'background: rgba(255,255,255,0.4);'"
+          :style="idx === currentBannerIndex ? 'background: var(--gold); width: 20px;' : 'background: rgba(255,255,255,0.5);'"
         ></button>
       </div>
     </div>
@@ -522,10 +522,10 @@ onUnmounted(() => {
       <div class="flex flex-wrap items-center gap-2.5">
         <button
           @click="goToCategory(null)"
-          class="flex items-center gap-2 px-4 py-2 rounded-none text-xs font-black uppercase tracking-wider transition-all hover:shadow-md active:scale-95"
+          class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all hover:shadow-card active:scale-95"
           :style="!categorySlug
-            ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white; box-shadow: 0 4px 14px rgba(26,18,9,0.25);'
-            : 'background: rgba(193,154,81,0.08); color: #7a6230; border: 1px solid rgba(193,154,81,0.3);'"
+            ? 'background: linear-gradient(135deg, var(--ink), #3d2c0e); color: white; box-shadow: 0 4px 14px rgba(26,18,9,0.25);'
+            : 'background: rgba(184,138,68,0.08); color: #6F4E1D; border: 1px solid rgba(184,138,68,0.3);'"
         >
           <span class="material-symbols-outlined text-sm">apps</span>
           Semua
@@ -533,10 +533,10 @@ onUnmounted(() => {
 
         <button
           @click="togglePromoFilter"
-          class="flex items-center gap-2 px-4 py-2 rounded-none text-xs font-black uppercase tracking-wider transition-all hover:shadow-md active:scale-95"
+          class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all hover:shadow-card active:scale-95"
           :style="hasPromo
             ? 'background: linear-gradient(135deg, #ef4444, #991b1b); color: white; box-shadow: 0 4px 14px rgba(239,68,68,0.25);'
-            : 'background: rgba(193,154,81,0.08); color: #ef4444; border: 1px solid rgba(239,68,68,0.3);'"
+            : 'background: rgba(184,138,68,0.08); color: #ef4444; border: 1px solid rgba(239,68,68,0.3);'"
         >
           <span class="material-symbols-outlined text-sm">sell</span>
           Promo %
@@ -547,16 +547,16 @@ onUnmounted(() => {
           <button
             v-if="categorySlug === cat.slug || (showAllCategories ? true : idx < (isMobileView ? 2 : 4))"
             @click="goToCategory(cat.slug)"
-            class="flex items-center gap-2 px-4 py-2 rounded-none text-xs font-black uppercase tracking-wider transition-all hover:shadow-md active:scale-95"
+            class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all hover:shadow-card active:scale-95"
             :style="categorySlug === cat.slug
-              ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white; box-shadow: 0 4px 14px rgba(26,18,9,0.25);'
-              : 'background: rgba(193,154,81,0.08); color: #7a6230; border: 1px solid rgba(193,154,81,0.3);'"
+              ? 'background: linear-gradient(135deg, var(--ink), #3d2c0e); color: white; box-shadow: 0 4px 14px rgba(26,18,9,0.25);'
+              : 'background: rgba(184,138,68,0.08); color: #6F4E1D; border: 1px solid rgba(184,138,68,0.3);'"
           >
             {{ cat.name }}
             <span
               v-if="cat.products_count !== undefined"
-              class="text-[9px] px-1.5 py-0.5 rounded-none"
-              :style="categorySlug === cat.slug ? 'background: rgba(255,255,255,0.2); color: rgba(255,255,255,0.8);' : 'background: rgba(193,154,81,0.15); color: #c19a51;'"
+              class="text-[9px] px-1.5 py-0.5 rounded-lg"
+              :style="categorySlug === cat.slug ? 'background: rgba(255,255,255,0.2); color: rgba(255,255,255,0.8);' : 'background: rgba(184,138,68,0.15); color: var(--gold);'"
             >{{ cat.products_count }}</span>
           </button>
         </template>
@@ -565,8 +565,8 @@ onUnmounted(() => {
         <button
           v-if="categories.length > (isMobileView ? 2 : 4)"
           @click="showAllCategories = !showAllCategories"
-          class="flex items-center gap-1.5 px-4 py-2 rounded-none text-xs font-black uppercase tracking-wider transition-all hover:shadow-md active:scale-95"
-          style="background: rgba(193,154,81,0.08); color: #7a6230; border: 1px solid rgba(193,154,81,0.3);"
+          class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all hover:shadow-card active:scale-95"
+          style="background: rgba(184,138,68,0.08); color: #6F4E1D; border: 1px solid rgba(184,138,68,0.3);"
         >
           <span class="material-symbols-outlined text-sm transition-transform" :style="showAllCategories ? 'transform: rotate(180deg)' : ''">expand_more</span>
           {{ showAllCategories ? 'Sembunyikan' : `+${categories.length - (isMobileView ? 2 : 4)} Kategori` }}
@@ -574,10 +574,10 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-4 border-b border-stone-200">
-      <p class="text-sm font-medium" style="color: #8a7a60;">
+    <div class="-mx-4 mb-6 flex flex-col gap-4 border-y border-mist bg-ivory px-4 py-4 md:mx-0 md:flex-row md:items-center md:justify-between md:rounded-lg md:border">
+      <p class="text-sm font-medium" style="color: var(--taupe);">
         <span v-if="!isLoading && !hasError">
-          Menampilkan <strong style="color: #1a1209;">{{ totalProducts }}</strong> produk
+          Menampilkan <strong style="color: var(--ink);">{{ totalProducts }}</strong> produk
         </span>
         <span v-else-if="isLoading">Memuat produk...</span>
       </p>
@@ -585,43 +585,43 @@ onUnmounted(() => {
       <div class="flex flex-wrap items-center gap-3">
         <button
           @click="showFilterPanel = !showFilterPanel"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-none text-xs font-black uppercase tracking-wider border transition-all active:scale-95"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider border transition-all active:scale-95"
           :style="showFilterPanel || activeFilterChips.length > 0
-            ? 'background: #1a1209; color: white; border-color: #1a1209;'
-            : 'background: white; color: #1a1209; border-color: #d6cbbb;'"
+            ? 'background: var(--ink); color: white; border-color: var(--ink);'
+            : 'background: white; color: var(--ink); border-color: #d6cbbb;'"
         >
           <span class="material-symbols-outlined text-sm">tune</span>
           Filter
           <span
             v-if="activeFilterChips.length > 0"
             class="min-w-5 h-5 px-1.5 inline-flex items-center justify-center text-[10px] font-black"
-            style="background: #c19a51; color: white;"
+            style="background: var(--gold); color: white;"
           >
             {{ activeFilterChips.length }}
           </span>
         </button>
 
-        <span class="text-xs font-bold uppercase tracking-widest text-stone-500">Merek:</span>
+        <span class="text-xs font-bold uppercase tracking-widest text-graphite/65">Merek:</span>
         <div class="relative">
           <select 
             v-model="selectedBrand" 
-            class="appearance-none bg-white border border-stone-300 px-4 py-2 pr-10 rounded-none text-sm font-medium focus:outline-none focus:border-amber-700 cursor-pointer shadow-sm"
-            style="color: #1a1209;"
+            class="appearance-none bg-porcelain border border-mist px-4 py-2 pr-10 rounded-lg text-sm font-medium focus:outline-none focus:border-gold cursor-pointer shadow-sm"
+            style="color: var(--ink);"
           >
             <option value="">Semua Merek</option>
             <option v-for="brand in availableBrands" :key="brand" :value="brand">{{ brand }}</option>
           </select>
-          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none text-sm">
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-graphite/45 pointer-events-none text-sm">
             expand_more
           </span>
         </div>
 
-        <span class="text-xs font-bold uppercase tracking-widest text-stone-500">Urut:</span>
+        <span class="text-xs font-bold uppercase tracking-widest text-graphite/65">Urut:</span>
         <div class="relative">
           <select
             v-model="selectedSort"
-            class="appearance-none bg-white border border-stone-300 px-4 py-2 pr-10 rounded-none text-sm font-medium focus:outline-none focus:border-amber-700 cursor-pointer shadow-sm"
-            style="color: #1a1209;"
+            class="appearance-none bg-porcelain border border-mist px-4 py-2 pr-10 rounded-lg text-sm font-medium focus:outline-none focus:border-gold cursor-pointer shadow-sm"
+            style="color: var(--ink);"
           >
             <option value="latest">Terbaru</option>
             <option value="price_low">Harga Terendah</option>
@@ -630,7 +630,7 @@ onUnmounted(() => {
             <option value="rating">Rating</option>
             <option value="popular">Populer</option>
           </select>
-          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none text-sm">
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-graphite/45 pointer-events-none text-sm">
             expand_more
           </span>
         </div>
@@ -642,16 +642,16 @@ onUnmounted(() => {
         v-for="chip in activeFilterChips"
         :key="chip.key"
         @click="clearFilter(chip.key)"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-none text-[11px] font-bold border transition-all hover:border-stone-900"
-        style="background: #f8f5ef; color: #1a1209; border-color: #e4d8c8;"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all hover:border-ink"
+        style="background: #f8f5ef; color: var(--ink); border-color: #e4d8c8;"
       >
-        <span class="uppercase tracking-wider text-stone-500">{{ chip.label }}</span>
+        <span class="uppercase tracking-wider text-graphite/65">{{ chip.label }}</span>
         <span>{{ chip.value }}</span>
         <span class="material-symbols-outlined text-sm">close</span>
       </button>
       <button
         @click="clearAllFilters"
-        class="px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-stone-500 hover:text-stone-900"
+        class="px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-graphite/65 hover:text-ink"
       >
         Reset
       </button>
@@ -659,44 +659,44 @@ onUnmounted(() => {
 
     <div
       v-if="showFilterPanel"
-      class="mb-7 border border-stone-200 bg-white shadow-sm"
+      class="mb-7 border border-mist bg-porcelain shadow-sm"
     >
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 p-5">
         <label class="block">
-          <span class="block text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Gender</span>
-          <select v-model="selectedGender" class="w-full border border-stone-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-amber-700">
+          <span class="block text-[10px] font-black uppercase tracking-widest text-graphite/65 mb-2">Gender</span>
+          <select v-model="selectedGender" class="input-field py-2 text-sm">
             <option value="">Semua</option>
             <option v-for="item in availableGenders" :key="item" :value="item">{{ formatFilterLabel(item) }}</option>
           </select>
         </label>
 
         <label class="block">
-          <span class="block text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Bentuk Frame</span>
-          <select v-model="selectedFrameShape" class="w-full border border-stone-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-amber-700">
+          <span class="block text-[10px] font-black uppercase tracking-widest text-graphite/65 mb-2">Bentuk Frame</span>
+          <select v-model="selectedFrameShape" class="input-field py-2 text-sm">
             <option value="">Semua</option>
             <option v-for="item in availableFrameShapes" :key="item" :value="item">{{ formatFilterLabel(item) }}</option>
           </select>
         </label>
 
         <label class="block">
-          <span class="block text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Material</span>
-          <select v-model="selectedFrameMaterial" class="w-full border border-stone-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-amber-700">
+          <span class="block text-[10px] font-black uppercase tracking-widest text-graphite/65 mb-2">Material</span>
+          <select v-model="selectedFrameMaterial" class="input-field py-2 text-sm">
             <option value="">Semua</option>
             <option v-for="item in availableFrameMaterials" :key="item" :value="item">{{ formatFilterLabel(item) }}</option>
           </select>
         </label>
 
         <label class="block">
-          <span class="block text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Warna</span>
-          <select v-model="selectedFrameColor" class="w-full border border-stone-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-amber-700">
+          <span class="block text-[10px] font-black uppercase tracking-widest text-graphite/65 mb-2">Warna</span>
+          <select v-model="selectedFrameColor" class="input-field py-2 text-sm">
             <option value="">Semua</option>
             <option v-for="item in availableFrameColors" :key="item" :value="item">{{ formatFilterLabel(item) }}</option>
           </select>
         </label>
 
         <label class="block">
-          <span class="block text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Fit Wajah</span>
-          <select v-model="selectedFaceSizeFit" class="w-full border border-stone-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-amber-700">
+          <span class="block text-[10px] font-black uppercase tracking-widest text-graphite/65 mb-2">Fit Wajah</span>
+          <select v-model="selectedFaceSizeFit" class="input-field py-2 text-sm">
             <option value="">Semua</option>
             <option v-for="item in availableFaceSizeFits" :key="item" :value="item">{{ formatFilterLabel(item) }}</option>
           </select>
@@ -704,29 +704,29 @@ onUnmounted(() => {
 
         <div class="grid grid-cols-2 gap-2">
           <label class="block">
-            <span class="block text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Min</span>
-            <input v-model="minPrice" inputmode="numeric" placeholder="Rp" class="w-full border border-stone-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-amber-700" />
+            <span class="block text-[10px] font-black uppercase tracking-widest text-graphite/65 mb-2">Min</span>
+            <input v-model="minPrice" inputmode="numeric" placeholder="Rp" class="input-field py-2 text-sm" />
           </label>
           <label class="block">
-            <span class="block text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Max</span>
-            <input v-model="maxPrice" inputmode="numeric" placeholder="Rp" class="w-full border border-stone-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-amber-700" />
+            <span class="block text-[10px] font-black uppercase tracking-widest text-graphite/65 mb-2">Max</span>
+            <input v-model="maxPrice" inputmode="numeric" placeholder="Rp" class="input-field py-2 text-sm" />
           </label>
         </div>
 
-        <label class="flex items-center gap-2 text-sm font-bold text-stone-700">
-          <input v-model="inStockOnly" type="checkbox" class="w-4 h-4 accent-amber-700" />
+        <label class="flex items-center gap-2 text-sm font-bold text-graphite">
+          <input v-model="inStockOnly" type="checkbox" class="w-4 h-4 accent-gold" />
           Stok tersedia
         </label>
 
-        <label class="flex items-center gap-2 text-sm font-bold text-stone-700">
-          <input v-model="prescriptionSupported" type="checkbox" class="w-4 h-4 accent-amber-700" />
+        <label class="flex items-center gap-2 text-sm font-bold text-graphite">
+          <input v-model="prescriptionSupported" type="checkbox" class="w-4 h-4 accent-gold" />
           Bisa resep
         </label>
 
         <div class="flex items-end">
           <button
             @click="clearAllFilters"
-            class="w-full px-4 py-2 text-xs font-black uppercase tracking-wider border border-stone-300 text-stone-700 hover:border-stone-900 hover:text-stone-900 transition-all"
+            class="w-full px-4 py-2 text-xs font-black uppercase tracking-wider border border-mist text-graphite hover:border-ink hover:text-ink transition-all"
           >
             Reset Filter
           </button>
@@ -734,31 +734,31 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div v-if="hasError" class="text-center py-24 rounded-none border border-dashed" style="border-color: rgba(220,38,38,0.25); background: rgba(220,38,38,0.03);">
+    <div v-if="hasError" class="text-center py-24 rounded-lg border border-dashed" style="border-color: rgba(220,38,38,0.25); background: rgba(220,38,38,0.03);">
       <span class="material-symbols-outlined text-5xl mb-4 block" style="color: rgba(220,38,38,0.5);">wifi_off</span>
-      <h2 class="text-xl font-bold text-stone-800 mb-2">Gagal memuat produk</h2>
-      <p class="text-stone-500 mb-6">Terjadi kesalahan server. Silakan coba lagi.</p>
-      <button @click="() => fetchProducts(false)" class="px-6 py-3 rounded-none font-bold text-white text-sm shadow-lg transition-all active:scale-95"
-        style="background: linear-gradient(135deg, #1a1209 0%, #3d2c0e 100%);">
+      <h2 class="text-xl font-bold text-ink mb-2">Gagal memuat produk</h2>
+      <p class="text-graphite/65 mb-6">Terjadi kesalahan server. Silakan coba lagi.</p>
+      <button @click="() => fetchProducts(false)" class="btn-primary"
+        style="background: linear-gradient(135deg, var(--ink) 0%, #3d2c0e 100%);">
         Coba Lagi
       </button>
     </div>
 
     <div v-else-if="isLoading" class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-7">
-      <div v-for="i in 12" :key="i" class="animate-pulse rounded-none overflow-hidden" style="background: rgba(245,242,238,0.9);">
-        <div class="aspect-[4/5]" style="background: linear-gradient(135deg, #e8e2d8, #d4cdc0);"></div>
+      <div v-for="i in 12" :key="i" class="animate-pulse rounded-lg overflow-hidden" style="background: rgba(245,242,238,0.9);">
+        <div class="aspect-[4/5]" style="background: linear-gradient(135deg, var(--mist), var(--taupe));"></div>
         <div class="p-5 space-y-3">
-          <div class="h-3 rounded-none w-1/3" style="background: #d4cdc0;"></div>
-          <div class="h-4 rounded-none w-3/4" style="background: #dcd7ce;"></div>
-          <div class="h-3 rounded-none w-1/2" style="background: #d4cdc0;"></div>
+          <div class="h-3 rounded-lg w-1/3" style="background: var(--taupe);"></div>
+          <div class="h-4 rounded-lg w-3/4" style="background: var(--mist);"></div>
+          <div class="h-3 rounded-lg w-1/2" style="background: var(--taupe);"></div>
         </div>
       </div>
     </div>
 
-    <div v-else-if="products.length === 0" class="text-center py-32 rounded-none border border-dashed" style="border-color: rgba(193,154,81,0.25); background: rgba(193,154,81,0.04);">
-      <span class="material-symbols-outlined text-7xl mb-6 block" style="color: rgba(193,154,81,0.4);">inventory_2</span>
-      <h2 class="text-2xl font-bold text-stone-700 mb-3" style="font-family: 'Outfit', sans-serif;">Produk tidak ditemukan</h2>
-      <p class="text-stone-500">Coba pilih kategori lain atau kembali lagi nanti.</p>
+    <div v-else-if="products.length === 0" class="text-center py-32 rounded-lg border border-dashed" style="border-color: rgba(184,138,68,0.25); background: rgba(184,138,68,0.04);">
+      <span class="material-symbols-outlined text-7xl mb-6 block" style="color: rgba(184,138,68,0.4);">inventory_2</span>
+      <h2 class="text-2xl font-bold text-graphite mb-3" style="font-family: 'Cormorant Garamond', serif;">Produk tidak ditemukan</h2>
+      <p class="text-graphite/65">Coba pilih kategori lain atau kembali lagi nanti.</p>
     </div>
 
     <div v-else class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
@@ -766,36 +766,36 @@ onUnmounted(() => {
         v-for="product in products"
         :key="product.id"
         @click="goToDetail(product.slug)"
-        class="group relative flex flex-col cursor-pointer rounded-none overflow-hidden transition-all duration-500 hover:-translate-y-1.5 hover:shadow-2xl"
+        class="group relative flex flex-col cursor-pointer rounded-lg overflow-hidden transition-all duration-500 hover:-translate-y-1.5 hover:shadow-soft"
         style="background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.06);"
       >
         <div class="relative aspect-[4/5] overflow-hidden flex items-center justify-center p-3 md:p-8"
-          style="background: linear-gradient(145deg, #f5f2ee, #ede7dc);">
+          style="background: linear-gradient(145deg, var(--ivory), var(--mist));">
 
           <img
             :src="resolveImageUrl(product)"
             :alt="product.name"
-            class="object-contain w-full h-full transition-transform duration-700 ease-out group-hover:scale-110"
+            class="object-contain w-full h-full mix-blend-multiply transition-transform duration-700 ease-out group-hover:scale-105"
             :class="{ 'opacity-40 grayscale': product.stock <= 0 }"
             loading="lazy"
             decoding="async"
           />
 
           <button
-            class="absolute top-3 right-3 w-9 h-9 rounded-none flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-md"
+            class="absolute top-3 right-3 w-9 h-9 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-card"
             :style="wishlistStore.isWishlisted(product.id)
-              ? 'background: rgba(193,154,81,0.18); backdrop-filter: blur(8px); opacity: 1;'
+              ? 'background: rgba(184,138,68,0.18); backdrop-filter: blur(8px); opacity: 1;'
               : 'background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);'"
             @click.stop="toggleWishlist(product)"
           >
-            <span class="material-symbols-outlined text-base" :style="wishlistStore.isWishlisted(product.id) ? 'color: #b45309;' : 'color: #c19a51;'">favorite</span>
+            <span class="material-symbols-outlined text-base" :style="wishlistStore.isWishlisted(product.id) ? 'color: var(--gold);' : 'color: var(--gold);'">favorite</span>
           </button>
 
           <button
-            class="absolute top-14 right-3 w-9 h-9 rounded-none flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-md"
+            class="absolute top-14 right-3 w-9 h-9 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-card"
             :style="compareStore.isCompared(product.id)
               ? 'background: rgba(26,18,9,0.9); backdrop-filter: blur(8px); opacity: 1; color: white;'
-              : 'background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); color: #7a6230;'"
+              : 'background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); color: #6F4E1D;'"
             @click.stop="toggleCompare(product)"
           >
             <span class="material-symbols-outlined text-base">compare_arrows</span>
@@ -805,17 +805,17 @@ onUnmounted(() => {
           <div
             v-if="product.is_best_seller"
             class="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-[0.1em] text-white shadow-sm"
-            style="background: rgba(26,18,9,0.8); backdrop-filter: blur(4px); border: 1px solid rgba(193,154,81,0.3);"
+            style="background: rgba(26,18,9,0.8); backdrop-filter: blur(4px); border: 1px solid rgba(184,138,68,0.3);"
           >
-            <span class="material-symbols-outlined text-[10px]" style="color: #c19a51;">trending_up</span>
+            <span class="material-symbols-outlined text-[10px]" style="color: var(--gold);">trending_up</span>
             Terlaris
           </div>
 
           <!-- Promo Badge (Buy X Get Y) -->
           <div
             v-if="getProductPromos(product).buyPromos.length > 0"
-            class="absolute top-[44px] left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-[0.1em] text-white shadow-md"
-            style="background: #c19a51; border: 1px solid rgba(255,255,255,0.2);"
+            class="absolute top-[44px] left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-[0.1em] text-white shadow-card"
+            style="background: var(--gold); border: 1px solid rgba(255,255,255,0.2);"
           >
             <span class="material-symbols-outlined text-[10px]">redeem</span>
             {{ 
@@ -828,7 +828,7 @@ onUnmounted(() => {
           <!-- Promo Badge (Product Discount) -->
           <div
             v-if="getProductPromos(product).discountPromos.length > 0"
-            class="absolute top-[44px] left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-[0.1em] text-white shadow-md"
+            class="absolute top-[44px] left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-[0.1em] text-white shadow-card"
             style="background: #ef4444; border: 1px solid rgba(255,255,255,0.2);"
             :style="getProductPromos(product).buyPromos.length > 0 ? 'top: 74px;' : ''"
           >
@@ -854,46 +854,46 @@ onUnmounted(() => {
           <div
             v-if="product.is_not_for_sale"
             class="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-[0.1em] text-white"
-            style="background: rgba(193,154,81,0.9); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2);"
+            style="background: rgba(184,138,68,0.9); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2);"
           >
             Informasi
           </div>
         </div>
 
         <div class="p-3 md:p-5 flex flex-col flex-grow min-w-0">
-          <span class="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] mb-1" style="color: #8a7a60;">
+          <span class="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] mb-1" style="color: var(--taupe);">
             {{ product.name }}
           </span>
           <h3
             class="font-bold text-sm md:text-lg leading-tight mb-2 md:mb-3 transition-colors duration-300 line-clamp-2 min-h-[2.5rem] md:min-h-[3.5rem]"
-            style="color: #1a1209; font-family: 'Outfit', sans-serif; letter-spacing: -0.01em;"
-            :class="{ 'group-hover:text-amber-800': product.stock > 0 }"
+            style="color: var(--ink); font-family: 'Cormorant Garamond', serif; letter-spacing: -0.01em;"
+            :class="{ 'group-hover:text-gold': product.stock > 0 }"
           >
             {{ product.brand || 'Optik Medio' }}
           </h3>
-          <div class="grid grid-cols-1 gap-1.5 mb-2 md:mb-3 text-[10px] md:text-[11px]" style="color: #8a7a60;">
+          <div class="grid grid-cols-1 gap-1.5 mb-2 md:mb-3 text-[10px] md:text-[11px]" style="color: var(--taupe);">
             <span class="flex items-center gap-1.5 min-w-0">
-              <span class="material-symbols-outlined text-sm" style="color: #c19a51;">star</span>
+              <span class="material-symbols-outlined text-sm" style="color: var(--gold);">star</span>
               {{ Number(product.avg_rating || 0).toFixed(1) }} · {{ product.review_count || 0 }} ulasan
             </span>
             <span class="flex items-center gap-1.5 min-w-0">
-              <span class="material-symbols-outlined text-sm" style="color: #c19a51;">shopping_bag</span>
+              <span class="material-symbols-outlined text-sm" style="color: var(--gold);">shopping_bag</span>
               {{ Number(product.purchase_count || 0) }} terjual
             </span>
           </div>
           <div class="flex items-start justify-between gap-3 mt-auto">
             <div v-if="!product.is_not_for_sale">
-              <p class="text-xs md:text-base font-black" style="color: #1a1209;">
+              <p class="text-xs md:text-base font-black" style="color: var(--ink);">
                 Rp {{ product.price.toLocaleString('id-ID') }}
               </p>
             </div>
             <div v-else>
-              <p class="text-[10px] md:text-xs font-bold uppercase tracking-tight" style="color: #c19a51;">
+              <p class="text-[10px] md:text-xs font-bold uppercase tracking-normal" style="color: var(--gold);">
                 Katalog Informasi
               </p>
             </div>
             <span v-if="product.stock > 0 && !product.is_not_for_sale" class="shrink-0 flex items-center gap-1 text-[9px] font-bold text-right" style="color: #16a34a;">
-              <span class="w-1.5 h-1.5 rounded-none bg-green-500 inline-block"></span>
+              <span class="w-1.5 h-1.5 rounded-lg bg-olive inline-block"></span>
               Tersedia
             </span>
           </div>
@@ -905,8 +905,8 @@ onUnmounted(() => {
         >
           <div class="px-4 md:px-5 pb-4">
             <button
-              class="w-full py-2.5 rounded-none text-xs font-black uppercase tracking-wider text-white transition-all active:scale-95"
-              style="background: linear-gradient(135deg, #1a1209 0%, #3d2c0e 100%);"
+              class="w-full py-2.5 rounded-lg text-xs font-black uppercase tracking-wider text-white transition-all active:scale-95"
+              style="background: linear-gradient(135deg, var(--ink) 0%, #3d2c0e 100%);"
             >
               Lihat Detail
             </button>
@@ -917,24 +917,24 @@ onUnmounted(() => {
 
     <div
       v-if="compareStore.count > 0"
-      class="fixed left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-[720px] bottom-5 z-40 bg-white border border-stone-200 shadow-2xl p-3 flex items-center justify-between gap-3"
+      class="fixed left-4 right-4 bottom-24 z-40 bg-porcelain border border-mist shadow-soft p-3 flex items-center justify-between gap-3 md:bottom-5 md:left-1/2 md:w-[720px] md:-translate-x-1/2"
     >
       <div class="flex items-center gap-3 min-w-0">
-        <span class="material-symbols-outlined text-xl shrink-0" style="color: #c19a51;">compare_arrows</span>
+        <span class="material-symbols-outlined text-xl shrink-0" style="color: var(--gold);">compare_arrows</span>
         <div class="min-w-0">
-          <p class="text-xs font-black uppercase tracking-widest text-stone-900">{{ compareStore.count }}/4 produk</p>
-          <p class="text-[11px] text-stone-500 truncate">{{ compareStore.items.map(item => item.name).join(', ') }}</p>
+          <p class="text-xs font-black uppercase tracking-widest text-ink">{{ compareStore.count }}/4 produk</p>
+          <p class="text-[11px] text-graphite/65 truncate">{{ compareStore.items.map(item => item.name).join(', ') }}</p>
         </div>
       </div>
       <div class="flex items-center gap-2 shrink-0">
-        <button @click="compareStore.clear()" class="px-3 py-2 text-xs font-bold text-stone-600 border border-stone-200">
+        <button @click="compareStore.clear()" class="px-3 py-2 text-xs font-bold text-graphite/80 border border-mist">
           Reset
         </button>
         <button
           @click="router.push('/compare')"
           :disabled="!compareStore.canCompare"
           class="px-4 py-2 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50"
-          style="background: #1a1209;"
+          style="background: var(--ink);"
         >
           Compare
         </button>
@@ -942,29 +942,29 @@ onUnmounted(() => {
     </div>
 
     <div class="w-full mt-12 mb-8 flex flex-col items-center gap-6">
-      <div v-if="isLoadingMore" class="flex items-center gap-3 text-stone-500">
-        <span class="material-symbols-outlined animate-spin text-2xl" style="color: #c19a51;">sync</span>
-        <span class="text-xs font-bold uppercase tracking-widest" style="color: #1a1209;">Memuat lebih banyak...</span>
+      <div v-if="isLoadingMore" class="flex items-center gap-3 text-graphite/65">
+        <span class="material-symbols-outlined animate-spin text-2xl" style="color: var(--gold);">sync</span>
+        <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--ink);">Memuat lebih banyak...</span>
       </div>
       
       <div v-else-if="currentPage < lastPage" class="w-full flex justify-center">
         <button 
           @click="handleLoadMore"
           class="group relative px-10 py-4 overflow-hidden transition-all duration-300 hover:shadow-[0_8px_30px_rgb(193,154,81,0.2)] active:scale-95"
-          style="background: #1a1209;"
+          style="background: var(--ink);"
         >
           <div class="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" style="background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);"></div>
           
           <div class="flex items-center gap-3 relative z-10">
             <span class="text-xs font-black uppercase tracking-[0.3em] text-white">Tampilkan Lebih Banyak</span>
-            <span class="material-symbols-outlined text-sm text-amber-500 group-hover:translate-y-1 transition-transform">expand_more</span>
+            <span class="material-symbols-outlined text-sm text-gold group-hover:translate-y-1 transition-transform">expand_more</span>
           </div>
         </button>
       </div>
 
       <div v-else-if="!isLoading && products.length > 0" class="flex flex-col items-center gap-2">
-        <div class="w-12 h-[1px] bg-stone-200"></div>
-        <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">
+        <div class="w-12 h-[1px] bg-mist"></div>
+        <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-graphite/45">
           Semua {{ totalProducts }} produk telah ditampilkan
         </span>
       </div>
@@ -973,23 +973,23 @@ onUnmounted(() => {
     <section v-if="lensShowcaseProducts.length > 0 || isLoadingLensShowcase" class="mt-20 mb-12">
       <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
         <div>
-          <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-3" style="color: #c19a51;">Pilihan Lensa Resep</p>
-          <h2 class="text-3xl md:text-4xl font-black tracking-tight" style="font-family: 'Outfit', sans-serif; color: #1a1209;">Merek Lensa yang Tersedia</h2>
-          <p class="text-sm text-stone-500 mt-3 max-w-2xl leading-relaxed">
+          <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-3" style="color: var(--gold);">Pilihan Lensa Resep</p>
+          <h2 class="text-3xl md:text-4xl font-black tracking-normal" style="font-family: 'Cormorant Garamond', serif; color: var(--ink);">Merek Lensa yang Tersedia</h2>
+          <p class="text-sm text-graphite/65 mt-3 max-w-2xl leading-relaxed">
             Produk berikut bersifat katalog informasi. Pemilihan dan pembelian lensa dilakukan bersama frame melalui konsultasi resep di Optik Medio.
           </p>
         </div>
-        <router-link to="/appointment" class="inline-flex items-center gap-2 px-5 py-3 text-xs font-black uppercase tracking-widest text-white transition-all hover:shadow-lg" style="background: #1a1209;">
+        <router-link to="/appointment" class="inline-flex items-center gap-2 px-5 py-3 text-xs font-black uppercase tracking-widest text-white transition-all hover:shadow-card" style="background: var(--ink);">
           Konsultasi Lensa
           <span class="material-symbols-outlined text-sm">arrow_forward</span>
         </router-link>
       </div>
 
       <div v-if="isLoadingLensShowcase" class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div v-for="i in 4" :key="i" class="animate-pulse border border-stone-100 p-5" style="background: #fffdf7;">
-          <div class="aspect-[4/3] mb-4" style="background: #e8e2d8;"></div>
-          <div class="h-3 w-1/2 mb-3" style="background: #d4cdc0;"></div>
-          <div class="h-4 w-3/4" style="background: #dcd7ce;"></div>
+        <div v-for="i in 4" :key="i" class="animate-pulse border border-mist p-5" style="background: var(--porcelain);">
+          <div class="aspect-[4/3] mb-4" style="background: var(--mist);"></div>
+          <div class="h-3 w-1/2 mb-3" style="background: var(--taupe);"></div>
+          <div class="h-4 w-3/4" style="background: var(--mist);"></div>
         </div>
       </div>
 
@@ -997,11 +997,11 @@ onUnmounted(() => {
         <article
           v-for="lens in lensShowcaseProducts"
           :key="lens.id"
-          class="group border border-stone-100 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-          style="background: #fffdf7;"
+          class="group border border-mist overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-soft"
+          style="background: var(--porcelain);"
           @click="goToDetail(lens.slug)"
         >
-          <div class="aspect-[4/3] p-5 flex items-center justify-center" style="background: linear-gradient(145deg, #f5f2ee, #ede7dc);">
+          <div class="aspect-[4/3] p-5 flex items-center justify-center" style="background: linear-gradient(145deg, var(--ivory), var(--mist));">
             <img
               :src="resolveImageUrl(lens)"
               :alt="lens.name"
@@ -1011,9 +1011,9 @@ onUnmounted(() => {
             />
           </div>
           <div class="p-4">
-            <p class="text-[9px] font-black uppercase tracking-[0.2em] mb-2" style="color: #8a7a60;">{{ lens.brand || 'Lensa' }}</p>
-            <h3 class="font-bold text-sm leading-tight line-clamp-2 min-h-[2.5rem]" style="color: #1a1209;">{{ lens.name }}</h3>
-            <div class="mt-4 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest" style="color: #c19a51;">
+            <p class="text-[9px] font-black uppercase tracking-[0.2em] mb-2" style="color: var(--taupe);">{{ lens.brand || 'Lensa' }}</p>
+            <h3 class="font-bold text-sm leading-tight line-clamp-2 min-h-[2.5rem]" style="color: var(--ink);">{{ lens.name }}</h3>
+            <div class="mt-4 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest" style="color: var(--gold);">
               Informasi
               <span class="material-symbols-outlined text-sm">visibility</span>
             </div>
@@ -1025,11 +1025,11 @@ onUnmounted(() => {
     <section class="mt-24 mb-12">
       <div class="flex flex-col md:flex-row justify-between items-end mb-10 gap-4">
         <div class="text-left">
-          <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-3" style="color: #c19a51;">Wawasan & Tips</p>
-          <h2 class="text-3xl md:text-4xl font-black tracking-tight" style="font-family: 'Outfit', sans-serif; color: #1a1209;">Blog & Edukasi</h2>
-          <div class="w-12 h-1 bg-amber-600 mt-4"></div>
+          <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-3" style="color: var(--gold);">Wawasan & Tips</p>
+          <h2 class="text-3xl md:text-4xl font-black tracking-normal" style="font-family: 'Cormorant Garamond', serif; color: var(--ink);">Blog & Edukasi</h2>
+          <div class="w-12 h-1 bg-gold mt-4"></div>
         </div>
-        <router-link to="/blog" class="text-xs font-black uppercase tracking-widest text-amber-700 hover:text-amber-800 transition-all flex items-center gap-2 group">
+        <router-link to="/blog" class="text-xs font-black uppercase tracking-widest text-gold hover:text-gold transition-all flex items-center gap-2 group">
           Lihat Semua Artikel
           <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
         </router-link>
@@ -1039,45 +1039,45 @@ onUnmounted(() => {
         <div class="group cursor-pointer" @click="router.push('/blog/cara-memilih-frame-sesuai-bentuk-wajah')">
           <div class="aspect-video overflow-hidden mb-5 relative">
             <img src="/blog_feature_1_face_shape_1777451535680.png" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-            <div class="absolute inset-0 bg-stone-900/20 group-hover:bg-transparent transition-all"></div>
+            <div class="absolute inset-0 bg-graphite/20 group-hover:bg-transparent transition-all"></div>
           </div>
-          <h3 class="font-bold text-lg mb-2 group-hover:text-amber-700 transition-colors" style="font-family: 'Outfit', sans-serif;">Cara Memilih Frame Sesuai Bentuk Wajah</h3>
-          <p class="text-sm text-stone-500 leading-relaxed line-clamp-2">Temukan panduan lengkap untuk mendapatkan kacamata yang paling pas dan menunjang penampilan Anda.</p>
+          <h3 class="font-bold text-lg mb-2 group-hover:text-gold transition-colors" style="font-family: 'Cormorant Garamond', serif;">Cara Memilih Frame Sesuai Bentuk Wajah</h3>
+          <p class="text-sm text-graphite/65 leading-relaxed line-clamp-2">Temukan panduan lengkap untuk mendapatkan kacamata yang paling pas dan menunjang penampilan Anda.</p>
         </div>
         <div class="group cursor-pointer" @click="router.push('/blog/pentingnya-perlindungan-lensa-blueray')">
           <div class="aspect-video overflow-hidden mb-5 relative">
             <img src="/blog_feature_2_blueray_lens_1777451550672.png" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-            <div class="absolute inset-0 bg-stone-900/20 group-hover:bg-transparent transition-all"></div>
+            <div class="absolute inset-0 bg-graphite/20 group-hover:bg-transparent transition-all"></div>
           </div>
-          <h3 class="font-bold text-lg mb-2 group-hover:text-amber-700 transition-colors" style="font-family: 'Outfit', sans-serif;">Pentingnya Perlindungan Lensa Blueray</h3>
-          <p class="text-sm text-stone-500 leading-relaxed line-clamp-2">Lindungi mata Anda dari radiasi layar digital dengan teknologi lensa terkini dari Optik Medio.</p>
+          <h3 class="font-bold text-lg mb-2 group-hover:text-gold transition-colors" style="font-family: 'Cormorant Garamond', serif;">Pentingnya Perlindungan Lensa Blueray</h3>
+          <p class="text-sm text-graphite/65 leading-relaxed line-clamp-2">Lindungi mata Anda dari radiasi layar digital dengan teknologi lensa terkini dari Optik Medio.</p>
         </div>
         <div class="group cursor-pointer" @click="router.push('/blog/update-tren-kacamata-2026')">
           <div class="aspect-video overflow-hidden mb-5 relative">
             <img src="/blog_feature_3_trends_2026_1777451566973.png" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-            <div class="absolute inset-0 bg-stone-900/20 group-hover:bg-transparent transition-all"></div>
+            <div class="absolute inset-0 bg-graphite/20 group-hover:bg-transparent transition-all"></div>
           </div>
-          <h3 class="font-bold text-lg mb-2 group-hover:text-amber-700 transition-colors" style="font-family: 'Outfit', sans-serif;">Update Tren Kacamata 2026</h3>
-          <p class="text-sm text-stone-500 leading-relaxed line-clamp-2">Jelajahi gaya terbaru yang akan mendominasi tahun ini, mulai dari gaya retro hingga futuristik.</p>
+          <h3 class="font-bold text-lg mb-2 group-hover:text-gold transition-colors" style="font-family: 'Cormorant Garamond', serif;">Update Tren Kacamata 2026</h3>
+          <p class="text-sm text-graphite/65 leading-relaxed line-clamp-2">Jelajahi gaya terbaru yang akan mendominasi tahun ini, mulai dari gaya retro hingga futuristik.</p>
         </div>
       </div>
     </section>
 
     <section v-if="testimonials.length > 0" class="mt-24 mb-16 px-6 md:px-0">
       <div class="text-center mb-12">
-        <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-3" style="color: #c19a51;">Apa Kata Pelanggan Kami</p>
-        <h2 class="text-3xl md:text-4xl font-black tracking-tight" style="font-family: 'Outfit', sans-serif; color: #1a1209;">Review Google Maps</h2>
-        <div class="w-12 h-1 bg-amber-600 mx-auto mt-4"></div>
+        <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-3" style="color: var(--gold);">Apa Kata Pelanggan Kami</p>
+        <h2 class="text-3xl md:text-4xl font-black tracking-normal" style="font-family: 'Cormorant Garamond', serif; color: var(--ink);">Review Google Maps</h2>
+        <div class="w-12 h-1 bg-gold mx-auto mt-4"></div>
       </div>
 
       <div class="flex overflow-x-auto md:grid md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto pb-4 md:pb-0 snap-x snap-mandatory scrollbar-hide">
         <div 
           v-for="(t, idx) in testimonials" 
           :key="idx"
-          class="min-w-[85vw] md:min-w-0 p-8 relative group transition-all duration-500 hover:shadow-xl border border-stone-100 snap-center"
+          class="min-w-[85vw] md:min-w-0 p-8 relative group transition-all duration-500 hover:shadow-soft border border-mist snap-center"
           style="background: white;"
         >
-          <div class="absolute -top-4 -left-4 w-12 h-12 flex items-center justify-center bg-stone-900 text-amber-500">
+          <div class="absolute -top-4 -left-4 w-12 h-12 flex items-center justify-center bg-graphite text-gold">
             <span class="material-symbols-outlined">format_quote</span>
           </div>
           
@@ -1085,15 +1085,15 @@ onUnmounted(() => {
             <span v-for="star in t.rating" :key="star" class="material-symbols-outlined text-sm" style="color: #fbbf24;">star</span>
           </div>
           
-          <p class="text-stone-600 italic leading-relaxed mb-6">"{{ t.review }}"</p>
+          <p class="text-graphite/80 italic leading-relaxed mb-6">"{{ t.review }}"</p>
           
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full flex items-center justify-center font-black text-xs" style="background: #f5f2ee; color: #c19a51;">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center font-black text-xs" style="background: var(--ivory); color: var(--gold);">
               {{ t.name.charAt(0) }}
             </div>
             <div>
-              <h4 class="font-bold text-sm text-stone-900">{{ t.name }}</h4>
-              <p class="text-[10px] uppercase tracking-widest text-stone-400">Google Reviewer</p>
+              <h4 class="font-bold text-sm text-ink">{{ t.name }}</h4>
+              <p class="text-[10px] uppercase tracking-widest text-graphite/45">Google Reviewer</p>
             </div>
           </div>
         </div>

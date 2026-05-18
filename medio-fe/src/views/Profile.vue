@@ -97,10 +97,10 @@ const orderStatusLabel = (status: string | null | undefined) => {
 
 const orderStatusClass = (status: string | null | undefined) => {
   const normalized = normalizeOrderStatus(status);
-  if (['paid', 'delivered', 'completed'].includes(normalized)) return 'bg-green-100 text-green-800';
+  if (['paid', 'delivered', 'completed'].includes(normalized)) return 'bg-olive/10 text-olive';
   if (['shipped'].includes(normalized)) return 'bg-blue-100 text-blue-800';
   if (['cancelled', 'refunded'].includes(normalized)) return 'bg-red-100 text-red-800';
-  if (['processing', 'waiting_prescription_review', 'prescription_verified', 'lens_processing'].includes(normalized)) return 'bg-amber-100 text-amber-800';
+  if (['processing', 'waiting_prescription_review', 'prescription_verified', 'lens_processing'].includes(normalized)) return 'bg-gold/10 text-gold';
   return 'bg-secondary-fixed/30 text-secondary';
 };
 
@@ -749,9 +749,9 @@ const deleteAddress = async (id: number) => {
     <div class="relative overflow-hidden" style="height: 280px;">
       <img src="/gambar/hero-bg.jpeg" alt="" class="absolute inset-0 w-full h-full object-cover object-center" style="transform: scale(1.08); object-position: center 40%;" />
       <div class="absolute inset-0" style="background: linear-gradient(135deg, rgba(10,8,5,0.65) 0%, rgba(30,20,10,0.45) 100%);"></div>
-      <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, #F5F2EE 100%);"></div>
-      <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(193,154,81,0.6), transparent);"></div>
-      <div class="relative z-10 h-full max-w-[1000px] mx-auto px-6 flex flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 16px)', paddingBottom: '56px' }">
+      <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, var(--ivory) 100%);"></div>
+      <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,138,68,0.6), transparent);"></div>
+      <div class="relative z-10 h-full container-premium max-w-[1000px] flex flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 16px)', paddingBottom: '56px' }">
         <!-- Breadcrumb + Back -->
         <div>
           <nav class="flex items-center gap-2 text-xs font-medium mb-2" style="color: rgba(255,255,255,0.55);">
@@ -759,13 +759,13 @@ const deleteAddress = async (id: number) => {
             <span class="material-symbols-outlined text-sm">chevron_right</span>
             <span class="text-white">Akun Saya</span>
           </nav>
-          <router-link to="/" class="flex items-center gap-2 text-sm font-bold group w-fit transition-all" style="color: rgba(193,154,81,0.9);">
+          <router-link to="/" class="flex items-center gap-2 text-sm font-bold group w-fit transition-all" style="color: rgba(184,138,68,0.9);">
             <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
             Kembali ke Beranda
           </router-link>
         </div>
         <!-- Page Title -->
-        <h1 class="text-4xl font-black tracking-tight text-white" style="font-family: 'Outfit', sans-serif;">Akun Saya</h1>
+        <h1 class="text-4xl font-black tracking-normal text-white" style="font-family: 'Cormorant Garamond', serif;">Akun Saya</h1>
       </div>
     </div>
   </div>
@@ -774,81 +774,81 @@ const deleteAddress = async (id: number) => {
     <div class="flex flex-col md:flex-row gap-10">
 
       <aside class="w-full md:w-56 shrink-0">
-        <nav class="flex flex-col gap-1 rounded-none overflow-hidden border p-2" style="background: white; border-color: rgba(193,154,81,0.15); box-shadow: 0 2px 12px rgba(0,0,0,0.05);">
+        <nav class="flex flex-col gap-1 rounded-lg overflow-hidden border p-2" style="background: white; border-color: rgba(184,138,68,0.15); box-shadow: 0 2px 12px rgba(0,0,0,0.05);">
           <button
             @click="router.push('/profile')"
-            class="flex items-center gap-3 text-left px-4 py-3 rounded-none text-sm font-bold transition-all"
+            class="flex items-center gap-3 text-left px-4 py-3 rounded-lg text-sm font-bold transition-all"
             :style="currentSection === 'profile'
-              ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white;'
-              : 'color: #5a5248; background: transparent;'"
+              ? 'background: linear-gradient(135deg, var(--ink), #3d2c0e); color: white;'
+              : 'color: var(--graphite); background: transparent;'"
           >
             <span class="material-symbols-outlined text-base">person</span>
             Profil Saya
           </button>
           <button
             @click="router.push('/addresses')"
-            class="flex items-center gap-3 text-left px-4 py-3 rounded-none text-sm font-bold transition-all"
+            class="flex items-center gap-3 text-left px-4 py-3 rounded-lg text-sm font-bold transition-all"
             :style="currentSection === 'addresses'
-              ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white;'
-              : 'color: #5a5248; background: transparent;'"
+              ? 'background: linear-gradient(135deg, var(--ink), #3d2c0e); color: white;'
+              : 'color: var(--graphite); background: transparent;'"
           >
             <span class="material-symbols-outlined text-base">location_on</span>
             Alamat Saya
           </button>
           <button
             @click="router.push('/prescriptions')"
-            class="flex items-center gap-3 text-left px-4 py-3 rounded-none text-sm font-bold transition-all"
+            class="flex items-center gap-3 text-left px-4 py-3 rounded-lg text-sm font-bold transition-all"
             :style="currentSection === 'prescriptions'
-              ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white;'
-              : 'color: #5a5248; background: transparent;'"
+              ? 'background: linear-gradient(135deg, var(--ink), #3d2c0e); color: white;'
+              : 'color: var(--graphite); background: transparent;'"
           >
             <span class="material-symbols-outlined text-base">visibility</span>
             Resep Optik
           </button>
           <button
             @click="router.push('/orders')"
-            class="flex items-center gap-3 text-left px-4 py-3 rounded-none text-sm font-bold transition-all"
+            class="flex items-center gap-3 text-left px-4 py-3 rounded-lg text-sm font-bold transition-all"
             :style="currentSection === 'orders'
-              ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white;'
-              : 'color: #5a5248; background: transparent;'"
+              ? 'background: linear-gradient(135deg, var(--ink), #3d2c0e); color: white;'
+              : 'color: var(--graphite); background: transparent;'"
           >
             <span class="material-symbols-outlined text-base">receipt_long</span>
             Riwayat Pesanan
           </button>
           <button
             @click="router.push('/wishlist')"
-            class="flex items-center gap-3 text-left px-4 py-3 rounded-none text-sm font-bold transition-all"
+            class="flex items-center gap-3 text-left px-4 py-3 rounded-lg text-sm font-bold transition-all"
             :style="currentSection === 'wishlist'
-              ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white;'
-              : 'color: #5a5248; background: transparent;'"
+              ? 'background: linear-gradient(135deg, var(--ink), #3d2c0e); color: white;'
+              : 'color: var(--graphite); background: transparent;'"
           >
             <span class="material-symbols-outlined text-base">favorite</span>
             Wishlist
           </button>
           <button
             @click="router.push('/warranty')"
-            class="flex items-center gap-3 text-left px-4 py-3 rounded-none text-sm font-bold transition-all"
+            class="flex items-center gap-3 text-left px-4 py-3 rounded-lg text-sm font-bold transition-all"
             :style="currentSection === 'warranty'
-              ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white;'
-              : 'color: #5a5248; background: transparent;'"
+              ? 'background: linear-gradient(135deg, var(--ink), #3d2c0e); color: white;'
+              : 'color: var(--graphite); background: transparent;'"
           >
             <span class="material-symbols-outlined text-base">shield</span>
             Garansi &amp; Servis
           </button>
           <button
             @click="router.push('/affiliate')"
-            class="flex items-center gap-3 text-left px-4 py-3 rounded-none text-sm font-bold transition-all"
+            class="flex items-center gap-3 text-left px-4 py-3 rounded-lg text-sm font-bold transition-all"
             :style="currentSection === 'affiliate'
-              ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white;'
-              : 'color: #5a5248; background: transparent;'"
+              ? 'background: linear-gradient(135deg, var(--ink), #3d2c0e); color: white;'
+              : 'color: var(--graphite); background: transparent;'"
           >
             <span class="material-symbols-outlined text-base">group</span>
             Afiliasi &amp; Komisi
           </button>
-          <div class="h-px my-1" style="background: rgba(193,154,81,0.15);"></div>
+          <div class="h-px my-1" style="background: rgba(184,138,68,0.15);"></div>
           <button
             @click="handleLogout"
-            class="flex items-center gap-3 text-left px-4 py-3 rounded-none text-sm font-bold transition-all"
+            class="flex items-center gap-3 text-left px-4 py-3 rounded-lg text-sm font-bold transition-all"
             style="color: #dc2626;"
           >
             <span class="material-symbols-outlined text-base">logout</span>
@@ -859,29 +859,29 @@ const deleteAddress = async (id: number) => {
 
       <div class="flex-grow">
         
-        <div v-if="currentSection === 'profile'" class="bg-surface-container-low p-8 rounded-none border border-outline-variant/15">
+        <div v-if="currentSection === 'profile'" class="bg-surface-container-low p-8 rounded-lg border border-outline-variant/15">
           <div class="flex flex-col gap-6 mb-8">
             <div class="flex items-center justify-between">
               <h2 class="font-headline text-2xl text-primary">Informasi Akun</h2>
-              <div class="bg-secondary-fixed/30 text-secondary px-4 py-1.5 rounded-none text-sm font-semibold flex items-center gap-1">
+              <div class="bg-secondary-fixed/30 text-secondary px-4 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1">
                 <span class="material-symbols-outlined text-sm">stars</span>
                 {{ authStore.user?.loyalty_points || 0 }} Loyalty Points
               </div>
             </div>
 
             <!-- Membership Card -->
-            <div class="relative overflow-hidden p-6 border border-outline-variant/15 bg-white shadow-sm group">
+            <div class="relative overflow-hidden p-6 border border-outline-variant/15 bg-white shadow-card group">
               <!-- Background Decorative Elements -->
               <div class="absolute -top-10 -right-10 w-40 h-40 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-all"></div>
               
               <div class="relative z-10 flex flex-col md:flex-row md:items-center gap-8">
                 <!-- Level Badge -->
                 <div class="flex flex-col items-center justify-center p-4 min-w-[140px] border-2 border-primary/20 bg-primary/5">
-                  <span class="material-symbols-outlined text-4xl mb-1" :style="{ color: currentLevel?.name === 'Platinum' ? '#1a1209' : (currentLevel?.name === 'Gold' ? '#c19a51' : '#5a5248') }">
+                  <span class="material-symbols-outlined text-4xl mb-1" :style="{ color: currentLevel?.name === 'Platinum' ? 'var(--ink)' : (currentLevel?.name === 'Gold' ? 'var(--gold)' : 'var(--graphite)') }">
                     {{ currentLevel?.name === 'Platinum' ? 'workspace_premium' : 'stars' }}
                   </span>
                   <span class="text-xs font-black uppercase tracking-widest text-on-surface-variant">Level Anda</span>
-                  <span class="text-xl font-black text-primary uppercase tracking-tight">{{ currentLevel?.name || 'Bronze' }}</span>
+                  <span class="text-xl font-black text-primary uppercase tracking-normal">{{ currentLevel?.name || 'Bronze' }}</span>
                 </div>
 
                 <!-- Progress & Benefits -->
@@ -899,7 +899,7 @@ const deleteAddress = async (id: number) => {
                   </div>
                   <div v-else class="py-2">
                     <p class="text-sm font-black text-primary flex items-center gap-2">
-                      <span class="material-symbols-outlined text-amber-500">verified</span>
+                      <span class="material-symbols-outlined text-gold">verified</span>
                       Selamat! Anda telah mencapai level tertinggi (Platinum)
                     </p>
                   </div>
@@ -944,8 +944,8 @@ const deleteAddress = async (id: number) => {
           <div class="mt-10">
             <h3 class="font-headline text-xl text-primary mb-4 border-b border-outline-variant/15 pb-2">Riwayat Poin Loyalitas</h3>
             <div v-if="isLoadingHistory" class="animate-pulse flex flex-col gap-2">
-              <div class="h-10 bg-surface-container-highest rounded-none w-full"></div>
-              <div class="h-10 bg-surface-container-highest rounded-none w-full"></div>
+              <div class="h-10 bg-surface-container-highest rounded-lg w-full"></div>
+              <div class="h-10 bg-surface-container-highest rounded-lg w-full"></div>
             </div>
             <div v-else-if="loyaltyHistory.length === 0" class="text-center py-6">
               <p class="text-sm text-on-surface-variant">Belum ada riwayat penggunaan atau penambahan poin.</p>
@@ -964,11 +964,11 @@ const deleteAddress = async (id: number) => {
                   <tr v-for="log in loyaltyHistory" :key="log.id" class="border-b border-outline-variant/10 hover:bg-surface-container-highest/50 transition-colors">
                     <td class="py-3">{{ new Date(log.created_at).toLocaleString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}</td>
                     <td class="py-3">
-                      <span :class="log.type === 'earned' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'" class="px-2 py-0.5 rounded text-xs font-medium uppercase">
+                      <span :class="log.type === 'earned' ? 'text-olive bg-olive/10' : 'text-red-600 bg-red-50'" class="px-2 py-0.5 rounded text-xs font-medium uppercase">
                         {{ log.type === 'earned' ? 'Dapat' : 'Pakai' }}
                       </span>
                     </td>
-                    <td class="py-3 text-right font-medium" :class="log.type === 'earned' ? 'text-green-600' : 'text-red-600'">
+                    <td class="py-3 text-right font-medium" :class="log.type === 'earned' ? 'text-olive' : 'text-red-600'">
                       {{ log.type === 'earned' ? '+' : '-' }}{{ Math.abs(log.points) }}
                     </td>
                     <td class="py-3 text-on-surface-variant text-xs">{{ log.description }}</td>
@@ -982,15 +982,15 @@ const deleteAddress = async (id: number) => {
         <div v-if="currentSection === 'addresses'">
            <div class="flex items-center justify-between mb-6">
              <h2 class="font-headline text-2xl text-primary">Shipping Addresses</h2>
-             <button @click="openAddressModal" class="bg-primary text-white px-4 py-2 rounded-none text-sm font-medium hover:bg-primary-container transition-colors">Add New Address</button>
+             <button @click="openAddressModal" class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-container transition-colors">Tambah Alamat Baru</button>
            </div>
            
            <div class="grid grid-cols-1 gap-4">
               <div v-if="authStore.user?.addresses?.length > 0">
-                 <div v-for="addr in authStore.user.addresses" :key="addr.id" class="p-6 bg-surface-container-low border border-outline-variant/15 rounded-none">
+                 <div v-for="addr in authStore.user.addresses" :key="addr.id" class="p-6 bg-surface-container-low border border-outline-variant/15 rounded-lg">
                     <div class="flex justify-between items-start">
                        <div>
-                          <p class="font-bold text-primary">{{ addr.recipient_name }} <span v-if="addr.is_default" class="ml-2 text-[10px] bg-secondary-fixed/30 text-secondary px-2 py-0.5 rounded-none uppercase">Default</span></p>
+                          <p class="font-bold text-primary">{{ addr.recipient_name }} <span v-if="addr.is_default" class="ml-2 text-[10px] bg-secondary-fixed/30 text-secondary px-2 py-0.5 rounded-lg uppercase">Default</span></p>
                           <p class="text-sm text-on-surface-variant mt-1">{{ addr.phone }}</p>
                           <p class="text-sm text-on-surface mt-3">{{ addr.address }}</p>
                           <p class="text-sm text-on-surface">{{ addr.district }}, {{ addr.city }}, {{ addr.province }} {{ addr.postal_code }}</p>
@@ -1001,7 +1001,7 @@ const deleteAddress = async (id: number) => {
                     </div>
                  </div>
               </div>
-              <div v-else class="text-center py-12 bg-surface-container-low rounded-none">
+              <div v-else class="text-center py-12 bg-surface-container-low rounded-lg">
                  <p class="text-on-surface-variant">No addresses saved yet.</p>
               </div>
            </div>
@@ -1013,7 +1013,7 @@ const deleteAddress = async (id: number) => {
             <button
               @click="showCreatePrescriptionForm = !showCreatePrescriptionForm"
               class="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-wider text-white transition-all"
-              style="background: linear-gradient(135deg, #1a1209 0%, #3d2c0e 100%);"
+              style="background: linear-gradient(135deg, var(--ink) 0%, #3d2c0e 100%);"
             >
               <span class="material-symbols-outlined text-sm">{{ showCreatePrescriptionForm ? 'close' : 'add' }}</span>
               {{ showCreatePrescriptionForm ? 'Batal' : 'Tambah Resep' }}
@@ -1021,20 +1021,20 @@ const deleteAddress = async (id: number) => {
           </div>
 
           <!-- Form Tambah Resep Baru -->
-          <div v-if="showCreatePrescriptionForm" class="mb-6 border p-6" style="background: #fffdf7; border-color: rgba(193,154,81,0.3);">
-            <h3 class="font-bold text-sm mb-4" style="color: #1a1209;">Tambah Resep Baru</h3>
+          <div v-if="showCreatePrescriptionForm" class="mb-6 border p-6" style="background: var(--porcelain); border-color: rgba(184,138,68,0.3);">
+            <h3 class="font-bold text-sm mb-4" style="color: var(--ink);">Tambah Resep Baru</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">Nama Resep *</label>
-                <input v-model="newPrescriptionForm.label" type="text" placeholder="Contoh: Resep Utama 2026" class="w-full border px-3 py-2 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: var(--taupe);">Nama Resep *</label>
+                <input v-model="newPrescriptionForm.label" type="text" placeholder="Contoh: Resep Utama 2026" class="input-field py-2" style="border-color: var(--mist);" />
               </div>
               <div>
-                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">Tipe Lensa</label>
-                <select v-model="newPrescriptionForm.lens_type" class="w-full border px-3 py-2 text-sm focus:outline-none" style="border-color: #e5e0d8;">
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: var(--taupe);">Tipe Lensa</label>
+                <select v-model="newPrescriptionForm.lens_type" class="input-field py-2" style="border-color: var(--mist);">
                   <option value="single_vision">Single Vision</option>
                   <option value="progressive">Progresif / Bifokal</option>
                 </select>
-                <p class="text-[11px] mt-2" style="color: #8a7a60;">
+                <p class="text-[11px] mt-2" style="color: var(--taupe);">
                   Fitur lensa seperti Blue Light, Photochromic, dan High Index dipilih saat checkout, bukan di resep dasar.
                 </p>
               </div>
@@ -1045,14 +1045,14 @@ const deleteAddress = async (id: number) => {
               <table class="w-full text-sm">
                 <thead>
                   <tr>
-                    <th class="text-left py-2 pr-4 text-xs font-black uppercase tracking-wider" style="color: #8a7a60; width: 60px;"></th>
-                    <th class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider" style="color: #8a7a60;">SPH</th>
-                    <th class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider" style="color: #8a7a60;">CYL</th>
-                    <th class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider" style="color: #8a7a60;">Axis</th>
+                    <th class="text-left py-2 pr-4 text-xs font-black uppercase tracking-wider" style="color: var(--taupe); width: 60px;"></th>
+                    <th class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider" style="color: var(--taupe);">SPH</th>
+                    <th class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider" style="color: var(--taupe);">CYL</th>
+                    <th class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider" style="color: var(--taupe);">Axis</th>
                     <th
                       v-if="supportsAddForNewPrescription"
                       class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider"
-                      style="color: #8a7a60;"
+                      style="color: var(--taupe);"
                     >
                       ADD
                     </th>
@@ -1060,18 +1060,18 @@ const deleteAddress = async (id: number) => {
                 </thead>
                 <tbody>
                   <tr>
-                    <td class="py-2 pr-4 font-black text-xs" style="color: #1a1209;">OD (Kanan)</td>
-                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.right_sphere" type="number" step="0.25" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
-                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.right_cylinder" type="number" step="0.25" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
-                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.right_axis" :disabled="!usesRightAxis" type="number" min="1" max="180" placeholder="—" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none disabled:bg-stone-100 disabled:text-stone-400 disabled:cursor-not-allowed" style="border-color: #e5e0d8;" /></td>
-                    <td v-if="supportsAddForNewPrescription" class="py-2 px-2"><input v-model="newPrescriptionForm.right_add" type="number" step="0.25" min="0" max="5" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
+                    <td class="py-2 pr-4 font-black text-xs" style="color: var(--ink);">OD (Kanan)</td>
+                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.right_sphere" type="number" step="0.25" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: var(--mist);" /></td>
+                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.right_cylinder" type="number" step="0.25" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: var(--mist);" /></td>
+                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.right_axis" :disabled="!usesRightAxis" type="number" min="1" max="180" placeholder="—" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none disabled:bg-mist disabled:text-graphite/45 disabled:cursor-not-allowed" style="border-color: var(--mist);" /></td>
+                    <td v-if="supportsAddForNewPrescription" class="py-2 px-2"><input v-model="newPrescriptionForm.right_add" type="number" step="0.25" min="0" max="5" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: var(--mist);" /></td>
                   </tr>
                   <tr>
-                    <td class="py-2 pr-4 font-black text-xs" style="color: #1a1209;">OS (Kiri)</td>
-                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.left_sphere" type="number" step="0.25" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
-                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.left_cylinder" type="number" step="0.25" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
-                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.left_axis" :disabled="!usesLeftAxis" type="number" min="1" max="180" placeholder="—" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none disabled:bg-stone-100 disabled:text-stone-400 disabled:cursor-not-allowed" style="border-color: #e5e0d8;" /></td>
-                    <td v-if="supportsAddForNewPrescription" class="py-2 px-2"><input v-model="newPrescriptionForm.left_add" type="number" step="0.25" min="0" max="5" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: #e5e0d8;" /></td>
+                    <td class="py-2 pr-4 font-black text-xs" style="color: var(--ink);">OS (Kiri)</td>
+                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.left_sphere" type="number" step="0.25" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: var(--mist);" /></td>
+                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.left_cylinder" type="number" step="0.25" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: var(--mist);" /></td>
+                    <td class="py-2 px-2"><input v-model="newPrescriptionForm.left_axis" :disabled="!usesLeftAxis" type="number" min="1" max="180" placeholder="—" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none disabled:bg-mist disabled:text-graphite/45 disabled:cursor-not-allowed" style="border-color: var(--mist);" /></td>
+                    <td v-if="supportsAddForNewPrescription" class="py-2 px-2"><input v-model="newPrescriptionForm.left_add" type="number" step="0.25" min="0" max="5" placeholder="0.00" class="w-full border px-2 py-1.5 text-center text-sm focus:outline-none" style="border-color: var(--mist);" /></td>
                   </tr>
                 </tbody>
               </table>
@@ -1080,33 +1080,33 @@ const deleteAddress = async (id: number) => {
             <!-- PD -->
             <div class="mt-4">
               <div class="flex items-center gap-6 mb-4">
-                <label class="flex items-center gap-2 cursor-pointer text-sm" style="color: #5a5248;">
-                  <input type="radio" v-model="newPrescriptionPdMode" value="single" class="accent-amber-700" />
+                <label class="flex items-center gap-2 cursor-pointer text-sm" style="color: var(--graphite);">
+                  <input type="radio" v-model="newPrescriptionPdMode" value="single" class="accent-gold" />
                   PD Tunggal
                 </label>
-                <label class="flex items-center gap-2 cursor-pointer text-sm" style="color: #5a5248;">
-                  <input type="radio" v-model="newPrescriptionPdMode" value="dual" class="accent-amber-700" />
+                <label class="flex items-center gap-2 cursor-pointer text-sm" style="color: var(--graphite);">
+                  <input type="radio" v-model="newPrescriptionPdMode" value="dual" class="accent-gold" />
                   PD Ganda
                 </label>
               </div>
 
               <div v-if="newPrescriptionPdMode === 'single'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">PD Tunggal (mm)</label>
-                  <input v-model="newPrescriptionForm.pd_single" type="number" min="50" max="75" step="0.5" placeholder="64" class="w-full border px-3 py-2 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+                  <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: var(--taupe);">PD Tunggal (mm)</label>
+                  <input v-model="newPrescriptionForm.pd_single" type="number" min="50" max="75" step="0.5" placeholder="64" class="input-field py-2" style="border-color: var(--mist);" />
                   <p class="text-[10px] mt-1" style="color: #b0a590;">Rentang umum 50 - 75 mm.</p>
                 </div>
               </div>
 
               <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">PD Kanan (mm)</label>
-                  <input v-model="newPrescriptionForm.pd_right" type="number" min="25" max="38" step="0.5" placeholder="32" class="w-full border px-3 py-2 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+                  <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: var(--taupe);">PD Kanan (mm)</label>
+                  <input v-model="newPrescriptionForm.pd_right" type="number" min="25" max="38" step="0.5" placeholder="32" class="input-field py-2" style="border-color: var(--mist);" />
                   <p class="text-[10px] mt-1" style="color: #b0a590;">Rentang umum 25 - 38 mm.</p>
                 </div>
                 <div>
-                  <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">PD Kiri (mm)</label>
-                  <input v-model="newPrescriptionForm.pd_left" type="number" min="25" max="38" step="0.5" placeholder="32" class="w-full border px-3 py-2 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+                  <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: var(--taupe);">PD Kiri (mm)</label>
+                  <input v-model="newPrescriptionForm.pd_left" type="number" min="25" max="38" step="0.5" placeholder="32" class="input-field py-2" style="border-color: var(--mist);" />
                   <p class="text-[10px] mt-1" style="color: #b0a590;">Rentang umum 25 - 38 mm.</p>
                 </div>
               </div>
@@ -1115,19 +1115,19 @@ const deleteAddress = async (id: number) => {
             <!-- Notes + Attachment -->
             <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">Catatan</label>
-                <textarea v-model="newPrescriptionForm.notes" rows="2" placeholder="Catatan tambahan..." class="w-full border px-3 py-2 text-sm focus:outline-none resize-none" style="border-color: #e5e0d8;"></textarea>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: var(--taupe);">Catatan</label>
+                <textarea v-model="newPrescriptionForm.notes" rows="2" placeholder="Catatan tambahan..." class="input-field py-2" style="border-color: var(--mist);"></textarea>
               </div>
               <div>
-                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">Upload Resep (Opsional)</label>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: var(--taupe);">Upload Resep (Opsional)</label>
                 <input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" @change="handleNewPrescriptionFile" class="block w-full text-sm" />
                 <p class="text-[10px] mt-1" style="color: #b0a590;">JPG, PNG, WEBP, atau PDF. Maks 4 MB.</p>
               </div>
             </div>
 
             <div class="mt-4 flex items-center gap-3">
-              <label class="flex items-center gap-2 cursor-pointer text-sm" style="color: #5a5248;">
-                <input type="checkbox" v-model="newPrescriptionForm.is_default" class="accent-amber-700" />
+              <label class="flex items-center gap-2 cursor-pointer text-sm" style="color: var(--graphite);">
+                <input type="checkbox" v-model="newPrescriptionForm.is_default" class="accent-gold" />
                 Jadikan resep default
               </label>
             </div>
@@ -1137,12 +1137,12 @@ const deleteAddress = async (id: number) => {
                 @click="createNewPrescription"
                 :disabled="isCreatingPrescription"
                 class="px-6 py-3 text-xs font-black uppercase tracking-wider text-white disabled:opacity-50 transition-all"
-                style="background: linear-gradient(135deg, #1a1209 0%, #3d2c0e 100%);"
+                style="background: linear-gradient(135deg, var(--ink) 0%, #3d2c0e 100%);"
               >
                 <span v-if="isCreatingPrescription" class="material-symbols-outlined animate-spin text-sm align-middle mr-1">sync</span>
                 {{ isCreatingPrescription ? 'Menyimpan...' : 'Simpan Resep' }}
               </button>
-              <button @click="showCreatePrescriptionForm = false" class="px-4 py-3 border text-xs font-black uppercase tracking-wider" style="border-color: #e5e0d8; color: #8a7a60;">
+              <button @click="showCreatePrescriptionForm = false" class="px-4 py-3 border text-xs font-black uppercase tracking-wider" style="border-color: var(--mist); color: var(--taupe);">
                 Batal
               </button>
             </div>
@@ -1152,7 +1152,7 @@ const deleteAddress = async (id: number) => {
             Memuat resep...
           </div>
 
-          <div v-else-if="prescriptions.length === 0" class="text-center py-12 bg-surface-container-low rounded-none">
+          <div v-else-if="prescriptions.length === 0" class="text-center py-12 bg-surface-container-low rounded-lg">
             <p class="text-on-surface-variant">Belum ada resep tersimpan.</p>
           </div>
 
@@ -1160,28 +1160,28 @@ const deleteAddress = async (id: number) => {
             <div
               v-for="profile in prescriptions"
               :key="profile.id"
-              class="p-6 bg-surface-container-low border border-outline-variant/15 rounded-none"
+              class="p-6 bg-surface-container-low border border-outline-variant/15 rounded-lg"
             >
               <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div class="flex-1">
                   <div v-if="editingPrescriptionId === profile.id" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                     <label class="block">
                       <span class="block text-xs text-on-surface-variant mb-1 uppercase tracking-wider">Nama Resep</span>
-                      <input v-model="prescriptionEditForm.label" class="w-full border border-outline-variant/30 rounded-none px-3 py-2 bg-white" />
+                      <input v-model="prescriptionEditForm.label" class="w-full border border-outline-variant/30 rounded-lg px-3 py-2 bg-white" />
                     </label>
                     <label class="block md:col-span-2">
                       <span class="block text-xs text-on-surface-variant mb-1 uppercase tracking-wider">Catatan</span>
-                      <textarea v-model="prescriptionEditForm.notes" rows="2" class="w-full border border-outline-variant/30 rounded-none px-3 py-2 bg-white"></textarea>
+                      <textarea v-model="prescriptionEditForm.notes" rows="2" class="w-full border border-outline-variant/30 rounded-lg px-3 py-2 bg-white"></textarea>
                     </label>
                   </div>
 
                   <div v-else>
                     <p class="font-bold text-primary">
                       {{ profile.label }}
-                      <span v-if="profile.is_default" class="ml-2 text-[10px] bg-secondary-fixed/30 text-secondary px-2 py-0.5 rounded-none uppercase">Default</span>
-                      <span v-if="profile.verification_status === 'approved'" class="ml-2 text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-none uppercase">Disetujui</span>
-                      <span v-else-if="profile.verification_status === 'rejected'" class="ml-2 text-[10px] bg-red-100 text-red-800 px-2 py-0.5 rounded-none uppercase">Ditolak</span>
-                      <span v-else-if="profile.verified_at" class="ml-2 text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-none uppercase">Terverifikasi</span>
+                      <span v-if="profile.is_default" class="ml-2 text-[10px] bg-secondary-fixed/30 text-secondary px-2 py-0.5 rounded-lg uppercase">Default</span>
+                      <span v-if="profile.verification_status === 'approved'" class="ml-2 text-[10px] bg-olive/10 text-olive px-2 py-0.5 rounded-lg uppercase">Disetujui</span>
+                      <span v-else-if="profile.verification_status === 'rejected'" class="ml-2 text-[10px] bg-red-100 text-red-800 px-2 py-0.5 rounded-lg uppercase">Ditolak</span>
+                      <span v-else-if="profile.verified_at" class="ml-2 text-[10px] bg-olive/10 text-olive px-2 py-0.5 rounded-lg uppercase">Terverifikasi</span>
                     </p>
                     <p class="text-sm text-on-surface-variant mt-1">{{ formatLensTypeLabel(profile.lens_type || 'single_vision') }}</p>
                     <!-- Admin notes jika ada -->
@@ -1200,13 +1200,13 @@ const deleteAddress = async (id: number) => {
 
                 <div class="flex flex-wrap md:flex-col gap-2 md:items-end">
                   <template v-if="editingPrescriptionId === profile.id">
-                    <button @click="savePrescriptionEdit(profile)" class="px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wide bg-primary text-white">Simpan</button>
-                    <button @click="editingPrescriptionId = null" class="px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wide border border-outline-variant/30 text-on-surface">Batal</button>
+                    <button @click="savePrescriptionEdit(profile)" class="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide bg-primary text-white">Simpan</button>
+                    <button @click="editingPrescriptionId = null" class="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide border border-outline-variant/30 text-on-surface">Batal</button>
                   </template>
                   <template v-else>
-                    <button @click="startEditPrescription(profile)" class="px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wide border border-outline-variant/30 text-on-surface">Edit</button>
-                    <button v-if="!profile.is_default" @click="setDefaultPrescription(profile.id)" class="px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wide bg-primary text-white">Set Default</button>
-                    <button @click="deletePrescription(profile.id)" class="px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wide text-error border border-error/20">Hapus</button>
+                    <button @click="startEditPrescription(profile)" class="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide border border-outline-variant/30 text-on-surface">Edit</button>
+                    <button v-if="!profile.is_default" @click="setDefaultPrescription(profile.id)" class="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide bg-primary text-white">Set Default</button>
+                    <button @click="deletePrescription(profile.id)" class="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide text-error border border-error/20">Hapus</button>
                   </template>
                 </div>
               </div>
@@ -1220,35 +1220,35 @@ const deleteAddress = async (id: number) => {
           <div class="flex flex-wrap gap-2 mb-6">
             <button v-for="tab in orderStatusTabs" :key="tab.value" @click="orderStatusFilter = tab.value"
               class="px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-all"
-              :style="orderStatusFilter === tab.value ? 'background: linear-gradient(135deg, #1a1209, #3d2c0e); color: white;' : 'background: rgba(193,154,81,0.08); color: #7a6230; border: 1px solid rgba(193,154,81,0.2);'"
+              :style="orderStatusFilter === tab.value ? 'background: linear-gradient(135deg, var(--ink), #3d2c0e); color: white;' : 'background: rgba(184,138,68,0.08); color: #7a6230; border: 1px solid rgba(184,138,68,0.2);'"
             >{{ tab.label }}</button>
           </div>
           
           <div v-if="isLoadingOrders" class="animate-pulse flex flex-col gap-4">
-            <div class="h-24 bg-surface-container-low rounded-none w-full"></div>
-            <div class="h-24 bg-surface-container-low rounded-none w-full"></div>
+            <div class="h-24 bg-surface-container-low rounded-lg w-full"></div>
+            <div class="h-24 bg-surface-container-low rounded-lg w-full"></div>
           </div>
           
-          <div v-else-if="orders.length === 0" class="text-center py-12 bg-surface-container-low rounded-none">
+          <div v-else-if="orders.length === 0" class="text-center py-12 bg-surface-container-low rounded-lg">
             <p class="text-on-surface-variant">You haven't placed any orders yet.</p>
           </div>
           
           <div v-else class="flex flex-col gap-4">
-            <div v-if="filteredOrders.length === 0" class="text-center py-10 bg-surface-container-low rounded-none">
+            <div v-if="filteredOrders.length === 0" class="text-center py-10 bg-surface-container-low rounded-lg">
               <p class="text-on-surface-variant">Tidak ada pesanan pada status ini.</p>
             </div>
             <template v-else>
-            <div v-for="order in filteredOrders" :key="order.id" class="bg-surface-container-low p-6 rounded-none border border-outline-variant/15 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:shadow-md transition-shadow">
+            <div v-for="order in filteredOrders" :key="order.id" class="bg-surface-container-low p-6 rounded-lg border border-outline-variant/15 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:shadow-card transition-shadow">
               <div class="flex items-center gap-4">
                 <!-- Product Thumbnail Preview -->
-                <div v-if="order.items && order.items.length > 0" class="w-16 h-16 shrink-0 bg-stone-100 border p-1 rounded-none flex items-center justify-center overflow-hidden">
+                <div v-if="order.items && order.items.length > 0" class="w-16 h-16 shrink-0 bg-mist border p-1 rounded-lg flex items-center justify-center overflow-hidden">
                   <img 
                     :src="resolveImageUrl(order.items[0].product, order.items[0].product?.name)" 
                     class="w-full h-full object-contain mix-blend-multiply"
                   />
                 </div>
-                <div v-else class="w-16 h-16 shrink-0 bg-stone-50 border p-1 rounded-none flex items-center justify-center">
-                  <span class="material-symbols-outlined text-stone-300">shopping_bag</span>
+                <div v-else class="w-16 h-16 shrink-0 bg-ivory border p-1 rounded-lg flex items-center justify-center">
+                  <span class="material-symbols-outlined text-ivory/70">shopping_bag</span>
                 </div>
 
                 <div>
@@ -1266,7 +1266,7 @@ const deleteAddress = async (id: number) => {
                   v-if="normalizeOrderStatus(order.status) === 'shipped'"
                   @click="confirmDelivery(order.id)"
                   :disabled="confirmingOrderId === order.id"
-                  class="px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wide bg-primary text-white hover:bg-primary-container transition-colors disabled:opacity-50"
+                  class="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide bg-primary text-white hover:bg-primary-container transition-colors disabled:opacity-50"
                 >
                   {{ confirmingOrderId === order.id ? 'Menyimpan...' : 'Konfirmasi Diterima' }}
                 </button>
@@ -1281,7 +1281,7 @@ const deleteAddress = async (id: number) => {
               v-if="canLoadMoreOrders"
               @click="loadMoreOrders"
               :disabled="isLoadingMoreOrders"
-              class="self-center mt-2 px-6 py-3 rounded-none text-sm font-medium bg-primary text-white hover:bg-primary-container transition-colors disabled:opacity-50"
+              class="self-center mt-2 px-6 py-3 rounded-lg text-sm font-medium bg-primary text-white hover:bg-primary-container transition-colors disabled:opacity-50"
             >
               {{ isLoadingMoreOrders ? 'Loading...' : 'Load More' }}
             </button>
@@ -1298,14 +1298,14 @@ const deleteAddress = async (id: number) => {
               v-if="wishlistStore.items && wishlistStore.items.length > 0"
               @click="shareWishlist"
               :disabled="isSharingWishlist"
-              class="px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wide bg-primary text-white hover:bg-primary-container transition-colors disabled:opacity-50 flex items-center gap-2"
+              class="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide bg-primary text-white hover:bg-primary-container transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               <span class="material-symbols-outlined text-base">ios_share</span>
               {{ isSharingWishlist ? 'Membuat...' : 'Salin Link' }}
             </button>
           </div>
 
-          <div v-if="!wishlistStore.items || wishlistStore.items.length === 0" class="text-center py-12 bg-surface-container-low rounded-none">
+          <div v-if="!wishlistStore.items || wishlistStore.items.length === 0" class="text-center py-12 bg-surface-container-low rounded-lg">
             <p class="text-on-surface-variant">Belum ada produk di wishlist Anda.</p>
           </div>
 
@@ -1313,9 +1313,9 @@ const deleteAddress = async (id: number) => {
             <div
               v-for="product in wishlistStore.items"
               :key="product.id"
-              class="bg-surface-container-low p-5 rounded-none border border-outline-variant/15 flex gap-4 items-start"
+              class="bg-surface-container-low p-5 rounded-lg border border-outline-variant/15 flex gap-4 items-start"
             >
-              <div class="w-20 h-20 shrink-0 bg-stone-100 border p-2 rounded-none flex items-center justify-center overflow-hidden">
+              <div class="w-20 h-20 shrink-0 bg-mist border p-2 rounded-lg flex items-center justify-center overflow-hidden">
                 <img
                   :src="resolveImageUrl(product, product.name)"
                   class="w-full h-full object-contain mix-blend-multiply"
@@ -1350,40 +1350,40 @@ const deleteAddress = async (id: number) => {
 
         <!-- Affiliate Section -->
         <div v-if="currentSection === 'affiliate'" class="space-y-6">
-          <h2 class="font-black text-2xl" style="color: #1a1209; font-family: Outfit, sans-serif;">Afiliasi &amp; Komisi</h2>
+          <h2 class="font-black text-2xl" style="color: var(--ink); font-family: Outfit, sans-serif;">Afiliasi &amp; Komisi</h2>
           <div v-if="isLoadingAffiliate" class="flex items-center gap-2 py-8">
-            <span class="material-symbols-outlined animate-spin" style="color: #c19a51;">sync</span>
-            <span class="text-sm text-stone-500">Memuat data afiliasi...</span>
+            <span class="material-symbols-outlined animate-spin" style="color: var(--gold);">sync</span>
+            <span class="text-sm text-graphite/65">Memuat data afiliasi...</span>
           </div>
-          <div v-else-if="!affiliateProfile" class="bg-white p-8 border border-stone-200 text-center">
-            <span class="material-symbols-outlined text-5xl block mb-4" style="color: #c19a51;">groups</span>
-            <h3 class="font-black text-xl mb-2" style="color: #1a1209;">Program Afiliasi Optik Medio</h3>
-            <p class="text-sm text-stone-500 mb-6 max-w-md mx-auto">Dapatkan komisi dari setiap penjualan melalui link referral Anda. Pendaftaran memerlukan persetujuan admin.</p>
-            <button @click="applyAffiliate" :disabled="isApplyingAffiliate" class="px-8 py-3 font-black text-sm text-white uppercase tracking-wider disabled:opacity-50" style="background: linear-gradient(135deg, #1a1209, #3d2c0e);">
+          <div v-else-if="!affiliateProfile" class="bg-white p-8 border border-mist text-center">
+            <span class="material-symbols-outlined text-5xl block mb-4" style="color: var(--gold);">groups</span>
+            <h3 class="font-black text-xl mb-2" style="color: var(--ink);">Program Afiliasi Optik Medio</h3>
+            <p class="text-sm text-graphite/65 mb-6 max-w-md mx-auto">Dapatkan komisi dari setiap penjualan melalui link referral Anda. Pendaftaran memerlukan persetujuan admin.</p>
+            <button @click="applyAffiliate" :disabled="isApplyingAffiliate" class="px-8 py-3 font-black text-sm text-white uppercase tracking-wider disabled:opacity-50" style="background: linear-gradient(135deg, var(--ink), #3d2c0e);">
               {{ isApplyingAffiliate ? 'Memproses...' : 'Daftar Afiliator' }}
             </button>
           </div>
           <div v-else class="space-y-6">
-            <div class="bg-white p-6 border border-stone-200">
+            <div class="bg-white p-6 border border-mist">
               <div class="flex justify-between items-start mb-6">
                 <div>
-                  <p class="text-xs font-black uppercase tracking-widest mb-1" style="color: #c19a51;">Kode Afiliasi</p>
-                  <p class="font-black text-2xl" style="color: #1a1209; font-family: Outfit, sans-serif;">{{ affiliateProfile.affiliate_code }}</p>
+                  <p class="text-xs font-black uppercase tracking-widest mb-1" style="color: var(--gold);">Kode Afiliasi</p>
+                  <p class="font-black text-2xl" style="color: var(--ink); font-family: Outfit, sans-serif;">{{ affiliateProfile.affiliate_code }}</p>
                 </div>
                 <span class="px-4 py-1.5 text-xs font-black uppercase" :style="affiliateProfile.status === 'approved' ? 'background: rgba(22,163,74,0.1); color: #16a34a;' : 'background: rgba(245,158,11,0.1); color: #d97706;'">{{ affiliateProfile.status }}</span>
               </div>
               <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="text-center p-3 border border-stone-100"><p class="text-2xl font-black" style="color: #1a1209;">{{ affiliateSummary?.referrals_count || 0 }}</p><p class="text-[10px] uppercase text-stone-500 mt-1">Referral</p></div>
-                <div class="text-center p-3 border border-stone-100"><p class="text-lg font-black" style="color: #16a34a;">{{ formatMoney(affiliateSummary?.available_balance) }}</p><p class="text-[10px] uppercase text-stone-500 mt-1">Saldo</p></div>
-                <div class="text-center p-3 border border-stone-100"><p class="text-lg font-black" style="color: #d97706;">{{ formatMoney(affiliateSummary?.locked_balance) }}</p><p class="text-[10px] uppercase text-stone-500 mt-1">Diproses</p></div>
-                <div class="text-center p-3 border border-stone-100"><p class="text-lg font-black" style="color: #c19a51;">{{ affiliateProfile.commission_rate_percentage }}%</p><p class="text-[10px] uppercase text-stone-500 mt-1">Komisi</p></div>
+                <div class="text-center p-3 border border-mist"><p class="text-2xl font-black" style="color: var(--ink);">{{ affiliateSummary?.referrals_count || 0 }}</p><p class="text-[10px] uppercase text-graphite/65 mt-1">Referral</p></div>
+                <div class="text-center p-3 border border-mist"><p class="text-lg font-black" style="color: #16a34a;">{{ formatMoney(affiliateSummary?.available_balance) }}</p><p class="text-[10px] uppercase text-graphite/65 mt-1">Saldo</p></div>
+                <div class="text-center p-3 border border-mist"><p class="text-lg font-black" style="color: #d97706;">{{ formatMoney(affiliateSummary?.locked_balance) }}</p><p class="text-[10px] uppercase text-graphite/65 mt-1">Diproses</p></div>
+                <div class="text-center p-3 border border-mist"><p class="text-lg font-black" style="color: var(--gold);">{{ affiliateProfile.commission_rate_percentage }}%</p><p class="text-[10px] uppercase text-graphite/65 mt-1">Komisi</p></div>
               </div>
             </div>
-            <div class="bg-white p-6 border border-stone-200">
+            <div class="bg-white p-6 border border-mist">
               <div class="flex items-start justify-between gap-4 mb-4">
                 <div>
-                  <h3 class="font-black text-base" style="color: #1a1209;">Rekening Pencairan</h3>
-                  <p class="text-xs text-stone-500 mt-1">Dipakai admin untuk transfer komisi. Data ini akan disalin ke setiap request pencairan.</p>
+                  <h3 class="font-black text-base" style="color: var(--ink);">Rekening Pencairan</h3>
+                  <p class="text-xs text-graphite/65 mt-1">Dipakai admin untuk transfer komisi. Data ini akan disalin ke setiap request pencairan.</p>
                 </div>
                 <span class="text-[10px] font-black uppercase px-2 py-1" :style="hasCompletePayoutProfile ? 'background: rgba(22,163,74,0.1); color: #16a34a;' : 'background: rgba(245,158,11,0.1); color: #d97706;'">
                   {{ hasCompletePayoutProfile ? 'Lengkap' : 'Belum Lengkap' }}
@@ -1391,64 +1391,64 @@ const deleteAddress = async (id: number) => {
               </div>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
-                  <label class="block text-xs font-black uppercase tracking-widest text-stone-500 mb-2">Bank / E-Wallet</label>
-                  <input v-model="payoutProfileForm.payout_bank_name" type="text" placeholder="BCA, BRI, Mandiri, DANA" class="w-full border px-4 py-3 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+                  <label class="block text-xs font-black uppercase tracking-widest text-graphite/65 mb-2">Bank / E-Wallet</label>
+                  <input v-model="payoutProfileForm.payout_bank_name" type="text" placeholder="BCA, BRI, Mandiri, DANA" class="input-field" style="border-color: var(--mist);" />
                 </div>
                 <div>
-                  <label class="block text-xs font-black uppercase tracking-widest text-stone-500 mb-2">Nomor Rekening / Akun</label>
-                  <input v-model="payoutProfileForm.payout_account_number" type="text" placeholder="Nomor rekening" class="w-full border px-4 py-3 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+                  <label class="block text-xs font-black uppercase tracking-widest text-graphite/65 mb-2">Nomor Rekening / Akun</label>
+                  <input v-model="payoutProfileForm.payout_account_number" type="text" placeholder="Nomor rekening" class="input-field" style="border-color: var(--mist);" />
                 </div>
                 <div>
-                  <label class="block text-xs font-black uppercase tracking-widest text-stone-500 mb-2">Nama Pemilik</label>
-                  <input v-model="payoutProfileForm.payout_account_name" type="text" placeholder="Nama sesuai rekening" class="w-full border px-4 py-3 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
+                  <label class="block text-xs font-black uppercase tracking-widest text-graphite/65 mb-2">Nama Pemilik</label>
+                  <input v-model="payoutProfileForm.payout_account_name" type="text" placeholder="Nama sesuai rekening" class="input-field" style="border-color: var(--mist);" />
                 </div>
                 <div class="md:col-span-3">
-                  <label class="block text-xs font-black uppercase tracking-widest text-stone-500 mb-2">Catatan</label>
-                  <textarea v-model="payoutProfileForm.payout_notes" rows="2" placeholder="Opsional, misalnya cabang bank atau catatan admin" class="w-full border px-4 py-3 text-sm focus:outline-none" style="border-color: #e5e0d8;"></textarea>
+                  <label class="block text-xs font-black uppercase tracking-widest text-graphite/65 mb-2">Catatan</label>
+                  <textarea v-model="payoutProfileForm.payout_notes" rows="2" placeholder="Opsional, misalnya cabang bank atau catatan admin" class="input-field" style="border-color: var(--mist);"></textarea>
                 </div>
               </div>
               <div class="mt-4 flex justify-end">
-                <button @click="savePayoutProfile" :disabled="isSavingPayoutProfile || !hasCompletePayoutProfile" class="px-6 py-3 text-sm font-black text-white uppercase disabled:opacity-50" style="background: linear-gradient(135deg, #1a1209, #3d2c0e);">
+                <button @click="savePayoutProfile" :disabled="isSavingPayoutProfile || !hasCompletePayoutProfile" class="px-6 py-3 text-sm font-black text-white uppercase disabled:opacity-50" style="background: linear-gradient(135deg, var(--ink), #3d2c0e);">
                   {{ isSavingPayoutProfile ? 'Menyimpan...' : 'Simpan Rekening' }}
                 </button>
               </div>
             </div>
-            <div v-if="affiliateProfile.status === 'approved'" class="bg-white p-6 border border-stone-200">
-              <h3 class="font-black text-base mb-4" style="color: #1a1209;">Request Pencairan</h3>
-              <p class="text-xs text-stone-500 mb-3">Saldo tersedia {{ formatMoney(affiliateSummary?.available_balance) }}. Minimal pencairan {{ formatMoney(affiliateSummary?.minimum_payout_amount || 10000) }}.</p>
+            <div v-if="affiliateProfile.status === 'approved'" class="bg-white p-6 border border-mist">
+              <h3 class="font-black text-base mb-4" style="color: var(--ink);">Ajukan Pencairan</h3>
+              <p class="text-xs text-graphite/65 mb-3">Saldo tersedia {{ formatMoney(affiliateSummary?.available_balance) }}. Minimal pencairan {{ formatMoney(affiliateSummary?.minimum_payout_amount || 10000) }}.</p>
               <div class="flex gap-3">
-                <input v-model.number="payoutAmount" type="number" :min="affiliateSummary?.minimum_payout_amount || 10000" :max="affiliateSummary?.available_balance || 0" placeholder="Jumlah pencairan (Rp)" class="flex-grow border px-4 py-3 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
-                <button @click="requestPayout" :disabled="isRequestingPayout || !hasCompletePayoutProfile || !payoutAmount || payoutAmount > (affiliateSummary?.available_balance || 0)" class="px-6 py-3 text-sm font-black text-white uppercase disabled:opacity-50" style="background: linear-gradient(135deg, #1a1209, #3d2c0e);">{{ isRequestingPayout ? 'Proses...' : 'Request' }}</button>
+                <input v-model.number="payoutAmount" type="number" :min="affiliateSummary?.minimum_payout_amount || 10000" :max="affiliateSummary?.available_balance || 0" placeholder="Jumlah pencairan (Rp)" class="flex-grow border px-4 py-3 text-sm focus:outline-none" style="border-color: var(--mist);" />
+                <button @click="requestPayout" :disabled="isRequestingPayout || !hasCompletePayoutProfile || !payoutAmount || payoutAmount > (affiliateSummary?.available_balance || 0)" class="px-6 py-3 text-sm font-black text-white uppercase disabled:opacity-50" style="background: linear-gradient(135deg, var(--ink), #3d2c0e);">{{ isRequestingPayout ? 'Proses...' : 'Request' }}</button>
               </div>
               <p v-if="!hasCompletePayoutProfile" class="text-xs text-red-600 mt-3">Lengkapi rekening pencairan sebelum membuat request.</p>
             </div>
-            <div class="bg-white p-6 border border-stone-200">
+            <div class="bg-white p-6 border border-mist">
               <div class="flex items-center justify-between gap-3 mb-4">
-                <h3 class="font-black text-base" style="color: #1a1209;">Order Komisi</h3>
-                <span class="text-xs font-black uppercase tracking-widest" style="color: #c19a51;">{{ affiliateEarnings.length }} order</span>
+                <h3 class="font-black text-base" style="color: var(--ink);">Order Komisi</h3>
+                <span class="text-xs font-black uppercase tracking-widest" style="color: var(--gold);">{{ affiliateEarnings.length }} order</span>
               </div>
-              <div v-if="affiliateEarnings.length === 0" class="text-center py-6 text-stone-400 text-sm">Belum ada order referral yang selesai.</div>
+              <div v-if="affiliateEarnings.length === 0" class="text-center py-6 text-graphite/45 text-sm">Belum ada order referral yang selesai.</div>
               <div v-else class="flex flex-col gap-3">
-                <div v-for="earning in affiliateEarnings" :key="earning.order_id" class="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 border border-stone-100">
+                <div v-for="earning in affiliateEarnings" :key="earning.order_id" class="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 border border-mist">
                   <div>
-                    <p class="font-black text-sm" style="color: #1a1209;">{{ earning.order_number }}</p>
-                    <p class="text-xs text-stone-500">{{ earning.customer_name }} · {{ earning.delivered_at ? new Date(earning.delivered_at).toLocaleDateString('id-ID') : earning.status }}</p>
+                    <p class="font-black text-sm" style="color: var(--ink);">{{ earning.order_number }}</p>
+                    <p class="text-xs text-graphite/65">{{ earning.customer_name }} · {{ earning.delivered_at ? new Date(earning.delivered_at).toLocaleDateString('id-ID') : earning.status }}</p>
                   </div>
                   <div class="grid grid-cols-3 gap-3 text-right">
-                    <div><p class="text-[10px] uppercase tracking-widest text-stone-400">Order</p><p class="font-bold text-xs" style="color: #1a1209;">{{ formatMoney(earning.base_amount) }}</p></div>
-                    <div><p class="text-[10px] uppercase tracking-widest text-stone-400">Komisi</p><p class="font-bold text-xs" style="color: #16a34a;">{{ formatMoney(earning.total_commission) }}</p></div>
-                    <div><p class="text-[10px] uppercase tracking-widest text-stone-400">Tersedia</p><p class="font-bold text-xs" :style="earning.is_available_for_payout ? 'color: #16a34a;' : 'color: #8a7a60;'">{{ formatMoney(earning.remaining_commission) }}</p></div>
+                    <div><p class="text-[10px] uppercase tracking-widest text-graphite/45">Order</p><p class="font-bold text-xs" style="color: var(--ink);">{{ formatMoney(earning.base_amount) }}</p></div>
+                    <div><p class="text-[10px] uppercase tracking-widest text-graphite/45">Komisi</p><p class="font-bold text-xs" style="color: #16a34a;">{{ formatMoney(earning.total_commission) }}</p></div>
+                    <div><p class="text-[10px] uppercase tracking-widest text-graphite/45">Tersedia</p><p class="font-bold text-xs" :style="earning.is_available_for_payout ? 'color: #16a34a;' : 'color: var(--taupe);'">{{ formatMoney(earning.remaining_commission) }}</p></div>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="bg-white p-6 border border-stone-200">
-              <h3 class="font-black text-base mb-4" style="color: #1a1209;">Histori Pencairan</h3>
-              <div v-if="affiliateCommissions.length === 0" class="text-center py-6 text-stone-400 text-sm">Belum ada histori pencairan.</div>
+            <div class="bg-white p-6 border border-mist">
+              <h3 class="font-black text-base mb-4" style="color: var(--ink);">Histori Pencairan</h3>
+              <div v-if="affiliateCommissions.length === 0" class="text-center py-6 text-graphite/45 text-sm">Belum ada histori pencairan.</div>
               <div v-else class="flex flex-col gap-3">
-                <div v-for="comm in affiliateCommissions" :key="comm.id" class="flex items-center justify-between p-4 border border-stone-100">
-                  <div><p class="font-bold text-sm" style="color: #1a1209;">{{ comm.request_no }}</p><p class="text-xs text-stone-500">{{ comm.requested_at ? new Date(comm.requested_at).toLocaleDateString('id-ID') : '-' }}</p></div>
-                  <div class="text-right"><p class="font-black text-sm" style="color: #1a1209;">Rp {{ Number(comm.requested_amount).toLocaleString('id-ID') }}</p><span class="text-[10px] font-black uppercase px-2 py-0.5" :style="comm.status === 'success' ? 'background: rgba(22,163,74,0.1); color: #16a34a;' : 'background: rgba(245,158,11,0.1); color: #d97706;'">{{ comm.status }}</span></div>
+                <div v-for="comm in affiliateCommissions" :key="comm.id" class="flex items-center justify-between p-4 border border-mist">
+                  <div><p class="font-bold text-sm" style="color: var(--ink);">{{ comm.request_no }}</p><p class="text-xs text-graphite/65">{{ comm.requested_at ? new Date(comm.requested_at).toLocaleDateString('id-ID') : '-' }}</p></div>
+                  <div class="text-right"><p class="font-black text-sm" style="color: var(--ink);">Rp {{ Number(comm.requested_amount).toLocaleString('id-ID') }}</p><span class="text-[10px] font-black uppercase px-2 py-0.5" :style="comm.status === 'success' ? 'background: rgba(22,163,74,0.1); color: #16a34a;' : 'background: rgba(245,158,11,0.1); color: #d97706;'">{{ comm.status }}</span></div>
                 </div>
               </div>
             </div>
@@ -1463,62 +1463,62 @@ const deleteAddress = async (id: number) => {
   <!-- Address Modal -->
   <Teleport to="body">
     <div v-if="showAddressModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-6 py-10">
-      <div class="bg-surface-container-low w-full max-w-2xl rounded-none p-8 max-h-full overflow-y-auto shadow-2xl border border-outline-variant/20">
+      <div class="bg-surface-container-low w-full max-w-2xl rounded-lg p-8 max-h-full overflow-y-auto shadow-soft border border-outline-variant/20">
         <div class="flex justify-between items-center mb-8">
-          <h3 class="text-2xl font-headline text-primary">Add New Address</h3>
-          <button @click="showAddressModal = false" class="text-on-surface-variant hover:text-primary transition-colors p-2 hover:bg-surface-container-highest rounded-none flex items-center justify-center">
+          <h3 class="text-2xl font-headline text-primary">Tambah Alamat Baru</h3>
+          <button @click="showAddressModal = false" class="text-on-surface-variant hover:text-primary transition-colors p-2 hover:bg-surface-container-highest rounded-lg flex items-center justify-center">
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="md:col-span-2">
-            <label class="block text-sm font-semibold text-on-surface-variant mb-2">Recipient Name</label>
-            <input v-model="addressForm.recipient_name" type="text" class="w-full bg-surface-container-highest p-4 rounded-none border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all" placeholder="e.g. Farhan" />
+            <label class="block text-sm font-semibold text-on-surface-variant mb-2">Nama Penerima</label>
+            <input v-model="addressForm.recipient_name" type="text" class="w-full bg-surface-container-highest p-4 rounded-lg border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all" placeholder="Contoh: Farhan" />
           </div>
           <div>
-            <label class="block text-sm font-semibold text-on-surface-variant mb-2">Phone Number</label>
-            <input v-model="addressForm.phone" type="text" class="w-full bg-surface-container-highest p-4 rounded-none border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all" placeholder="e.g. 08123456789" />
+            <label class="block text-sm font-semibold text-on-surface-variant mb-2">Nomor Telepon</label>
+            <input v-model="addressForm.phone" type="text" class="w-full bg-surface-container-highest p-4 rounded-lg border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all" placeholder="Contoh: 08123456789" />
           </div>
           <div>
-            <label class="block text-sm font-semibold text-on-surface-variant mb-2">Province</label>
-            <select v-model="addressForm.province_id" class="w-full bg-surface-container-highest p-4 rounded-none border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all">
-              <option value="">{{ isProvLoading ? 'Loading...' : 'Select Province' }}</option>
+            <label class="block text-sm font-semibold text-on-surface-variant mb-2">Provinsi</label>
+            <select v-model="addressForm.province_id" class="w-full bg-surface-container-highest p-4 rounded-lg border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all">
+              <option value="">{{ isProvLoading ? 'Memuat...' : 'Pilih Provinsi' }}</option>
               <option v-for="prov in provinces" :key="prov.id || (prov as any).province_id" :value="prov.id || (prov as any).province_id">{{ prov.name || (prov as any).province_name || (prov as any).province }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-sm font-semibold text-on-surface-variant mb-2">City</label>
-            <select v-model="addressForm.city_id" :disabled="!addressForm.province_id" class="w-full bg-surface-container-highest p-4 rounded-none border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all">
-              <option value="">{{ isCityLoading ? 'Loading...' : 'Select City' }}</option>
+            <label class="block text-sm font-semibold text-on-surface-variant mb-2">Kota/Kabupaten</label>
+            <select v-model="addressForm.city_id" :disabled="!addressForm.province_id" class="w-full bg-surface-container-highest p-4 rounded-lg border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all">
+              <option value="">{{ isCityLoading ? 'Memuat...' : 'Pilih Kota/Kabupaten' }}</option>
               <option v-for="city in cities" :key="city.id" :value="city.id">{{ city.name }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-sm font-semibold text-on-surface-variant mb-2">District</label>
-            <select v-model="addressForm.district_id" :disabled="!addressForm.city_id" class="w-full bg-surface-container-highest p-4 rounded-none border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all">
-              <option value="">{{ isDistLoading ? 'Loading...' : 'Select District' }}</option>
+            <label class="block text-sm font-semibold text-on-surface-variant mb-2">Kecamatan</label>
+            <select v-model="addressForm.district_id" :disabled="!addressForm.city_id" class="w-full bg-surface-container-highest p-4 rounded-lg border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all">
+              <option value="">{{ isDistLoading ? 'Memuat...' : 'Pilih Kecamatan' }}</option>
               <option v-for="dist in districts" :key="dist.id" :value="dist.id">{{ dist.name }}</option>
             </select>
           </div>
           <div class="md:col-span-2">
-            <label class="block text-sm font-semibold text-on-surface-variant mb-2">Full Address</label>
-            <textarea v-model="addressForm.address" rows="3" class="w-full bg-surface-container-highest p-4 rounded-none border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all" placeholder="Street name, house number, etc."></textarea>
+            <label class="block text-sm font-semibold text-on-surface-variant mb-2">Alamat Lengkap</label>
+            <textarea v-model="addressForm.address" rows="3" class="w-full bg-surface-container-highest p-4 rounded-lg border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all" placeholder="Nama jalan, nomor rumah, patokan, dan detail lainnya"></textarea>
           </div>
           <div>
-            <label class="block text-sm font-semibold text-on-surface-variant mb-2">Postal Code</label>
-            <input v-model="addressForm.postal_code" type="text" class="w-full bg-surface-container-highest p-4 rounded-none border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all" />
+            <label class="block text-sm font-semibold text-on-surface-variant mb-2">Kode Pos</label>
+            <input v-model="addressForm.postal_code" type="text" class="w-full bg-surface-container-highest p-4 rounded-lg border-0 ring-1 ring-inset ring-outline-variant/30 focus:ring-2 focus:ring-secondary transition-all" />
           </div>
           <div class="flex items-center gap-3 py-2">
             <input v-model="addressForm.is_default" type="checkbox" id="is_default" class="w-5 h-5 rounded border-outline-variant/30 text-secondary focus:ring-secondary" />
-            <label for="is_default" class="text-sm font-medium text-on-surface cursor-pointer select-none">Set as Default Address</label>
+            <label for="is_default" class="text-sm font-medium text-on-surface cursor-pointer select-none">Jadikan Alamat Utama</label>
           </div>
         </div>
 
-        <div class="mt-10 flex gap-4 sticky bottom-0 bg-surface-container-low pt-4 border-t border-outline-variant/10">
-          <button @click="showAddressModal = false" class="flex-grow py-4 rounded-none font-bold text-primary hover:bg-surface-container-highest transition-all">Cancel</button>
-          <button @click="saveAddress" :disabled="isSavingAddress" class="flex-grow py-4 rounded-none font-bold bg-primary text-on-primary hover:bg-primary-container transition-all shadow-lg shadow-primary/20 disabled:opacity-50">
-            {{ isSavingAddress ? 'Saving...' : 'Save Address' }}
+        <div class="mt-10 flex gap-4 border-t border-outline-variant/10 pt-4">
+          <button @click="showAddressModal = false" class="flex-grow py-4 rounded-lg font-bold text-primary hover:bg-surface-container-highest transition-all">Batal</button>
+          <button @click="saveAddress" :disabled="isSavingAddress" class="flex-grow py-4 rounded-lg font-bold transition-all shadow-card disabled:opacity-50" style="background: linear-gradient(135deg, var(--ink) 0%, #3d2c0e 100%); color: #fff;">
+            {{ isSavingAddress ? 'Menyimpan...' : 'Simpan Alamat' }}
           </button>
         </div>
       </div>

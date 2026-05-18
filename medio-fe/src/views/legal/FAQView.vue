@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-[#F5F2EE] min-h-screen">
+  <div class="bg-[var(--ivory)] min-h-screen">
     <PageHero
       title="Pertanyaan Umum (FAQ)"
       :breadcrumbs="[{ label: 'FAQ' }]"
@@ -7,7 +7,7 @@
 
     <!-- Main Content -->
     <main class="max-w-[1000px] mx-auto w-full px-6 pb-20 relative z-20">
-      <div class="bg-white p-8 md:p-12 border border-outline-variant/15 shadow-sm">
+      <div class="bg-porcelain p-8 md:p-12 border border-outline-variant/15 shadow-card">
         <div class="mb-10">
           <p class="text-xs font-black uppercase tracking-[0.2em] mb-3 text-primary">Pusat Bantuan</p>
           <p class="text-base leading-relaxed max-w-2xl text-on-surface-variant">
@@ -23,7 +23,7 @@
               'px-6 py-2.5 text-xs font-black uppercase tracking-widest transition-all border',
               selectedCategory === 'Semua' 
                 ? 'bg-primary text-white border-primary' 
-                : 'bg-white text-on-surface-variant border-outline-variant/30 hover:border-primary/50'
+                : 'bg-porcelain text-on-surface-variant border-outline-variant/30 hover:border-primary/50'
             ]"
           >
             Semua
@@ -36,7 +36,7 @@
               'px-6 py-2.5 text-xs font-black uppercase tracking-widest transition-all border',
               selectedCategory === cat 
                 ? 'bg-primary text-white border-primary' 
-                : 'bg-white text-on-surface-variant border-outline-variant/30 hover:border-primary/50'
+                : 'bg-porcelain text-on-surface-variant border-outline-variant/30 hover:border-primary/50'
             ]"
           >
             {{ cat }}
@@ -52,7 +52,7 @@
           <div 
             v-for="faq in filteredFaqs" 
             :key="faq.id"
-            class="border border-outline-variant/10 overflow-hidden bg-white hover:border-primary/20 transition-all duration-300"
+            class="border border-outline-variant/10 overflow-hidden bg-porcelain hover:border-primary/20 transition-all duration-300"
           >
             <button 
               @click="toggleFaq(faq.id)"
@@ -92,7 +92,7 @@
             :href="whatsappHref" 
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-flex items-center gap-2 px-8 py-4 bg-primary text-white font-black uppercase tracking-widest hover:shadow-lg hover:-translate-y-0.5 transition-all"
+            class="inline-flex items-center gap-2 px-8 py-4 bg-primary text-white font-black uppercase tracking-widest hover:shadow-card hover:-translate-y-0.5 transition-all"
           >
             <span class="material-symbols-outlined text-xl">chat</span>
             Hubungi WhatsApp

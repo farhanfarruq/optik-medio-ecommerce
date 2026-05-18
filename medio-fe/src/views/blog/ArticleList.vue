@@ -1,13 +1,14 @@
 <template>
-  <div class="bg-[#F5F2EE] min-h-screen">
+  <div class="bg-[var(--ivory)] min-h-screen">
     <PageHero
       title="Blog & Artikel"
+      subtitle="Tips kesehatan mata, panduan memilih frame, dan update layanan Optik Medio."
       :breadcrumbs="[{ label: 'Blog & Artikel' }]"
     />
 
     <!-- Main Content -->
-    <main class="max-w-[1000px] mx-auto w-full px-6 pb-20 relative z-20">
-      <div class="bg-white p-8 md:p-12 border border-outline-variant/15 shadow-sm">
+    <main class="container-premium py-12 pb-20">
+      <div>
         <div class="mb-12">
           <p class="text-xs font-black uppercase tracking-[0.2em] mb-3 text-primary">Informasi & Edukasi</p>
           <p class="text-base leading-relaxed max-w-2xl text-on-surface-variant">
@@ -24,7 +25,7 @@
               v-model="searchQuery"
               type="search"
               placeholder="Cari artikel..."
-              class="w-full border border-outline-variant/30 bg-white py-4 pl-12 pr-4 text-sm text-on-surface outline-none transition-all focus:border-primary"
+              class="w-full border border-outline-variant/30 bg-porcelain py-4 pl-12 pr-4 text-sm text-on-surface outline-none transition-all focus:border-primary"
             />
           </div>
         </div>
@@ -107,7 +108,7 @@
               class="w-10 h-10 flex items-center justify-center text-xs font-black transition-all"
               :class="page === currentPage 
                 ? 'bg-primary text-white border border-primary' 
-                : 'bg-white text-on-surface-variant border border-outline-variant/30 hover:border-primary'"
+                : 'bg-porcelain text-on-surface-variant border border-outline-variant/30 hover:border-primary'"
             >
               {{ page }}
             </button>

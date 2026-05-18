@@ -1,13 +1,28 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { onBeforeUnmount, onMounted, computed, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useCartStore } from '../stores/cartStore';
 
 const cartStore = useCartStore();
 const router = useRouter();
+const route = useRoute();
+const isScrolled = ref(false);
+const isAuthPage = computed(() => ['Login', 'Register'].includes(route.name as string));
+const isLightBanner = computed(() => isScrolled.value || isAuthPage.value);
+const bannerTextStyle = computed(() => ({ color: isLightBanner.value ? 'var(--ink)' : '#fff' }));
+
+const updateScrollState = () => {
+  isScrolled.value = window.scrollY > 50;
+};
 
 onMounted(async () => {
   await cartStore.fetchPromos();
+  updateScrollState();
+  window.addEventListener('scroll', updateScrollState, { passive: true });
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', updateScrollState);
 });
 
 const activePromo = computed(() => {
@@ -30,25 +45,33 @@ const handleAmbil = () => {
 
 <template>
   <Transition name="slide-down">
-    <div v-if="activePromo" class="bg-[#1a1209] text-white py-2 px-4 text-center fixed top-0 w-full z-[100] border-b border-[#c19a51]/30 shadow-lg h-[40px] flex items-center">
-      <div class="max-w-7xl mx-auto w-full flex items-center justify-between gap-4">
-        <div class="flex-1 flex items-center justify-center gap-3 overflow-hidden">
-          <div class="flex items-center gap-2 shrink-0">
-            <span class="material-symbols-outlined text-[14px] text-[#c19a51] animate-pulse">sell</span>
-            <p class="text-[10px] md:text-xs font-black uppercase tracking-[0.15em] whitespace-nowrap">
-              <span class="text-[#fcd34d]">{{ activePromo.name }}</span>
-            </p>
-          </div>
-          <div class="hidden md:block w-px h-3 bg-white/30 shrink-0"></div>
-          <p class="text-[10px] md:text-xs text-white/90 font-bold truncate italic">
-            "{{ activePromo.description }}"
+    <div
+      v-if="activePromo"
+      class="fixed top-0 z-[100] flex h-10 w-full items-center border-b px-3 shadow-card transition-colors duration-300"
+      :class="isLightBanner ? 'border-mist bg-porcelain' : 'border-gold/25 bg-ink'"
+      :style="bannerTextStyle"
+    >
+      <div class="container-premium flex items-center justify-between gap-3 px-0">
+        <div class="flex min-w-0 flex-1 items-center justify-center gap-2 overflow-hidden md:gap-3">
+          <span class="material-symbols-outlined shrink-0 text-[15px]" :style="bannerTextStyle">sell</span>
+          <p class="truncate text-[10px] font-semibold uppercase tracking-[0.14em] md:text-xs">
+            <span :style="bannerTextStyle">{{ activePromo.name }}</span>
+            <span class="mx-2 hidden sm:inline" :style="{ color: isLightBanner ? 'rgba(26,18,9,0.38)' : 'rgba(255,255,255,0.5)' }">/</span>
+            <span class="hidden normal-case tracking-normal sm:inline" :style="{ color: isLightBanner ? 'rgba(26,18,9,0.72)' : 'rgba(255,255,255,0.82)' }">{{ activePromo.description }}</span>
           </p>
-          <button @click="handleAmbil" class="ml-2 text-[9px] font-black uppercase tracking-widest bg-[#c19a51] text-[#1a1209] px-3 py-1 rounded-none hover:bg-white hover:scale-105 active:scale-95 transition-all shadow-sm shrink-0">
+          <button
+            @click="handleAmbil"
+            class="shrink-0 rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors active:scale-95"
+            :class="isLightBanner ? 'bg-gold text-ink hover:bg-ivory' : 'bg-white/10 text-white ring-1 ring-white/25 hover:bg-white/15'"
+          >
             Ambil
           </button>
         </div>
-        <button @click="cartStore.dismissPromoBanner()" class="text-white/50 hover:text-white transition-colors p-1 flex items-center justify-center shrink-0">
-          <span class="material-symbols-outlined text-sm">close</span>
+        <button @click="cartStore.dismissPromoBanner()" :class="[
+            'flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors',
+            isLightBanner ? 'hover:bg-ivory' : 'hover:bg-white/10'
+          ]" :style="bannerTextStyle" aria-label="Tutup promo">
+          <span class="material-symbols-outlined text-base">close</span>
         </button>
       </div>
     </div>
@@ -57,13 +80,7 @@ const handleAmbil = () => {
 
 <style scoped>
 .slide-down-enter-active,
-.slide-down-leave-active {
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
-}
-
+.slide-down-leave-active { transition: transform 0.28s ease, opacity 0.28s ease; }
 .slide-down-enter-from,
-.slide-down-leave-to {
-  transform: translateY(-100%);
-  opacity: 0;
-}
+.slide-down-leave-to { transform: translateY(-100%); opacity: 0; }
 </style>

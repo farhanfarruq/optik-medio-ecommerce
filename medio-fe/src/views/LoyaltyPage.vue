@@ -71,32 +71,32 @@ onMounted(() => {
   <div>
     <PageHero title="Loyalty Points" subtitle="Belanja, kumpulkan poin, nikmati diskon" :breadcrumbs="breadcrumbs" />
 
-    <main class="max-w-4xl mx-auto px-6 py-12">
+    <main class="container-premium max-w-4xl py-12">
 
       <!-- Cara Kerja -->
       <section class="mb-12">
-        <h2 class="text-2xl font-black mb-8" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Cara Kerja</h2>
+        <h2 class="text-2xl font-black mb-8" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Cara Kerja</h2>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div v-for="(step, i) in [
             { icon: 'shopping_bag', title: 'Belanja', desc: 'Setiap pembelian menghasilkan poin loyalty.' },
             { icon: 'check_circle', title: 'Konfirmasi', desc: 'Poin diberikan setelah konfirmasi penerimaan barang.' },
             { icon: 'toll', title: 'Kumpulkan', desc: 'Semakin banyak poin, semakin tinggi level Anda.' },
             { icon: 'redeem', title: 'Tukarkan', desc: 'Gunakan poin sebagai diskon di checkout (1 poin = Rp 1.000).' },
-          ]" :key="i" class="border p-5 text-center" style="background: white; border-color: rgba(193,154,81,0.2);">
-            <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3" style="background: rgba(193,154,81,0.15);">
-              <span class="material-symbols-outlined" style="color: #c19a51;">{{ step.icon }}</span>
+          ]" :key="i" class="border p-5 text-center" style="background: white; border-color: rgba(184,138,68,0.2);">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3" style="background: rgba(184,138,68,0.15);">
+              <span class="material-symbols-outlined" style="color: var(--gold);">{{ step.icon }}</span>
             </div>
-            <p class="font-bold text-sm mb-1" style="color: #1a1209;">{{ step.title }}</p>
-            <p class="text-xs leading-relaxed" style="color: #8a7a60;">{{ step.desc }}</p>
+            <p class="font-bold text-sm mb-1" style="color: var(--ink);">{{ step.title }}</p>
+            <p class="text-xs leading-relaxed" style="color: var(--taupe);">{{ step.desc }}</p>
           </div>
         </div>
       </section>
 
       <!-- Level Membership -->
       <section class="mb-12">
-        <h2 class="text-2xl font-black mb-6" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Level Membership</h2>
+        <h2 class="text-2xl font-black mb-6" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Level Membership</h2>
         <div v-if="isLoading" class="flex justify-center py-8">
-          <span class="material-symbols-outlined animate-spin text-3xl" style="color: #c19a51;">sync</span>
+          <span class="material-symbols-outlined animate-spin text-3xl" style="color: var(--gold);">sync</span>
         </div>
         <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div
@@ -104,52 +104,52 @@ onMounted(() => {
             :key="level.id"
             class="border p-6 relative"
             :style="currentLevel?.id === level.id
-              ? 'border-color: #c19a51; background: rgba(193,154,81,0.05);'
-              : 'border-color: rgba(193,154,81,0.15); background: white;'"
+              ? 'border-color: var(--gold); background: rgba(184,138,68,0.05);'
+              : 'border-color: rgba(184,138,68,0.15); background: white;'"
           >
-            <div v-if="currentLevel?.id === level.id" class="absolute top-3 right-3 text-[10px] px-2 py-0.5 font-black uppercase" style="background: #c19a51; color: white;">Level Anda</div>
-            <p class="text-xl font-black mb-1" style="color: #1a1209; font-family: 'Outfit', sans-serif;">{{ level.name }}</p>
-            <p class="text-xs mb-3" style="color: #8a7a60;">Mulai dari {{ level.min_points?.toLocaleString('id-ID') }} poin</p>
+            <div v-if="currentLevel?.id === level.id" class="absolute top-3 right-3 text-[10px] px-2 py-0.5 font-black uppercase" style="background: var(--gold); color: white;">Level Anda</div>
+            <p class="text-xl font-black mb-1" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">{{ level.name }}</p>
+            <p class="text-xs mb-3" style="color: var(--taupe);">Mulai dari {{ level.min_points?.toLocaleString('id-ID') }} poin</p>
             <div v-if="level.discount_percentage > 0" class="flex items-center gap-2 mb-2">
-              <span class="material-symbols-outlined text-sm" style="color: #c19a51;">percent</span>
-              <p class="text-sm font-bold" style="color: #1a1209;">Diskon {{ level.discount_percentage }}% setiap pembelian</p>
+              <span class="material-symbols-outlined text-sm" style="color: var(--gold);">percent</span>
+              <p class="text-sm font-bold" style="color: var(--ink);">Diskon {{ level.discount_percentage }}% setiap pembelian</p>
             </div>
-            <div v-if="level.description" class="text-xs leading-relaxed" style="color: #5a5248;">{{ level.description }}</div>
+            <div v-if="level.description" class="text-xs leading-relaxed" style="color: var(--graphite);">{{ level.description }}</div>
           </div>
         </div>
       </section>
 
       <!-- Status User (jika login) -->
       <template v-if="isLoggedIn">
-        <section class="mb-12 border p-8" style="background: #fffdf7; border-color: rgba(193,154,81,0.3);">
+        <section class="mb-12 border p-8" style="background: var(--porcelain); border-color: rgba(184,138,68,0.3);">
           <div class="flex items-center justify-between gap-4 mb-6">
             <div>
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-1" style="color: #8a7a60;">Poin Anda</p>
-              <p class="text-4xl font-black" style="color: #c19a51; font-family: 'Outfit', sans-serif;">
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-1" style="color: var(--taupe);">Poin Anda</p>
+              <p class="text-4xl font-black" style="color: var(--gold); font-family: 'Cormorant Garamond', serif;">
                 {{ userPoints.toLocaleString('id-ID') }}
               </p>
-              <p class="text-xs mt-1" style="color: #8a7a60;">= Rp {{ (userPoints * 1000).toLocaleString('id-ID') }} diskon</p>
+              <p class="text-xs mt-1" style="color: var(--taupe);">= Rp {{ (userPoints * 1000).toLocaleString('id-ID') }} diskon</p>
             </div>
             <div class="text-right">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-1" style="color: #8a7a60;">Level Saat Ini</p>
-              <p class="text-xl font-black" style="color: #1a1209;">{{ currentLevel?.name || 'Bronze' }}</p>
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-1" style="color: var(--taupe);">Level Saat Ini</p>
+              <p class="text-xl font-black" style="color: var(--ink);">{{ currentLevel?.name || 'Bronze' }}</p>
             </div>
           </div>
 
           <!-- Progress bar -->
           <div v-if="nextLevel" class="mb-4">
-            <div class="flex justify-between text-xs mb-2" style="color: #8a7a60;">
+            <div class="flex justify-between text-xs mb-2" style="color: var(--taupe);">
               <span>{{ currentLevel?.name || 'Bronze' }}</span>
               <span>{{ nextLevel.name }} ({{ nextLevel.min_points?.toLocaleString('id-ID') }} poin)</span>
             </div>
-            <div class="h-2 rounded-full overflow-hidden" style="background: rgba(193,154,81,0.15);">
-              <div class="h-full rounded-full transition-all duration-500" :style="`width: ${progressToNext}%; background: linear-gradient(90deg, #c19a51, #e8c97a);`"></div>
+            <div class="h-2 rounded-full overflow-hidden" style="background: rgba(184,138,68,0.15);">
+              <div class="h-full rounded-full transition-all duration-500" :style="`width: ${progressToNext}%; background: linear-gradient(90deg, var(--gold), #e8c97a);`"></div>
             </div>
-            <p class="text-xs mt-2" style="color: #8a7a60;">
+            <p class="text-xs mt-2" style="color: var(--taupe);">
               Butuh {{ (nextLevel.min_points - userPoints).toLocaleString('id-ID') }} poin lagi untuk naik ke {{ nextLevel.name }}
             </p>
           </div>
-          <div v-else class="flex items-center gap-2 text-sm font-bold" style="color: #c19a51;">
+          <div v-else class="flex items-center gap-2 text-sm font-bold" style="color: var(--gold);">
             <span class="material-symbols-outlined text-lg">stars</span>
             Anda sudah di level tertinggi!
           </div>
@@ -157,12 +157,12 @@ onMounted(() => {
 
         <!-- Riwayat Poin -->
         <section v-if="loyaltyHistory.length > 0">
-          <h2 class="text-xl font-black mb-4" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Riwayat Poin</h2>
-          <div class="border" style="background: white; border-color: rgba(193,154,81,0.15);">
+          <h2 class="text-xl font-black mb-4" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Riwayat Poin</h2>
+          <div class="border" style="background: white; border-color: rgba(184,138,68,0.15);">
             <div v-for="(log, i) in loyaltyHistory.slice(0, 10)" :key="i" class="flex items-center justify-between px-6 py-4 border-b last:border-b-0" style="border-color: #f0ece4;">
               <div>
-                <p class="text-sm font-bold" style="color: #1a1209;">{{ log.description || 'Poin loyalty' }}</p>
-                <p class="text-xs" style="color: #8a7a60;">{{ log.created_at }}</p>
+                <p class="text-sm font-bold" style="color: var(--ink);">{{ log.description || 'Poin loyalty' }}</p>
+                <p class="text-xs" style="color: var(--taupe);">{{ log.created_at }}</p>
               </div>
               <span class="text-sm font-black" :style="log.points > 0 ? 'color: #16a34a;' : 'color: #dc2626;'">
                 {{ log.points > 0 ? '+' : '' }}{{ log.points?.toLocaleString('id-ID') }}
@@ -174,13 +174,13 @@ onMounted(() => {
 
       <!-- CTA untuk guest -->
       <template v-else>
-        <section class="text-center py-12 border" style="background: #fffdf7; border-color: rgba(193,154,81,0.2);">
-          <span class="material-symbols-outlined text-5xl mb-4 block" style="color: #c19a51;">toll</span>
-          <h3 class="text-xl font-black mb-3" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Mulai Kumpulkan Poin</h3>
-          <p class="text-sm mb-6" style="color: #8a7a60;">Daftar atau login untuk mulai mengumpulkan poin dari setiap pembelian.</p>
+        <section class="text-center py-12 border" style="background: var(--porcelain); border-color: rgba(184,138,68,0.2);">
+          <span class="material-symbols-outlined text-5xl mb-4 block" style="color: var(--gold);">toll</span>
+          <h3 class="text-xl font-black mb-3" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Mulai Kumpulkan Poin</h3>
+          <p class="text-sm mb-6" style="color: var(--taupe);">Daftar atau login untuk mulai mengumpulkan poin dari setiap pembelian.</p>
           <div class="flex gap-3 justify-center">
-            <button @click="router.push('/login')" class="px-6 py-3 border text-xs font-black uppercase tracking-wider" style="border-color: #e5e0d8; color: #8a7a60;">Masuk</button>
-            <button @click="router.push('/register')" class="px-6 py-3 text-xs font-black uppercase tracking-wider text-white" style="background: linear-gradient(135deg, #1a1209 0%, #3d2c0e 100%);">Daftar Sekarang</button>
+            <button @click="router.push('/login')" class="px-6 py-3 border text-xs font-black uppercase tracking-wider" style="border-color: var(--mist); color: var(--taupe);">Masuk</button>
+            <button @click="router.push('/register')" class="px-6 py-3 text-xs font-black uppercase tracking-wider text-white" style="background: linear-gradient(135deg, var(--ink) 0%, var(--graphite) 100%);">Daftar Sekarang</button>
           </div>
         </section>
       </template>

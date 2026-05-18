@@ -219,25 +219,25 @@ onMounted(() => {
   <div>
     <PageHero title="Booking Appointment" subtitle="Pilih cabang, layanan, dan waktu yang sesuai" :breadcrumbs="breadcrumbs" />
 
-    <main class="max-w-5xl mx-auto px-6 py-12">
+    <main class="container-premium max-w-5xl pt-40 pb-12">
       <div v-if="isLoading" class="flex justify-center py-20">
-        <span class="material-symbols-outlined animate-spin text-4xl" style="color: #c19a51;">sync</span>
+        <span class="material-symbols-outlined animate-spin text-4xl" style="color: var(--gold);">sync</span>
       </div>
 
       <template v-else>
-        <section class="mb-8 border p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4" style="background: #1a1209; border-color: rgba(193,154,81,0.35);">
+        <section class="mb-8 border p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4" style="background: var(--ink); border-color: rgba(184,138,68,0.35); color: #fff;">
           <div class="flex items-center gap-4">
-            <span class="material-symbols-outlined text-4xl shrink-0" style="color: #c19a51;">calendar_today</span>
+            <span class="material-symbols-outlined text-4xl shrink-0" style="color: var(--gold);">calendar_today</span>
             <div>
-              <p class="text-lg font-black text-white" style="font-family: 'Outfit', sans-serif;">Siap booking kunjungan?</p>
-              <p class="text-sm text-stone-300">Pilih cabang, layanan, tanggal, lalu tekan tombol buat appointment.</p>
+              <p class="text-lg font-black" style="font-family: 'Cormorant Garamond', serif; color: #fff;">Siap booking kunjungan?</p>
+              <p class="text-sm" style="color: rgba(255,255,255,0.78);">Pilih cabang, layanan, tanggal, lalu tekan tombol buat appointment.</p>
             </div>
           </div>
           <button
             type="button"
             @click="scrollToBookingForm"
-            class="inline-flex items-center justify-center gap-2 px-6 py-3 text-xs font-black uppercase tracking-widest text-white transition-all hover:translate-y-[-1px]"
-            style="background: #c19a51;"
+            class="btn-primary px-6 py-3 text-xs uppercase tracking-[0.12em]"
+            style="background: var(--gold); color: var(--ink);"
           >
             Booking Sekarang
             <span class="material-symbols-outlined text-sm">arrow_forward</span>
@@ -248,23 +248,23 @@ onMounted(() => {
 
           <!-- Form Booking -->
           <div ref="bookingFormRef" class="space-y-6 scroll-mt-28">
-            <h2 class="text-xl font-black" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Buat Appointment Baru</h2>
+            <h2 class="text-xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Buat Appointment Baru</h2>
 
             <!-- Pilih Cabang -->
-            <div class="border p-6" style="background: white; border-color: rgba(193,154,81,0.2);">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: #8a7a60;">1. Pilih Cabang</p>
+            <div class="border p-6" style="background: white; border-color: rgba(184,138,68,0.2);">
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: var(--taupe);">1. Pilih Cabang</p>
               <div class="grid gap-3">
                 <label
                   v-for="branch in branches"
                   :key="branch.id"
                   class="flex items-start gap-4 p-4 border cursor-pointer transition-all"
-                  :style="form.branch_id === branch.id ? 'border-color: #c19a51; background: rgba(193,154,81,0.05);' : 'border-color: #e5e0d8;'"
+                  :style="form.branch_id === branch.id ? 'border-color: var(--gold); background: rgba(184,138,68,0.05);' : 'border-color: var(--mist);'"
                 >
                   <input type="radio" v-model="form.branch_id" :value="branch.id" class="mt-1" @change="availability = null; form.appointment_time = ''" />
                   <div>
-                    <p class="font-bold text-sm" style="color: #1a1209;">{{ branch.name }}</p>
-                    <p class="text-xs mt-0.5" style="color: #8a7a60;">{{ branch.address }}, {{ branch.city }}</p>
-                    <p v-if="branch.phone" class="flex items-center gap-1.5 text-xs mt-0.5" style="color: #8a7a60;">
+                    <p class="font-bold text-sm" style="color: var(--ink);">{{ branch.name }}</p>
+                    <p class="text-xs mt-0.5" style="color: var(--taupe);">{{ branch.address }}, {{ branch.city }}</p>
+                    <p v-if="branch.phone" class="flex items-center gap-1.5 text-xs mt-0.5" style="color: var(--taupe);">
                       <span class="material-symbols-outlined text-sm">call</span>
                       {{ branch.phone }}
                     </p>
@@ -274,41 +274,41 @@ onMounted(() => {
             </div>
 
             <!-- Pilih Layanan -->
-            <div class="border p-6" style="background: white; border-color: rgba(193,154,81,0.2);">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: #8a7a60;">2. Pilih Layanan</p>
+            <div class="border p-6" style="background: white; border-color: rgba(184,138,68,0.2);">
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: var(--taupe);">2. Pilih Layanan</p>
               <div class="grid gap-2">
                 <label
                   v-for="svc in serviceOptions"
                   :key="svc.value"
                   class="flex items-center gap-4 p-3 border cursor-pointer transition-all"
-                  :style="form.service_type === svc.value ? 'border-color: #c19a51; background: rgba(193,154,81,0.05);' : 'border-color: #e5e0d8;'"
+                  :style="form.service_type === svc.value ? 'border-color: var(--gold); background: rgba(184,138,68,0.05);' : 'border-color: var(--mist);'"
                 >
                   <input type="radio" v-model="form.service_type" :value="svc.value" />
-                  <span class="material-symbols-outlined text-xl" style="color: #c19a51;">{{ svc.icon }}</span>
+                  <span class="material-symbols-outlined text-xl" style="color: var(--gold);">{{ svc.icon }}</span>
                   <div>
-                    <p class="font-bold text-sm" style="color: #1a1209;">{{ svc.label }}</p>
-                    <p class="text-xs" style="color: #8a7a60;">{{ svc.desc }}</p>
+                    <p class="font-bold text-sm" style="color: var(--ink);">{{ svc.label }}</p>
+                    <p class="text-xs" style="color: var(--taupe);">{{ svc.desc }}</p>
                   </div>
                 </label>
               </div>
             </div>
 
             <!-- Pilih Tanggal & Waktu -->
-            <div class="border p-6" style="background: white; border-color: rgba(193,154,81,0.2);">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: #8a7a60;">3. Pilih Tanggal & Waktu</p>
+            <div class="border p-6" style="background: white; border-color: rgba(184,138,68,0.2);">
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: var(--taupe);">3. Pilih Tanggal & Waktu</p>
               <div class="flex gap-3 mb-4">
                 <input
                   v-model="form.appointment_date"
                   type="date"
                   :min="minDate"
                   class="flex-1 border px-4 py-3 text-sm focus:outline-none"
-                  style="border-color: #e5e0d8;"
+                  style="border-color: var(--mist);"
                   @change="checkAvailability"
                   :disabled="!form.branch_id"
                 />
               </div>
 
-              <div v-if="isCheckingAvailability" class="text-xs text-center py-3" style="color: #8a7a60;">
+              <div v-if="isCheckingAvailability" class="text-xs text-center py-3" style="color: var(--taupe);">
                 <span class="material-symbols-outlined animate-spin text-sm align-middle">sync</span> Mengecek ketersediaan...
               </div>
 
@@ -317,7 +317,7 @@ onMounted(() => {
                   Slot untuk tanggal ini sudah penuh atau cabang tutup.
                 </div>
                 <div v-else>
-                  <p class="text-xs mb-3" style="color: #8a7a60;">{{ availability.available }} slot tersedia</p>
+                  <p class="text-xs mb-3" style="color: var(--taupe);">{{ availability.available }} slot tersedia</p>
                   <div class="flex flex-wrap gap-2">
                     <button
                       v-for="slot in availability.available_slots"
@@ -325,8 +325,8 @@ onMounted(() => {
                       @click="form.appointment_time = slot"
                       class="px-3 py-1.5 text-xs font-bold border transition-all"
                       :style="form.appointment_time === slot
-                        ? 'background: #1a1209; color: white; border-color: #1a1209;'
-                        : 'border-color: #e5e0d8; color: #5a5248;'"
+                        ? 'background: var(--ink); color: white; border-color: var(--ink);'
+                        : 'border-color: var(--mist); color: var(--graphite);'"
                     >
                       {{ slot }}
                     </button>
@@ -336,12 +336,12 @@ onMounted(() => {
             </div>
 
             <!-- Data Pelanggan -->
-            <div class="border p-6" style="background: white; border-color: rgba(193,154,81,0.2);">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: #8a7a60;">4. Data Anda</p>
+            <div class="border p-6" style="background: white; border-color: rgba(184,138,68,0.2);">
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: var(--taupe);">4. Data Anda</p>
               <div class="grid gap-3">
-                <input v-model="form.customer_name" type="text" placeholder="Nama lengkap" class="border px-4 py-3 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
-                <input v-model="form.customer_phone" type="tel" placeholder="Nomor telepon" class="border px-4 py-3 text-sm focus:outline-none" style="border-color: #e5e0d8;" />
-                <textarea v-model="form.notes" rows="2" placeholder="Catatan tambahan (opsional)" class="border px-4 py-3 text-sm focus:outline-none resize-none" style="border-color: #e5e0d8;"></textarea>
+                <input v-model="form.customer_name" type="text" placeholder="Nama lengkap" class="border px-4 py-3 text-sm focus:outline-none" style="border-color: var(--mist);" />
+                <input v-model="form.customer_phone" type="tel" placeholder="Nomor telepon" class="border px-4 py-3 text-sm focus:outline-none" style="border-color: var(--mist);" />
+                <textarea v-model="form.notes" rows="2" placeholder="Catatan tambahan (opsional)" class="border px-4 py-3 text-sm focus:outline-none resize-none" style="border-color: var(--mist);"></textarea>
               </div>
             </div>
 
@@ -349,7 +349,7 @@ onMounted(() => {
               @click="submitAppointment"
               :disabled="isSubmitting"
               class="w-full py-4 text-sm font-black uppercase tracking-wider text-white disabled:opacity-50 transition-all"
-              style="background: linear-gradient(135deg, #1a1209 0%, #3d2c0e 100%);"
+              style="background: linear-gradient(135deg, var(--ink) 0%, var(--graphite) 100%);"
             >
               <span v-if="isSubmitting" class="material-symbols-outlined animate-spin text-sm align-middle mr-1">sync</span>
               {{ isSubmitting ? 'Memproses...' : 'Buat Appointment' }}
@@ -358,16 +358,16 @@ onMounted(() => {
 
           <!-- Appointment Saya -->
           <div>
-            <h2 class="text-xl font-black mb-4" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Appointment Saya</h2>
+            <h2 class="text-xl font-black mb-4" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Appointment Saya</h2>
 
-            <div v-if="!isLoggedIn" class="border p-6 text-center" style="background: #fffdf7; border-color: rgba(193,154,81,0.2);">
-              <p class="text-sm mb-3" style="color: #8a7a60;">Login untuk melihat appointment Anda.</p>
-              <button @click="router.push('/login')" class="px-4 py-2 text-xs font-black uppercase tracking-wider text-white" style="background: #1a1209;">Login</button>
+            <div v-if="!isLoggedIn" class="border p-6 text-center" style="background: var(--porcelain); border-color: rgba(184,138,68,0.2);">
+              <p class="text-sm mb-3" style="color: var(--taupe);">Login untuk melihat appointment Anda.</p>
+              <button @click="router.push('/login')" class="px-4 py-2 text-xs font-black uppercase tracking-wider text-white" style="background: var(--ink);">Login</button>
             </div>
 
-            <div v-else-if="myAppointments.length === 0" class="border p-6 text-center" style="background: #fffdf7; border-color: rgba(193,154,81,0.2);">
-              <span class="material-symbols-outlined text-3xl mb-2 block" style="color: #c19a51;">calendar_today</span>
-              <p class="text-sm" style="color: #8a7a60;">Belum ada appointment.</p>
+            <div v-else-if="myAppointments.length === 0" class="border p-6 text-center" style="background: var(--porcelain); border-color: rgba(184,138,68,0.2);">
+              <span class="material-symbols-outlined text-3xl mb-2 block" style="color: var(--gold);">calendar_today</span>
+              <p class="text-sm" style="color: var(--taupe);">Belum ada appointment.</p>
             </div>
 
             <div v-else class="space-y-3">
@@ -375,10 +375,10 @@ onMounted(() => {
                 v-for="apt in myAppointments.slice(0, 5)"
                 :key="apt.id"
                 class="border p-4"
-                style="background: white; border-color: rgba(193,154,81,0.15);"
+                style="background: white; border-color: rgba(184,138,68,0.15);"
               >
                 <div class="flex items-start justify-between gap-2 mb-2">
-                  <p class="font-bold text-xs" style="color: #1a1209;">{{ apt.appointment_number }}</p>
+                  <p class="font-bold text-xs" style="color: var(--ink);">{{ apt.appointment_number }}</p>
                   <span
                     class="text-[10px] px-2 py-0.5 font-bold"
                     :style="statusStyle(apt.status)"
@@ -386,14 +386,14 @@ onMounted(() => {
                     {{ statusLabel(apt.status) }}
                   </span>
                 </div>
-                <p class="text-xs" style="color: #5a5248;">{{ apt.branch?.name }}</p>
-                <p class="text-xs" style="color: #8a7a60;">{{ apt.appointment_date }} · {{ apt.appointment_time?.substring(0,5) }}</p>
+                <p class="text-xs" style="color: var(--graphite);">{{ apt.branch?.name }}</p>
+                <p class="text-xs" style="color: var(--taupe);">{{ apt.appointment_date }} · {{ apt.appointment_time?.substring(0,5) }}</p>
                 <div class="mt-3 flex flex-wrap gap-2">
                   <button
                     type="button"
                     @click="viewAppointmentDetail(apt)"
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider border"
-                    style="border-color: rgba(193,154,81,0.35); color: #8a5f13;"
+                    style="border-color: rgba(184,138,68,0.35); color: #8a5f13;"
                   >
                     <span class="material-symbols-outlined text-xs">visibility</span>
                     Detail
@@ -412,11 +412,11 @@ onMounted(() => {
               </div>
             </div>
 
-            <div v-if="selectedAppointment" class="mt-5 border p-5" style="background: #fffdf7; border-color: rgba(193,154,81,0.25);">
+            <div v-if="selectedAppointment" class="mt-5 border p-5" style="background: var(--porcelain); border-color: rgba(184,138,68,0.25);">
               <div class="flex items-start justify-between gap-3 mb-4">
                 <div>
-                  <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: #8a7a60;">Detail Appointment</p>
-                  <h3 class="text-base font-black mt-1" style="color: #1a1209; font-family: 'Outfit', sans-serif;">
+                  <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: var(--taupe);">Detail Appointment</p>
+                  <h3 class="text-base font-black mt-1" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">
                     {{ selectedAppointment.appointment_number }}
                   </h3>
                 </div>
@@ -425,31 +425,31 @@ onMounted(() => {
                 </span>
               </div>
 
-              <div v-if="isLoadingAppointmentDetail" class="flex items-center gap-2 text-xs" style="color: #8a7a60;">
+              <div v-if="isLoadingAppointmentDetail" class="flex items-center gap-2 text-xs" style="color: var(--taupe);">
                 <span class="material-symbols-outlined animate-spin text-sm">sync</span>
                 Memuat detail...
               </div>
 
               <div v-else class="grid gap-3 text-xs">
                 <div class="flex items-start gap-3">
-                  <span class="material-symbols-outlined text-lg" style="color: #c19a51;">calendar_today</span>
+                  <span class="material-symbols-outlined text-lg" style="color: var(--gold);">calendar_today</span>
                   <div>
-                    <p class="font-bold" style="color: #1a1209;">{{ selectedAppointment.appointment_date }} · {{ selectedAppointment.appointment_time?.substring(0,5) }}</p>
-                    <p style="color: #8a7a60;">{{ serviceLabel(selectedAppointment.service_type) }}</p>
+                    <p class="font-bold" style="color: var(--ink);">{{ selectedAppointment.appointment_date }} · {{ selectedAppointment.appointment_time?.substring(0,5) }}</p>
+                    <p style="color: var(--taupe);">{{ serviceLabel(selectedAppointment.service_type) }}</p>
                   </div>
                 </div>
                 <div class="flex items-start gap-3">
-                  <span class="material-symbols-outlined text-lg" style="color: #c19a51;">store</span>
+                  <span class="material-symbols-outlined text-lg" style="color: var(--gold);">store</span>
                   <div>
-                    <p class="font-bold" style="color: #1a1209;">{{ selectedAppointment.branch?.name }}</p>
-                    <p style="color: #8a7a60;">{{ selectedAppointment.branch?.address }}, {{ selectedAppointment.branch?.city }}</p>
+                    <p class="font-bold" style="color: var(--ink);">{{ selectedAppointment.branch?.name }}</p>
+                    <p style="color: var(--taupe);">{{ selectedAppointment.branch?.address }}, {{ selectedAppointment.branch?.city }}</p>
                     <a
                       v-if="selectedAppointment.branch?.maps_url"
                       :href="selectedAppointment.branch.maps_url"
                       target="_blank"
                       rel="noopener noreferrer"
                       class="inline-flex items-center gap-1 mt-1 font-bold"
-                      style="color: #c19a51;"
+                      style="color: var(--gold);"
                     >
                       Buka Maps
                       <span class="material-symbols-outlined text-xs">open_in_new</span>
@@ -457,15 +457,15 @@ onMounted(() => {
                   </div>
                 </div>
                 <div class="flex items-start gap-3">
-                  <span class="material-symbols-outlined text-lg" style="color: #c19a51;">person</span>
+                  <span class="material-symbols-outlined text-lg" style="color: var(--gold);">person</span>
                   <div>
-                    <p class="font-bold" style="color: #1a1209;">{{ selectedAppointment.customer_name }}</p>
-                    <p style="color: #8a7a60;">{{ selectedAppointment.customer_phone }}</p>
+                    <p class="font-bold" style="color: var(--ink);">{{ selectedAppointment.customer_name }}</p>
+                    <p style="color: var(--taupe);">{{ selectedAppointment.customer_phone }}</p>
                   </div>
                 </div>
                 <div v-if="selectedAppointment.notes" class="flex items-start gap-3">
-                  <span class="material-symbols-outlined text-lg" style="color: #c19a51;">notes</span>
-                  <p style="color: #5a5248;">{{ selectedAppointment.notes }}</p>
+                  <span class="material-symbols-outlined text-lg" style="color: var(--gold);">notes</span>
+                  <p style="color: var(--graphite);">{{ selectedAppointment.notes }}</p>
                 </div>
               </div>
             </div>

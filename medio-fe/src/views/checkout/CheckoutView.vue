@@ -668,8 +668,8 @@ const submitOrder = async () => {
         <img src="/gambar/hero-bg.jpeg" alt="" class="absolute inset-0 w-full h-full object-cover object-center" style="transform: scale(1.08); object-position: center 40%;" />
         <div class="absolute inset-0" style="background: linear-gradient(135deg, rgba(10,8,5,0.65) 0%, rgba(30,20,10,0.45) 100%);"></div>
         <!-- Gradient bleed -->
-        <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, #F5F2EE 100%);"></div>
-        <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(193,154,81,0.6), transparent);"></div>
+        <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, var(--ivory) 100%);"></div>
+        <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,138,68,0.6), transparent);"></div>
 
         <div class="relative z-10 h-full max-w-[1440px] mx-auto px-6 md:px-12 flex flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 16px)', paddingBottom: '56px' }">
           <!-- Breadcrumb + Back -->
@@ -681,13 +681,13 @@ const submitOrder = async () => {
               <span class="material-symbols-outlined text-sm">chevron_right</span>
               <span class="text-white">Checkout</span>
             </nav>
-            <router-link to="/" class="flex items-center gap-2 text-sm font-bold group w-fit transition-all" style="color: rgba(193,154,81,0.9);">
+            <router-link to="/" class="flex items-center gap-2 text-sm font-bold group w-fit transition-all" style="color: rgba(184,138,68,0.9);">
               <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
               Kembali ke Beranda
             </router-link>
           </div>
           <!-- Page Title -->
-          <h1 class="text-4xl font-black tracking-tight text-white" style="font-family: 'Outfit', sans-serif;">Checkout</h1>
+          <h1 class="text-4xl font-black tracking-normal text-white" style="font-family: 'Cormorant Garamond', serif;">Checkout</h1>
         </div>
       </div>
     </div>
@@ -709,54 +709,54 @@ const submitOrder = async () => {
         <div class="w-full lg:w-3/5 xl:w-2/3 flex flex-col gap-8">
           
           <!-- ── Pilihan Metode Pemenuhan ─────────────────────────────────── -->
-          <section class="bg-white p-8 rounded-none shadow-sm border border-stone-200">
+          <section class="bg-porcelain p-8 rounded-lg shadow-sm border border-mist">
             <div class="flex items-center gap-3 mb-6">
-              <div class="w-10 h-10 rounded-none bg-stone-100 flex items-center justify-center text-stone-600">
+              <div class="w-10 h-10 rounded-lg bg-mist flex items-center justify-center text-graphite/80">
                 <span class="material-symbols-outlined">package_2</span>
               </div>
               <div>
-                <h2 class="text-xl font-bold text-stone-900" style="font-family: 'Outfit', sans-serif;">Cara Mendapatkan Pesanan</h2>
-                <p class="text-xs text-stone-500">Pilih apakah pesanan dikirim atau diambil langsung di toko</p>
+                <h2 class="text-xl font-bold text-ink" style="font-family: 'Cormorant Garamond', serif;">Cara Mendapatkan Pesanan</h2>
+                <p class="text-xs text-graphite/65">Pilih apakah pesanan dikirim atau diambil langsung di toko</p>
               </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <!-- Opsi: Dikirim ke Alamat -->
               <label
-                class="flex items-start gap-4 p-5 border-2 rounded-none cursor-pointer transition-all hover:bg-stone-50"
-                :class="fulfillmentMethod === 'delivery' ? 'border-[#c19a51] bg-amber-50/30 ring-1 ring-[#c19a51]/40' : 'border-stone-200'"
+                class="flex items-start gap-4 p-5 border-2 rounded-lg cursor-pointer transition-all hover:bg-ivory"
+                :class="fulfillmentMethod === 'delivery' ? 'border-[var(--gold)] bg-gold/10 ring-1 ring-[var(--gold)]/40' : 'border-mist'"
               >
-                <input type="radio" v-model="fulfillmentMethod" value="delivery" class="accent-amber-700 w-5 h-5 mt-0.5 shrink-0" />
+                <input type="radio" v-model="fulfillmentMethod" value="delivery" class="accent-gold w-5 h-5 mt-0.5 shrink-0" />
                 <div>
                   <div class="flex items-center gap-2 mb-1">
-                    <span class="material-symbols-outlined text-lg" style="color: #c19a51;">local_shipping</span>
-                    <p class="font-bold text-sm text-stone-900">Dikirim ke Alamat</p>
+                    <span class="material-symbols-outlined text-lg" style="color: var(--gold);">local_shipping</span>
+                    <p class="font-bold text-sm text-ink">Dikirim ke Alamat</p>
                   </div>
-                  <p class="text-xs text-stone-500 leading-relaxed">Pesanan dikirim ke alamat tujuan Anda. Biaya ongkir sesuai kurir yang dipilih.</p>
+                  <p class="text-xs text-graphite/65 leading-relaxed">Pesanan dikirim ke alamat tujuan Anda. Biaya ongkir sesuai kurir yang dipilih.</p>
                 </div>
               </label>
 
               <!-- Opsi: Ambil di Toko -->
               <label
-                class="flex items-start gap-4 p-5 border-2 rounded-none cursor-pointer transition-all hover:bg-stone-50"
-                :class="fulfillmentMethod === 'store_pickup' ? 'border-[#c19a51] bg-amber-50/30 ring-1 ring-[#c19a51]/40' : 'border-stone-200'"
+                class="flex items-start gap-4 p-5 border-2 rounded-lg cursor-pointer transition-all hover:bg-ivory"
+                :class="fulfillmentMethod === 'store_pickup' ? 'border-[var(--gold)] bg-gold/10 ring-1 ring-[var(--gold)]/40' : 'border-mist'"
               >
-                <input type="radio" v-model="fulfillmentMethod" value="store_pickup" class="accent-amber-700 w-5 h-5 mt-0.5 shrink-0" />
+                <input type="radio" v-model="fulfillmentMethod" value="store_pickup" class="accent-gold w-5 h-5 mt-0.5 shrink-0" />
                 <div>
                   <div class="flex items-center gap-2 mb-1">
-                    <span class="material-symbols-outlined text-lg" style="color: #c19a51;">storefront</span>
-                    <p class="font-bold text-sm text-stone-900">Ambil di Toko</p>
+                    <span class="material-symbols-outlined text-lg" style="color: var(--gold);">storefront</span>
+                    <p class="font-bold text-sm text-ink">Ambil di Toko</p>
                     <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded" style="background: rgba(34,197,94,0.12); color: #15803d;">Gratis Ongkir</span>
                   </div>
-                  <p class="text-xs text-stone-500 leading-relaxed">Beli online, ambil langsung di toko kami. Tidak ada biaya pengiriman. Setelah checkout, Anda akan diarahkan untuk booking jadwal pengambilan.</p>
+                  <p class="text-xs text-graphite/65 leading-relaxed">Beli online, ambil langsung di toko kami. Tidak ada biaya pengiriman. Setelah checkout, Anda akan diarahkan untuk booking jadwal pengambilan.</p>
                 </div>
               </label>
             </div>
 
             <!-- Info banner saat pickup dipilih -->
-            <div v-if="fulfillmentMethod === 'store_pickup'" class="mt-5 p-4 flex items-start gap-3 rounded-none" style="background: rgba(193,154,81,0.08); border: 1px solid rgba(193,154,81,0.3);">
-              <span class="material-symbols-outlined text-xl shrink-0 mt-0.5" style="color: #c19a51;">info</span>
-              <div class="text-xs leading-relaxed" style="color: #7a6230;">
+            <div v-if="fulfillmentMethod === 'store_pickup'" class="mt-5 p-4 flex items-start gap-3 rounded-lg" style="background: rgba(184,138,68,0.08); border: 1px solid rgba(184,138,68,0.3);">
+              <span class="material-symbols-outlined text-xl shrink-0 mt-0.5" style="color: var(--gold);">info</span>
+              <div class="text-xs leading-relaxed" style="color: #6F4E1D;">
                 <p class="font-bold mb-1">Cara kerja Ambil di Toko:</p>
                 <ol class="list-decimal list-inside space-y-1">
                   <li>Selesaikan pembayaran online seperti biasa.</li>
@@ -769,15 +769,15 @@ const submitOrder = async () => {
           </section>
 
           <!-- Shipping Destination Section (hanya tampil saat delivery) -->
-          <section v-if="fulfillmentMethod === 'delivery'" class="bg-white p-8 rounded-none shadow-sm border border-stone-200 group relative">
+          <section v-if="fulfillmentMethod === 'delivery'" class="bg-porcelain p-8 rounded-lg shadow-sm border border-mist group relative">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-none bg-stone-100 flex items-center justify-center text-stone-600">
+                <div class="w-10 h-10 rounded-lg bg-mist flex items-center justify-center text-graphite/80">
                   <span class="material-symbols-outlined">location_on</span>
                 </div>
                 <div>
-                  <h2 class="text-xl font-bold text-stone-900" style="font-family: 'Outfit', sans-serif;">Alamat Pengiriman</h2>
-                  <p class="text-xs text-stone-500">Kirim pesanan Anda ke lokasi tujuan</p>
+                  <h2 class="text-xl font-bold text-ink" style="font-family: 'Cormorant Garamond', serif;">Alamat Pengiriman</h2>
+                  <p class="text-xs text-graphite/65">Kirim pesanan Anda ke lokasi tujuan</p>
                 </div>
               </div>
               
@@ -785,15 +785,15 @@ const submitOrder = async () => {
                 <button 
                   v-if="userAddresses.length > 0" 
                   @click="showAddressModal = true" 
-                  class="flex items-center gap-2 px-4 py-2 rounded-none text-sm font-bold transition-all bg-stone-100 hover:bg-stone-200 text-stone-700"
+                  class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all bg-mist hover:bg-mist text-graphite"
                 >
                   <span class="material-symbols-outlined text-sm">list_alt</span>
                   Pilih Alamat
                 </button>
                 <router-link 
                   to="/profile" 
-                  class="flex items-center gap-2 px-4 py-2 rounded-none text-sm font-bold transition-all bg-primary/10 hover:bg-primary/20 text-primary"
-                  style="color: #c19a51;"
+                  class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all bg-primary/10 hover:bg-primary/20 text-primary"
+                  style="color: var(--gold);"
                 >
                   <span class="material-symbols-outlined text-sm">add</span>
                   Tambah Baru
@@ -803,72 +803,72 @@ const submitOrder = async () => {
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                <div>
-                  <label class="font-label text-sm mb-1 block text-stone-500">Nama Penerima</label>
-                  <input v-model="form.recipient_name" type="text" class="w-full bg-stone-50 border border-stone-200 rounded-none p-3 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="Nama Lengkap" />
+                  <label class="font-label text-sm mb-1 block text-graphite/65">Nama Penerima</label>
+                  <input v-model="form.recipient_name" type="text" class="w-full bg-ivory border border-mist rounded-lg p-3 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="Nama Lengkap" />
                </div>
                <div>
-                  <label class="font-label text-sm mb-1 block text-stone-500">No. Telepon</label>
-                  <input v-model="form.phone" type="text" class="w-full bg-stone-50 border border-stone-200 rounded-none p-3 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="08xxx" />
+                  <label class="font-label text-sm mb-1 block text-graphite/65">No. Telepon</label>
+                  <input v-model="form.phone" type="text" class="w-full bg-ivory border border-mist rounded-lg p-3 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="08xxx" />
                </div>
                <div class="md:col-span-2">
-                  <label class="font-label text-sm mb-1 block text-stone-500">Alamat Lengkap</label>
-                  <textarea v-model="form.address" class="w-full bg-stone-50 border border-stone-200 rounded-none p-3 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" rows="3" placeholder="Jl. Raya No..."></textarea>
+                  <label class="font-label text-sm mb-1 block text-graphite/65">Alamat Lengkap</label>
+                  <textarea v-model="form.address" class="w-full bg-ivory border border-mist rounded-lg p-3 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" rows="3" placeholder="Jl. Raya No..."></textarea>
                </div>
 
                <div>
-                  <label class="font-label text-sm mb-1 block text-stone-500">Provinsi</label>
-                  <select v-model="form.province_id" class="w-full bg-stone-50 border border-stone-200 rounded-none p-3 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all cursor-pointer">
+                  <label class="font-label text-sm mb-1 block text-graphite/65">Provinsi</label>
+                  <select v-model="form.province_id" class="w-full bg-ivory border border-mist rounded-lg p-3 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all cursor-pointer">
                     <option value="">{{ isProvLoading ? 'Memuat Provinsi...' : 'Pilih Provinsi' }}</option>
                     <option v-for="prov in provinces" :key="prov.id || (prov as any).province_id" :value="prov.id || (prov as any).province_id">{{ prov.name || (prov as any).province_name || (prov as any).province }}</option>
                   </select>
                </div>
 
                <div>
-                  <label class="font-label text-sm mb-1 block text-stone-500">Kota/Kabupaten</label>
-                  <select v-model="form.city_id" :disabled="!form.province_id || isCityLoading" class="w-full bg-stone-50 border border-stone-200 rounded-none p-3 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all cursor-pointer disabled:opacity-50">
+                  <label class="font-label text-sm mb-1 block text-graphite/65">Kota/Kabupaten</label>
+                  <select v-model="form.city_id" :disabled="!form.province_id || isCityLoading" class="w-full bg-ivory border border-mist rounded-lg p-3 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all cursor-pointer disabled:opacity-50">
                     <option value="">{{ isCityLoading ? 'Memuat Kota...' : 'Pilih Kota' }}</option>
                     <option v-for="city in cities" :key="city.id" :value="city.id">{{ city.name }}</option>
                   </select>
                </div>
 
                <div>
-                  <label class="font-label text-sm mb-1 block text-stone-500">Kecamatan</label>
-                  <select v-model="form.district_id" :disabled="!form.city_id || isDistLoading" class="w-full bg-stone-50 border border-stone-200 rounded-none p-3 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all cursor-pointer disabled:opacity-50">
+                  <label class="font-label text-sm mb-1 block text-graphite/65">Kecamatan</label>
+                  <select v-model="form.district_id" :disabled="!form.city_id || isDistLoading" class="w-full bg-ivory border border-mist rounded-lg p-3 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all cursor-pointer disabled:opacity-50">
                     <option value="">{{ isDistLoading ? 'Memuat Kecamatan...' : 'Pilih Kecamatan' }}</option>
                     <option v-for="dist in districts" :key="dist.id" :value="dist.id">{{ dist.name }}</option>
                   </select>
                </div>
 
                <div>
-                  <label class="font-label text-sm mb-1 block text-stone-500">Kode Pos</label>
-                  <input v-model="form.postal_code" type="text" class="w-full bg-stone-50 border border-stone-200 rounded-none p-3 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="12345" />
+                  <label class="font-label text-sm mb-1 block text-graphite/65">Kode Pos</label>
+                  <input v-model="form.postal_code" type="text" class="w-full bg-ivory border border-mist rounded-lg p-3 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="12345" />
                </div>
             </div>
           </section>
 
                     <!-- Promos & Discount Section -->
-          <section class="bg-white p-8 rounded-none shadow-sm border border-stone-200">
+          <section class="bg-porcelain p-8 rounded-lg shadow-sm border border-mist">
             <div class="flex items-center gap-3 mb-6">
-              <div class="w-10 h-10 rounded-none bg-stone-100 flex items-center justify-center text-stone-600">
+              <div class="w-10 h-10 rounded-lg bg-mist flex items-center justify-center text-graphite/80">
                 <span class="material-symbols-outlined">sell</span>
               </div>
-              <h2 class="text-xl font-bold text-stone-900" style="font-family: 'Outfit', sans-serif;">Punya Promo atau Diskon?</h2>
+              <h2 class="text-xl font-bold text-ink" style="font-family: 'Cormorant Garamond', serif;">Punya Promo atau Diskon?</h2>
             </div>
             
-            <p class="text-xs text-stone-500 mb-4">* Anda hanya dapat menggunakan salah satu: Promo Eksklusif ATAU Kode Diskon.</p>
+            <p class="text-xs text-graphite/65 mb-4">* Anda hanya dapat menggunakan salah satu: Promo Eksklusif ATAU Kode Diskon.</p>
 
             <div v-if="cartStore.applicablePromos.length > 0" class="mb-6 flex flex-col gap-3">
-              <h3 class="font-bold text-sm text-stone-800">Pilih Promo Eksklusif</h3>
+              <h3 class="font-bold text-sm text-ink">Pilih Promo Eksklusif</h3>
               <div 
                 v-for="promo in cartStore.applicablePromos" 
                 :key="promo.id"
                 @click="handlePromoSelect(promo.id)"
-                class="p-4 border rounded-none cursor-pointer transition-all hover:bg-stone-50 flex justify-between items-center"
-                :class="cartStore.appliedPromoId === promo.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-stone-100'"
+                class="p-4 border rounded-lg cursor-pointer transition-all hover:bg-ivory flex justify-between items-center"
+                :class="cartStore.appliedPromoId === promo.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-mist'"
               >
                 <div>
-                  <p class="font-bold text-stone-900 text-sm">{{ promo.name }}</p>
-                  <p class="text-xs text-stone-500 mt-1">{{ formatPromoDescription(promo.description) }}</p>
+                  <p class="font-bold text-ink text-sm">{{ promo.name }}</p>
+                  <p class="text-xs text-graphite/65 mt-1">{{ formatPromoDescription(promo.description) }}</p>
                 </div>
                 <div v-if="cartStore.appliedPromoId === promo.id" class="text-primary">
                   <span class="material-symbols-outlined">check_circle</span>
@@ -876,32 +876,32 @@ const submitOrder = async () => {
               </div>
             </div>
 
-            <div class="h-px bg-stone-100 mb-6"></div>
+            <div class="h-px bg-mist mb-6"></div>
 
-            <h3 class="font-bold text-sm text-stone-800 mb-3">Atau Masukkan Kode Diskon</h3>
+            <h3 class="font-bold text-sm text-ink mb-3">Atau Masukkan Kode Diskon</h3>
             <div v-if="!appliedDiscount" class="flex gap-2">
               <input 
                 v-model="couponCode" 
                 type="text" 
-                class="flex-grow bg-stone-50 border border-stone-200 rounded-none px-4 py-3 focus:border-primary outline-none uppercase font-bold tracking-widest text-xs" 
+                class="flex-grow bg-ivory border border-mist rounded-lg px-4 py-3 focus:border-primary outline-none uppercase font-bold tracking-widest text-xs" 
                 placeholder="MASUKKAN KODE" 
                 @keyup.enter="applyCoupon"
               />
               <button 
                 @click="applyCoupon" 
                 :disabled="isValidatingCoupon || !couponCode"
-                class="shrink-0 px-4 bg-[#1a1209] text-white rounded-none font-bold text-xs transition-all hover:bg-stone-800 disabled:opacity-50 flex items-center justify-center min-w-[90px]"
+                class="shrink-0 px-4 bg-[var(--ink)] text-white rounded-lg font-bold text-xs transition-all hover:bg-graphite disabled:opacity-50 flex items-center justify-center min-w-[90px]"
               >
                 {{ isValidatingCoupon ? 'Cek...' : 'Terapkan' }}
               </button>
             </div>
             
-            <div v-else class="flex items-center justify-between p-4 bg-primary/5 border border-primary/30 rounded-none">
+            <div v-else class="flex items-center justify-between p-4 bg-primary/5 border border-primary/30 rounded-lg">
               <div class="flex items-center gap-3">
                 <span class="material-symbols-outlined text-primary">verified</span>
                 <div>
-                  <p class="font-bold text-stone-900 text-sm">Diskon Terpasang: <span class="text-primary uppercase">{{ appliedDiscount.code }}</span></p>
-                  <p class="text-[10px] text-stone-500" v-if="cartStore.calculatedData">Potongan sebesar Rp {{ cartStore.calculatedData.discount_amount.toLocaleString('id-ID') }}</p>
+                  <p class="font-bold text-ink text-sm">Diskon Terpasang: <span class="text-primary uppercase">{{ appliedDiscount.code }}</span></p>
+                  <p class="text-[10px] text-graphite/65" v-if="cartStore.calculatedData">Potongan sebesar Rp {{ cartStore.calculatedData.discount_amount.toLocaleString('id-ID') }}</p>
                 </div>
               </div>
               <button @click="removeCoupon" class="text-xs font-bold text-red-500 hover:underline">Hapus</button>
@@ -909,59 +909,59 @@ const submitOrder = async () => {
           </section>
 
           <!-- Delivery Method Section -->
-          <section v-if="fulfillmentMethod === 'delivery' && form.district_id" class="bg-white p-8 rounded-none shadow-sm border border-stone-200">
+          <section v-if="fulfillmentMethod === 'delivery' && form.district_id" class="bg-porcelain p-8 rounded-lg shadow-sm border border-mist">
             <div class="flex items-center gap-3 mb-8">
-              <div class="w-10 h-10 rounded-none bg-stone-100 flex items-center justify-center text-stone-600">
+              <div class="w-10 h-10 rounded-lg bg-mist flex items-center justify-center text-graphite/80">
                 <span class="material-symbols-outlined">local_shipping</span>
               </div>
-              <h2 class="text-xl font-bold text-stone-900" style="font-family: 'Outfit', sans-serif;">Metode Pengiriman</h2>
+              <h2 class="text-xl font-bold text-ink" style="font-family: 'Cormorant Garamond', serif;">Metode Pengiriman</h2>
             </div>
 
             <div class="flex flex-col gap-4">
                <div v-if="isCalculating" class="flex flex-col gap-3">
-                 <div v-for="i in 3" :key="i" class="h-20 bg-stone-50 animate-pulse rounded-none border border-stone-100"></div>
-                 <p class="text-xs text-stone-400 text-center mt-2">Menghitung ongkos kirim...</p>
+                 <div v-for="i in 3" :key="i" class="h-20 bg-ivory animate-pulse rounded-lg border border-mist"></div>
+                 <p class="text-xs text-graphite/45 text-center mt-2">Menghitung ongkos kirim...</p>
                </div>
 
                <div v-else-if="shippingResults.length > 0" class="flex flex-col gap-3">
                  <label v-for="res in shippingResults" :key="`${res.courier}_${res.service}`"
-                   class="flex items-center justify-between p-4 border rounded-none cursor-pointer transition-all hover:bg-stone-50"
-                   :class="form.selected_service === `${res.courier}_${res.service}` ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-stone-100'">
+                   class="flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-all hover:bg-ivory"
+                   :class="form.selected_service === `${res.courier}_${res.service}` ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-mist'">
                    <div class="flex items-center gap-4">
                       <input type="radio" v-model="form.selected_service" :value="`${res.courier}_${res.service}`" class="accent-primary w-5 h-5"/>
                       <div>
-                        <p class="font-bold text-stone-900 uppercase text-sm">{{ res.courier }} - {{ res.service }}</p>
-                        <p class="text-xs text-stone-500">{{ res.description }}</p>
-                        <p class="text-[10px] font-bold mt-1" style="color: #c19a51;">Estimasi: {{ res.etd }} Hari</p>
+                        <p class="font-bold text-ink uppercase text-sm">{{ res.courier }} - {{ res.service }}</p>
+                        <p class="text-xs text-graphite/65">{{ res.description }}</p>
+                        <p class="text-[10px] font-bold mt-1" style="color: var(--gold);">Estimasi: {{ res.etd }} Hari</p>
                       </div>
                    </div>
-                   <span class="font-bold text-stone-900">Rp {{ res.cost.toLocaleString('id-ID') }}</span>
+                   <span class="font-bold text-ink">Rp {{ res.cost.toLocaleString('id-ID') }}</span>
                  </label>
                </div>
-               <div v-else class="text-sm text-red-600 bg-red-50 p-4 rounded-none border border-red-100">
+               <div v-else class="text-sm text-red-600 bg-red-50 p-4 rounded-lg border border-red-100">
                  {{ shippingError || 'Layanan tidak tersedia. Coba ganti alamat atau kurir.' }}
                </div>
             </div>
           </section>
 
           <!-- Payment Method Section -->
-          <section class="bg-white p-8 rounded-none shadow-sm border border-stone-200">
+          <section class="bg-porcelain p-8 rounded-lg shadow-sm border border-mist">
             <div class="flex items-center gap-3 mb-6">
-              <div class="w-10 h-10 rounded-none bg-stone-100 flex items-center justify-center text-stone-600">
+              <div class="w-10 h-10 rounded-lg bg-mist flex items-center justify-center text-graphite/80">
                 <span class="material-symbols-outlined">credit_card</span>
               </div>
               <div>
-                <h2 class="font-black text-lg" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Metode Pembayaran</h2>
-                <p class="text-xs text-stone-500 mt-0.5">Pilih cara pembayaran yang Anda inginkan</p>
+                <h2 class="font-black text-lg" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Metode Pembayaran</h2>
+                <p class="text-xs text-graphite/65 mt-0.5">Pilih cara pembayaran yang Anda inginkan</p>
               </div>
             </div>
 
             <div v-if="isLoadingPayment" class="flex items-center gap-2 py-6">
-              <span class="material-symbols-outlined animate-spin" style="color: #c19a51;">sync</span>
-              <span class="text-sm text-stone-500">Memuat metode pembayaran...</span>
+              <span class="material-symbols-outlined animate-spin" style="color: var(--gold);">sync</span>
+              <span class="text-sm text-graphite/65">Memuat metode pembayaran...</span>
             </div>
 
-            <div v-else-if="paymentMethods.length === 0" class="py-6 text-center text-sm text-stone-400">
+            <div v-else-if="paymentMethods.length === 0" class="py-6 text-center text-sm text-graphite/45">
               Tidak ada metode pembayaran tersedia.
             </div>
 
@@ -969,37 +969,37 @@ const submitOrder = async () => {
               <label
                 v-for="pm in paymentMethods"
                 :key="pm.id"
-                class="flex items-start gap-4 p-4 border cursor-pointer transition-all hover:bg-stone-50 rounded-none"
-                :class="selectedPaymentMethodId === pm.id ? 'border-amber-700 bg-amber-50/30 ring-1 ring-amber-700/30' : 'border-stone-100'"
+                class="flex items-start gap-4 p-4 border cursor-pointer transition-all hover:bg-ivory rounded-lg"
+                :class="selectedPaymentMethodId === pm.id ? 'border-gold bg-gold/10 ring-1 ring-gold/30' : 'border-mist'"
               >
-                <input type="radio" v-model="selectedPaymentMethodId" :value="pm.id" class="accent-amber-700 w-4 h-4 mt-0.5 shrink-0"/>
+                <input type="radio" v-model="selectedPaymentMethodId" :value="pm.id" class="accent-gold w-4 h-4 mt-0.5 shrink-0"/>
                 <div class="flex-grow min-w-0">
                   <div class="flex items-center gap-2 mb-1">
-                    <span class="material-symbols-outlined text-base" style="color: #c19a51;">{{ pm.type === 'online' ? 'account_balance' : 'swap_horiz' }}</span>
-                    <p class="font-bold text-sm" style="color: #1a1209;">{{ pm.name }}</p>
-                    <span v-if="pm.provider === 'xendit'" class="text-[9px] font-black uppercase px-2 py-0.5 rounded" style="background: rgba(193,154,81,0.12); color: #7a6230;">Otomatis</span>
+                    <span class="material-symbols-outlined text-base" style="color: var(--gold);">{{ pm.type === 'online' ? 'account_balance' : 'swap_horiz' }}</span>
+                    <p class="font-bold text-sm" style="color: var(--ink);">{{ pm.name }}</p>
+                    <span v-if="pm.provider === 'xendit'" class="text-[9px] font-black uppercase px-2 py-0.5 rounded" style="background: rgba(184,138,68,0.12); color: #6F4E1D;">Otomatis</span>
                   </div>
-                  <p v-if="pm.instructions" class="text-xs text-stone-500 leading-relaxed">{{ pm.instructions }}</p>
+                  <p v-if="pm.instructions" class="text-xs text-graphite/65 leading-relaxed">{{ pm.instructions }}</p>
                 </div>
               </label>
             </div>
 
-            <div class="mt-6 pt-6 border-t border-stone-100">
-              <div class="flex items-start justify-between gap-4 p-4 border border-stone-200 bg-stone-50">
+            <div class="mt-6 pt-6 border-t border-mist">
+              <div class="flex items-start justify-between gap-4 p-4 border border-mist bg-ivory">
                 <div class="min-w-0">
-                  <p class="text-sm font-bold" style="color: #1a1209;">Proteksi Pengiriman</p>
-                  <p class="text-xs leading-relaxed text-stone-500 mt-1">
+                  <p class="text-sm font-bold" style="color: var(--ink);">Proteksi Pengiriman</p>
+                  <p class="text-xs leading-relaxed text-graphite/65 mt-1">
                     {{ shippingProtectionSummary }}
                   </p>
                 </div>
                 <label class="shrink-0 inline-flex items-center gap-3 cursor-pointer">
-                  <span class="text-xs font-bold text-stone-700">
+                  <span class="text-xs font-bold text-graphite">
                     {{ shippingProtectionOpted ? 'Aktif' : 'Tidak' }}
                   </span>
                   <input
                     v-model="shippingProtectionOpted"
                     type="checkbox"
-                    class="h-4 w-4 accent-amber-700"
+                    class="h-4 w-4 accent-gold"
                     :disabled="!selectedShipping"
                   />
                 </label>
@@ -1007,20 +1007,20 @@ const submitOrder = async () => {
             </div>
 
             <!-- Bank Account Selection -->
-            <div v-if="needsBankSelection && bankAccounts.length > 0" class="mt-6 pt-6 border-t border-stone-100">
-              <p class="text-sm font-bold mb-3" style="color: #1a1209;">Rekening Tujuan Transfer</p>
+            <div v-if="needsBankSelection && bankAccounts.length > 0" class="mt-6 pt-6 border-t border-mist">
+              <p class="text-sm font-bold mb-3" style="color: var(--ink);">Rekening Tujuan Transfer</p>
               <div class="flex flex-col gap-3">
                 <label
                   v-for="bank in bankAccounts"
                   :key="bank.id"
-                  class="flex items-center gap-4 p-4 border cursor-pointer transition-all hover:bg-stone-50 rounded-none"
-                  :class="selectedBankId === bank.id ? 'border-amber-700 bg-amber-50/30 ring-1 ring-amber-700/30' : 'border-stone-100'"
+                  class="flex items-center gap-4 p-4 border cursor-pointer transition-all hover:bg-ivory rounded-lg"
+                  :class="selectedBankId === bank.id ? 'border-gold bg-gold/10 ring-1 ring-gold/30' : 'border-mist'"
                 >
-                  <input type="radio" v-model="selectedBankId" :value="bank.id" class="accent-amber-700 w-4 h-4 shrink-0"/>
+                  <input type="radio" v-model="selectedBankId" :value="bank.id" class="accent-gold w-4 h-4 shrink-0"/>
                   <div>
-                    <p class="font-bold text-sm" style="color: #1a1209;">{{ bank.name }}</p>
-                    <p class="text-xs text-stone-500">{{ bank.account_number }} a/n {{ bank.account_name }}</p>
-                    <p v-if="bank.branch" class="text-[10px] text-stone-400 mt-0.5">Cabang: {{ bank.branch }}</p>
+                    <p class="font-bold text-sm" style="color: var(--ink);">{{ bank.name }}</p>
+                    <p class="text-xs text-graphite/65">{{ bank.account_number }} a/n {{ bank.account_name }}</p>
+                    <p v-if="bank.branch" class="text-[10px] text-graphite/45 mt-0.5">Cabang: {{ bank.branch }}</p>
                   </div>
                 </label>
               </div>
@@ -1031,27 +1031,27 @@ const submitOrder = async () => {
 
         <!-- Right Column: Summary -->
         <div class="w-full lg:w-2/5 xl:w-1/3">
-          <div class="sticky top-28 bg-white p-8 rounded-none shadow-lg border border-stone-100">
-            <h2 class="text-xl font-bold text-stone-900 mb-8" style="font-family: 'Outfit', sans-serif;">Ringkasan Pesanan</h2>
+          <div class="premium-card p-6 lg:p-8">
+            <h2 class="text-xl font-bold text-ink mb-8" style="font-family: 'Cormorant Garamond', serif;">Ringkasan Pesanan</h2>
 
             <div class="space-y-4 mb-8">
               <div
                 v-for="item in cartStore.items"
                 :key="item.id + '-' + (item.variant?.color || '') + '-' + (item.lens_option_id || '')"
-                class="flex gap-3 border-b border-stone-100 pb-4 last:border-b-0 last:pb-0"
+                class="flex gap-3 border-b border-mist pb-4 last:border-b-0 last:pb-0"
               >
-                <div class="w-16 h-16 border border-stone-100 bg-stone-50 flex items-center justify-center shrink-0">
+                <div class="w-16 h-16 border border-mist bg-ivory flex items-center justify-center shrink-0">
                   <img :src="resolveImageUrl(item.image_url || item.images?.[0], item.name)" :alt="item.name" class="w-full h-full object-contain p-1" />
                 </div>
                 <div class="min-w-0 flex-1">
                   <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0">
-                      <h3 class="text-sm font-black text-stone-900 line-clamp-2">{{ item.name }}</h3>
-                      <p class="text-xs text-stone-500 mt-1">Qty {{ item.quantity }}</p>
+                      <h3 class="text-sm font-black text-ink line-clamp-2">{{ item.name }}</h3>
+                      <p class="text-xs text-graphite/65 mt-1">Qty {{ item.quantity }}</p>
                     </div>
-                    <p class="text-sm font-black text-stone-900 whitespace-nowrap">Rp {{ (item.price * item.quantity).toLocaleString('id-ID') }}</p>
+                    <p class="text-sm font-black text-ink whitespace-nowrap">Rp {{ (item.price * item.quantity).toLocaleString('id-ID') }}</p>
                   </div>
-                  <div v-if="item.configuration_snapshot" class="mt-3 p-3 text-xs space-y-1" style="background: rgba(193,154,81,0.08); color: #5a5248;">
+                  <div v-if="item.configuration_snapshot" class="mt-3 p-3 text-xs space-y-1" style="background: rgba(184,138,68,0.08); color: var(--graphite);">
                     <p v-if="item.configuration_snapshot.lens_option"><b>Lensa:</b> {{ item.configuration_snapshot.lens_option.name }} (+Rp {{ Number(item.configuration_snapshot.lens_option.base_price || 0).toLocaleString('id-ID') }})</p>
                     <p v-if="item.configuration_snapshot.lens_coating"><b>Coating:</b> {{ item.configuration_snapshot.lens_coating.name }} (+Rp {{ Number(item.configuration_snapshot.lens_coating.price || 0).toLocaleString('id-ID') }})</p>
                     <p v-if="item.configuration_snapshot.prescription_profile_id"><b>Resep:</b> Profil #{{ item.configuration_snapshot.prescription_profile_id }}</p>
@@ -1062,31 +1062,31 @@ const submitOrder = async () => {
             </div>
 
             <div class="flex flex-col gap-4 text-sm mb-8">
-                            <div class="flex justify-between text-stone-500">
+                            <div class="flex justify-between text-graphite/65">
                 <span>Subtotal ({{ cartStore.calculatedData ? cartStore.calculatedData.items.length : cartStore.items.length }} item)</span>
-                <span class="font-bold text-stone-900">Rp {{ (cartStore.calculatedData ? cartStore.calculatedData.subtotal : cartStore.cartTotal).toLocaleString('id-ID') }}</span>
+                <span class="font-bold text-ink">Rp {{ (cartStore.calculatedData ? cartStore.calculatedData.subtotal : cartStore.cartTotal).toLocaleString('id-ID') }}</span>
               </div>
-              <div class="flex justify-between text-stone-500">
+              <div class="flex justify-between text-graphite/65">
                 <span>Ongkos Kirim</span>
-                <span class="font-bold" :class="fulfillmentMethod === 'store_pickup' ? 'text-green-600' : 'text-stone-900'">
+                <span class="font-bold" :class="fulfillmentMethod === 'store_pickup' ? 'text-olive' : 'text-ink'">
                   {{ fulfillmentMethod === 'store_pickup' ? 'Gratis (Ambil di Toko)' : 'Rp ' + selectedShippingCost.toLocaleString('id-ID') }}
                 </span>
               </div>
-              <div v-if="shippingProtectionOpted" class="flex justify-between text-stone-500">
+              <div v-if="shippingProtectionOpted" class="flex justify-between text-graphite/65">
                 <span>Proteksi Pengiriman</span>
-                <span class="font-bold text-stone-900">Rp {{ shippingProtectionFee.toLocaleString('id-ID') }}</span>
+                <span class="font-bold text-ink">Rp {{ shippingProtectionFee.toLocaleString('id-ID') }}</span>
               </div>
-              <div v-if="cartStore.calculatedData && cartStore.calculatedData.discount_amount > 0" class="flex justify-between text-green-600">
+              <div v-if="cartStore.calculatedData && cartStore.calculatedData.discount_amount > 0" class="flex justify-between text-olive">
                 <span>Diskon Promo Code</span>
                 <span class="font-bold">-Rp {{ cartStore.calculatedData.discount_amount.toLocaleString('id-ID') }}</span>
               </div>
-              <div v-if="cartStore.calculatedData && cartStore.calculatedData.promo_discount_amount > 0" class="flex justify-between text-green-600">
+              <div v-if="cartStore.calculatedData && cartStore.calculatedData.promo_discount_amount > 0" class="flex justify-between text-olive">
                 <span>Promo Eksklusif</span>
                 <span class="font-bold">-Rp {{ cartStore.calculatedData.promo_discount_amount.toLocaleString('id-ID') }}</span>
               </div>
 
               <!-- Level Member Discount -->
-              <div v-if="levelDiscountAmount > 0" class="flex justify-between text-amber-600">
+              <div v-if="levelDiscountAmount > 0" class="flex justify-between text-gold">
                 <span class="flex items-center gap-1">
                   <span class="material-symbols-outlined text-sm">stars</span>
                   Diskon Member {{ userLevelMember?.name }} ({{ userLevelMember?.discount_percentage }}%)
@@ -1095,13 +1095,13 @@ const submitOrder = async () => {
               </div>
 
               <!-- Loyalty Points Redemption -->
-              <div v-if="userLoyaltyPoints > 0" class="border rounded-none p-3 mt-1" style="background: #fffdf7; border-color: rgba(193,154,81,0.25);">
+              <div v-if="userLoyaltyPoints > 0" class="border rounded-lg p-3 mt-1" style="background: var(--porcelain); border-color: rgba(184,138,68,0.25);">
                 <div class="flex items-center justify-between mb-2">
-                  <span class="text-xs font-black uppercase tracking-wider" style="color: #8a7a60;">
-                    <span class="material-symbols-outlined text-sm align-middle" style="color: #c19a51;">toll</span>
+                  <span class="text-xs font-black uppercase tracking-wider" style="color: var(--taupe);">
+                    <span class="material-symbols-outlined text-sm align-middle" style="color: var(--gold);">toll</span>
                     Gunakan Loyalty Points
                   </span>
-                  <span class="text-xs font-bold" style="color: #c19a51;">{{ userLoyaltyPoints.toLocaleString('id-ID') }} poin tersedia</span>
+                  <span class="text-xs font-bold" style="color: var(--gold);">{{ userLoyaltyPoints.toLocaleString('id-ID') }} poin tersedia</span>
                 </div>
                 <div class="flex items-center gap-2">
                   <input
@@ -1110,41 +1110,41 @@ const submitOrder = async () => {
                     :min="0"
                     :max="maxLoyaltyPoints"
                     class="w-24 border px-2 py-1.5 text-sm text-center font-bold"
-                    style="border-color: rgba(193,154,81,0.4); color: #1a1209;"
+                    style="border-color: rgba(184,138,68,0.4); color: var(--ink);"
                     placeholder="0"
                   />
-                  <span class="text-xs" style="color: #8a7a60;">poin = Rp {{ loyaltyDiscountAmount.toLocaleString('id-ID') }}</span>
+                  <span class="text-xs" style="color: var(--taupe);">poin = Rp {{ loyaltyDiscountAmount.toLocaleString('id-ID') }}</span>
                   <button v-if="loyaltyPointsToUse > 0" @click="loyaltyPointsToUse = 0" class="ml-auto text-xs font-bold underline" style="color: #dc2626;">Hapus</button>
                 </div>
                 <p class="text-[10px] mt-1.5" style="color: #b0a590;">Maks {{ maxLoyaltyPoints.toLocaleString('id-ID') }} poin (5% dari subtotal). 1 poin = Rp 1.000.</p>
-                <div v-if="loyaltyDiscountAmount > 0" class="flex justify-between mt-2 pt-2 border-t text-green-600" style="border-color: rgba(193,154,81,0.2);">
+                <div v-if="loyaltyDiscountAmount > 0" class="flex justify-between mt-2 pt-2 border-t text-olive" style="border-color: rgba(184,138,68,0.2);">
                   <span class="text-xs">Potongan Loyalty Points</span>
                   <span class="text-xs font-bold">-Rp {{ loyaltyDiscountAmount.toLocaleString('id-ID') }}</span>
                 </div>
               </div>
               
               <!-- Free Items -->
-              <div v-if="cartStore.calculatedData" class="mt-4 border-t border-stone-50 pt-4">
+              <div v-if="cartStore.calculatedData" class="mt-4 border-t border-mist pt-4">
                 <div v-for="cItem in cartStore.calculatedData.items" :key="cItem.product_id + (cItem.name || cItem.product_name)">
                   <div v-if="cItem.is_free" class="flex items-center gap-3 p-3 bg-primary/5 border border-primary/10 mb-2">
-                    <div class="w-12 h-12 rounded-none bg-white border border-primary/10 flex items-center justify-center p-1 shrink-0">
+                    <div class="w-12 h-12 rounded-lg bg-porcelain border border-primary/10 flex items-center justify-center p-1 shrink-0">
                       <img :src="resolveImageUrl(cItem.image, cItem.name || cItem.product_name)" class="w-full h-full object-contain" />
                     </div>
                     <div class="flex flex-col flex-grow min-w-0">
                       <p class="text-[9px] font-black uppercase tracking-[0.1em] text-primary mb-0.5">Bonus Hadiah</p>
-                      <h3 class="text-[11px] font-bold text-stone-900 leading-tight line-clamp-2">{{ cItem.name || cItem.product_name }}</h3>
-                      <p class="text-[10px] text-stone-500 mt-1 font-bold">Qty: {{ cItem.quantity }} <span class="ml-2 text-primary">GRATIS</span></p>
+                      <h3 class="text-[11px] font-bold text-ink leading-tight line-clamp-2">{{ cItem.name || cItem.product_name }}</h3>
+                      <p class="text-[10px] text-graphite/65 mt-1 font-bold">Qty: {{ cItem.quantity }} <span class="ml-2 text-primary">GRATIS</span></p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div class="h-px bg-stone-100 my-2"></div>
+              <div class="h-px bg-mist my-2"></div>
               <div class="flex justify-between items-center">
-                <span class="text-base font-bold text-stone-900">Total Pembayaran</span>
-                <span class="text-2xl font-black text-primary" style="color: #c19a51;">Rp {{ grandTotal.toLocaleString('id-ID') }}</span>
+                <span class="text-base font-bold text-ink">Total Pembayaran</span>
+                <span class="text-2xl font-black text-primary" style="color: var(--gold);">Rp {{ grandTotal.toLocaleString('id-ID') }}</span>
               </div>
-              <p v-if="loyaltyPointsToUse > 0 || levelDiscountAmount > 0" class="text-[10px] text-right" style="color: #8a7a60;">
+              <p v-if="loyaltyPointsToUse > 0 || levelDiscountAmount > 0" class="text-[10px] text-right" style="color: var(--taupe);">
                 Hemat Rp {{ (levelDiscountAmount + loyaltyDiscountAmount + (cartStore.calculatedData?.discount_amount || 0) + (cartStore.calculatedData?.promo_discount_amount || 0)).toLocaleString('id-ID') }} dari total belanja
               </p>
             </div>
@@ -1152,14 +1152,14 @@ const submitOrder = async () => {
             <button 
               @click="submitOrder" 
               :disabled="isSubmitting || (fulfillmentMethod === 'delivery' && !form.selected_service) || !isAddressComplete" 
-              class="w-full bg-[#1a1209] text-white py-4 rounded-none font-bold text-sm transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2 shadow-xl shadow-stone-200"
+              class="w-full bg-[var(--ink)] text-white py-4 rounded-lg font-bold text-sm transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2 shadow-soft"
             >
               <span v-if="isSubmitting" class="material-symbols-outlined animate-spin">sync</span>
               {{ isSubmitting ? 'Memproses...' : (fulfillmentMethod === 'store_pickup' ? 'Bayar & Booking Pengambilan' : 'Bayar Sekarang') }}
               <span v-if="!isSubmitting" class="material-symbols-outlined text-lg">{{ fulfillmentMethod === 'store_pickup' ? 'storefront' : 'arrow_forward' }}</span>
             </button>
             
-            <div v-if="checkoutError" class="mt-4 text-xs text-red-600 bg-red-50 p-3 rounded-none text-center">
+            <div v-if="checkoutError" class="mt-4 text-xs text-red-600 bg-red-50 p-3 rounded-lg text-center">
               {{ checkoutError }}
             </div>
           </div>
@@ -1170,10 +1170,10 @@ const submitOrder = async () => {
     <!-- Address Selector Modal -->
     <Teleport to="body">
       <div v-if="showAddressModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-        <div class="bg-white w-full max-w-lg rounded-none shadow-2xl p-8 flex flex-col max-h-[80vh]">
+        <div class="bg-porcelain w-full max-w-lg rounded-lg shadow-soft p-8 flex flex-col max-h-[80vh]">
           <div class="flex items-center justify-between mb-8">
-            <h2 class="text-2xl font-bold text-stone-900" style="font-family: 'Outfit', sans-serif;">Pilih Alamat</h2>
-            <button @click="showAddressModal = false" class="w-10 h-10 rounded-none hover:bg-stone-100 flex items-center justify-center transition-all">
+            <h2 class="text-2xl font-bold text-ink" style="font-family: 'Cormorant Garamond', serif;">Pilih Alamat</h2>
+            <button @click="showAddressModal = false" class="w-10 h-10 rounded-lg hover:bg-mist flex items-center justify-center transition-all">
               <span class="material-symbols-outlined">close</span>
             </button>
           </div>
@@ -1181,17 +1181,17 @@ const submitOrder = async () => {
           <div class="flex-grow overflow-y-auto pr-2 custom-scrollbar flex flex-col gap-4">
             <div v-for="addr in userAddresses" :key="addr.id" 
               @click="selectAddress(addr)"
-              class="p-5 border-2 border-stone-100 rounded-none cursor-pointer hover:border-primary hover:bg-stone-50 transition-all relative group">
-              <div v-if="addr.is_default" class="absolute top-4 right-4 px-2 py-1 bg-primary/10 text-primary text-[10px] font-bold rounded-lg uppercase" style="color: #c19a51;">Default</div>
-              <p class="font-bold text-stone-900">{{ addr.recipient_name }}</p>
-              <p class="text-xs text-stone-500 mt-1">{{ addr.phone }}</p>
-              <p class="text-sm text-stone-700 mt-3 leading-relaxed">{{ addr.address }}</p>
-              <p class="text-xs text-stone-500 mt-2">{{ addr.district }}, {{ addr.city }}, {{ addr.province }} {{ addr.postal_code }}</p>
+              class="p-5 border-2 border-mist rounded-lg cursor-pointer hover:border-primary hover:bg-ivory transition-all relative group">
+              <div v-if="addr.is_default" class="absolute top-4 right-4 px-2 py-1 bg-primary/10 text-primary text-[10px] font-bold rounded-lg uppercase" style="color: var(--gold);">Default</div>
+              <p class="font-bold text-ink">{{ addr.recipient_name }}</p>
+              <p class="text-xs text-graphite/65 mt-1">{{ addr.phone }}</p>
+              <p class="text-sm text-graphite mt-3 leading-relaxed">{{ addr.address }}</p>
+              <p class="text-xs text-graphite/65 mt-2">{{ addr.district }}, {{ addr.city }}, {{ addr.province }} {{ addr.postal_code }}</p>
             </div>
           </div>
 
-          <div class="mt-8 pt-6 border-t border-stone-100">
-            <button @click="showAddressModal = false" class="w-full py-4 rounded-none font-bold text-stone-500 hover:bg-stone-50 transition-all">
+          <div class="mt-8 pt-6 border-t border-mist">
+            <button @click="showAddressModal = false" class="w-full py-4 rounded-lg font-bold text-graphite/65 hover:bg-ivory transition-all">
               Batal
             </button>
           </div>
@@ -1210,29 +1210,29 @@ const submitOrder = async () => {
       >
         <div
           class="relative w-full flex flex-col"
-          style="max-width: 520px; max-height: 92vh; background: #faf8f5; border: 1px solid rgba(193,154,81,0.2); box-shadow: 0 30px 80px rgba(0,0,0,0.35);"
+          style="max-width: 520px; max-height: 92vh; background: #faf8f5; border: 1px solid rgba(184,138,68,0.2); box-shadow: 0 30px 80px rgba(0,0,0,0.35);"
         >
           <!-- Header -->
-          <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color: rgba(193,154,81,0.15);">
+          <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color: rgba(184,138,68,0.15);">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 flex items-center justify-center" style="background: rgba(193,154,81,0.1);">
-                <span class="material-symbols-outlined text-base" style="color: #c19a51;">lock</span>
+              <div class="w-8 h-8 flex items-center justify-center" style="background: rgba(184,138,68,0.1);">
+                <span class="material-symbols-outlined text-base" style="color: var(--gold);">lock</span>
               </div>
               <div>
-                <p class="text-xs font-black uppercase tracking-[0.2em]" style="color: #1a1209;">Pembayaran Aman</p>
-                <p class="text-[10px]" style="color: #8a7a60;">Diproses oleh Xendit · SSL Terenkripsi</p>
+                <p class="text-xs font-black uppercase tracking-[0.2em]" style="color: var(--ink);">Pembayaran Aman</p>
+                <p class="text-[10px]" style="color: var(--taupe);">Diproses oleh Xendit · SSL Terenkripsi</p>
               </div>
             </div>
             <div class="flex items-center gap-3">
               <!-- Polling indicator -->
               <div v-if="isPollingPayment" class="flex items-center gap-1.5">
-                <div class="w-1.5 h-1.5 rounded-full animate-pulse" style="background: #c19a51;"></div>
-                <span class="text-[10px]" style="color: #8a7a60;">Menunggu pembayaran...</span>
+                <div class="w-1.5 h-1.5 rounded-full animate-pulse" style="background: var(--gold);"></div>
+                <span class="text-[10px]" style="color: var(--taupe);">Menunggu pembayaran...</span>
               </div>
               <button
                 @click="closeXenditModal"
                 class="w-9 h-9 flex items-center justify-center transition-all hover:opacity-70"
-                style="background: rgba(193,154,81,0.1); color: #7a6230;"
+                style="background: rgba(184,138,68,0.1); color: #6F4E1D;"
                 title="Tutup dan lanjutkan nanti"
               >
                 <span class="material-symbols-outlined text-base">close</span>
@@ -1251,17 +1251,17 @@ const submitOrder = async () => {
               title="Xendit Payment"
             ></iframe>
             <div v-else class="flex items-center justify-center h-full">
-              <div class="w-8 h-8 rounded-none border-4 border-t-transparent animate-spin" style="border-color: rgba(193,154,81,0.25); border-top-color: #c19a51;"></div>
+              <div class="w-8 h-8 rounded-lg border-4 border-t-transparent animate-spin" style="border-color: rgba(184,138,68,0.25); border-top-color: var(--gold);"></div>
             </div>
           </div>
 
           <!-- Footer -->
-          <div class="px-6 py-3 border-t flex items-center justify-between" style="border-color: rgba(193,154,81,0.15); background: rgba(245,242,238,0.6);">
-            <p class="text-[10px]" style="color: #8a7a60;">Tutup jendela ini untuk melanjutkan pembayaran nanti dari halaman pesanan.</p>
+          <div class="px-6 py-3 border-t flex items-center justify-between" style="border-color: rgba(184,138,68,0.15); background: rgba(245,242,238,0.6);">
+            <p class="text-[10px]" style="color: var(--taupe);">Tutup jendela ini untuk melanjutkan pembayaran nanti dari halaman pesanan.</p>
             <button
               @click="closeXenditModal"
               class="text-[10px] font-black uppercase tracking-wider underline flex-shrink-0 ml-4"
-              style="color: #8a7a60;"
+              style="color: var(--taupe);"
             >
               Bayar Nanti
             </button>

@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-[#F5F2EE] min-h-screen">
+  <div class="bg-[var(--ivory)] min-h-screen">
     <PageHero
       :title="article?.title || 'Baca Artikel'"
       :breadcrumbs="[
@@ -8,13 +8,13 @@
       ]"
       back-to="/blog"
       back-label="Kembali ke Blog"
-      title-class="text-3xl md:text-4xl font-black tracking-tight text-white line-clamp-1"
+      title-class="text-4xl font-black tracking-normal text-white line-clamp-2"
     />
 
     <!-- Main Content -->
-    <main class="max-w-[1000px] mx-auto w-full px-6 pb-20 relative z-20">
+    <main class="container-premium max-w-5xl py-12 pb-20">
       <!-- Loading State -->
-      <div v-if="loading" class="bg-white p-12 border border-outline-variant/15 shadow-sm space-y-8">
+      <div v-if="loading" class="premium-card p-12 space-y-8">
         <div class="h-8 bg-surface-container-low w-3/4 animate-pulse"></div>
         <div class="h-64 bg-surface-container-low w-full animate-pulse"></div>
         <div class="space-y-4">
@@ -23,7 +23,7 @@
       </div>
 
       <!-- Error State -->
-      <div v-else-if="error" class="bg-white p-20 text-center border border-outline-variant/15 shadow-sm">
+      <div v-else-if="error" class="premium-card p-20 text-center">
         <span class="material-symbols-outlined text-5xl text-error mb-4">error</span>
         <h2 class="text-2xl font-black text-on-surface mb-2">Artikel Tidak Ditemukan</h2>
         <p class="text-on-surface-variant mb-8">{{ error }}</p>
@@ -33,7 +33,7 @@
       </div>
 
       <!-- Article Content -->
-      <article v-else-if="article" class="bg-white border border-outline-variant/15 shadow-sm overflow-hidden">
+      <article v-else-if="article" class="premium-card overflow-hidden">
         <!-- Featured Image -->
         <div v-if="article.featured_image" class="w-full aspect-[21/9] overflow-hidden bg-surface-container">
           <img :src="resolveImageUrl(article.featured_image)" :alt="article.title" class="w-full h-full object-cover">
@@ -48,7 +48,7 @@
               </span>
             </div>
             
-            <h2 class="text-3xl md:text-5xl font-black text-on-surface leading-tight mb-8" style="font-family: 'Outfit', sans-serif;">
+            <h2 class="text-3xl md:text-5xl font-black text-on-surface leading-tight mb-8" style="font-family: 'Cormorant Garamond', serif;">
               {{ article.title }}
             </h2>
 
@@ -69,7 +69,7 @@
           </header>
 
           <!-- Article Body -->
-          <div class="prose prose-lg prose-primary max-w-none mb-16" v-html="sanitizedContent"></div>
+          <div class="prose prose-lg max-w-none mb-16" v-html="sanitizedContent"></div>
 
           <div class="pt-10 border-t border-outline-variant/10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <span class="text-xs font-black uppercase tracking-[0.2em] text-on-surface">Bagikan Artikel</span>
@@ -107,7 +107,7 @@
 
         <!-- Related Articles -->
         <div v-if="relatedArticles.length > 0" class="bg-surface-container-low p-8 md:p-16 border-t border-outline-variant/10">
-          <h3 class="text-2xl font-black text-on-surface mb-10" style="font-family: 'Outfit', sans-serif;">Artikel Terkait</h3>
+          <h3 class="text-2xl font-black text-on-surface mb-10" style="font-family: 'Cormorant Garamond', serif;">Artikel Terkait</h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <router-link v-for="related in relatedArticles" :key="related.id" :to="`/blog/${related.slug}`" class="group">
               <div class="aspect-[16/10] overflow-hidden bg-surface-container mb-4">
@@ -205,13 +205,13 @@ onMounted(() => {
 /* Styling for Rich Editor content */
 .prose h1, .prose h2, .prose h3 {
   @apply text-on-surface font-black mt-12 mb-6 leading-tight;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Cormorant Garamond', serif;
 }
 .prose p {
   @apply mb-8 text-on-surface-variant leading-relaxed text-lg;
 }
 .prose img {
-  @apply rounded-none border border-outline-variant/10 my-12 shadow-sm;
+  @apply rounded-lg border border-outline-variant/10 my-12 shadow-card;
 }
 .prose ul, .prose ol {
   @apply mb-8 space-y-3 pl-6;

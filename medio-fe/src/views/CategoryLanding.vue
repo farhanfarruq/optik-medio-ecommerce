@@ -61,9 +61,9 @@ onMounted(loadCategory);
 <template>
   <div>
     <!-- Hero -->
-    <div class="relative overflow-hidden" style="height: 280px; background: linear-gradient(135deg, #1a1209 0%, #3d2c0e 100%);">
+    <div class="relative overflow-hidden" style="height: 280px; background: linear-gradient(135deg, var(--ink) 0%, var(--graphite) 100%);">
       <div class="absolute inset-0" style="background: url('/gambar/hero-bg.jpeg') center/cover; opacity: 0.2;"></div>
-      <div class="relative z-10 h-full max-w-[1440px] mx-auto px-6 md:px-12 flex flex-col justify-end pb-12 pt-24">
+      <div class="relative z-10 h-full container-premium flex flex-col justify-end pb-12 pt-24">
         <nav class="flex items-center gap-2 text-xs mb-3" style="color: rgba(255,255,255,0.5);">
           <router-link to="/" class="hover:text-white">Beranda</router-link>
           <span>›</span>
@@ -71,47 +71,46 @@ onMounted(loadCategory);
           <span>›</span>
           <span class="text-white">{{ category?.name || slug }}</span>
         </nav>
-        <h1 class="text-4xl font-black text-white" style="font-family: 'Outfit', sans-serif;">
+        <h1 class="text-4xl font-black text-white" style="font-family: 'Cormorant Garamond', serif;">
           {{ category?.name || slug }}
         </h1>
         <p v-if="category?.description" class="text-sm mt-2" style="color: rgba(255,255,255,0.7);">
           {{ category.description }}
         </p>
-        <p class="text-xs mt-2" style="color: rgba(193,154,81,0.8);">{{ totalProducts }} produk</p>
+        <p class="text-xs mt-2" style="color: rgba(184,138,68,0.8);">{{ totalProducts }} produk</p>
       </div>
     </div>
 
-    <main class="max-w-[1440px] mx-auto px-6 md:px-12 py-12">
+    <main class="container-premium py-12">
       <div v-if="isLoading" class="flex justify-center py-20">
-        <span class="material-symbols-outlined animate-spin text-4xl" style="color: #c19a51;">sync</span>
+        <span class="material-symbols-outlined animate-spin text-4xl" style="color: var(--gold);">sync</span>
       </div>
 
       <div v-else-if="products.length === 0" class="text-center py-20">
-        <p class="text-stone-500">Belum ada produk di kategori ini.</p>
-        <router-link to="/products" class="mt-4 inline-block text-sm font-bold" style="color: #c19a51;">← Lihat Semua Produk</router-link>
+        <p class="text-graphite/65">Belum ada produk di kategori ini.</p>
+        <router-link to="/products" class="mt-4 inline-block text-sm font-bold" style="color: var(--gold);">← Lihat Semua Produk</router-link>
       </div>
 
-      <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div v-else class="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
         <router-link
           v-for="product in products"
           :key="product.id"
           :to="`/products/${product.slug}`"
-          class="group border transition-all hover:shadow-md"
-          style="background: white; border-color: rgba(193,154,81,0.15);"
+          class="product-card-base group transition-colors hover:border-gold/40"
         >
-          <div class="aspect-square overflow-hidden flex items-center justify-center p-4" style="background: linear-gradient(145deg, #f5f2ee, #ede7dc);">
+          <div class="product-image-frame flex items-center justify-center p-4">
             <img
               :src="resolveImageUrl(product)"
               :alt="product.name"
-              class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+              class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.03]"
               loading="lazy"
               decoding="async"
             />
           </div>
           <div class="p-4">
-            <p class="text-xs font-bold uppercase tracking-wider mb-1" style="color: #8a7a60;">{{ product.brand || 'Optik Medio' }}</p>
-            <p class="text-sm font-bold line-clamp-2" style="color: #1a1209;">{{ product.name }}</p>
-            <p class="text-base font-black mt-2" style="color: #c19a51;">Rp {{ product.price?.toLocaleString('id-ID') }}</p>
+            <p class="text-xs font-bold uppercase tracking-wider mb-1" style="color: var(--taupe);">{{ product.brand || 'Optik Medio' }}</p>
+            <p class="text-sm font-bold line-clamp-2" style="color: var(--ink);">{{ product.name }}</p>
+            <p class="text-base font-black mt-2" style="color: var(--gold);">Rp {{ product.price?.toLocaleString('id-ID') }}</p>
           </div>
         </router-link>
       </div>
@@ -119,8 +118,7 @@ onMounted(loadCategory);
       <div class="mt-8 text-center">
         <router-link
           :to="`/products/category/${slug}`"
-          class="inline-flex items-center gap-2 px-6 py-3 border text-sm font-black uppercase tracking-wider transition-all hover:bg-stone-50"
-          style="border-color: rgba(193,154,81,0.3); color: #8a7a60;"
+          class="btn-outline inline-flex items-center gap-2 px-6 py-3 text-sm uppercase tracking-[0.12em]"
         >
           Lihat Semua Produk {{ category?.name }}
           <span class="material-symbols-outlined text-sm">arrow_forward</span>

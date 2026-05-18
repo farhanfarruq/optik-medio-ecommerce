@@ -5,6 +5,7 @@ import { complaintRepository } from '../repositories/ComplaintRepository';
 import { orderRepository } from '../repositories/OrderRepository';
 import { useToast } from '../composables/useToast';
 import { useAuthStore } from '../stores/authStore';
+import PageHero from '../components/layout/PageHero.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -81,40 +82,27 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-screen" style="background: #F5F2EE;">
+  <div class="min-h-screen bg-ivory">
 
-    <!-- Hero Header — sama seperti Product/Profile -->
-    <div class="relative overflow-hidden" style="height: 220px;">
-      <img src="/gambar/hero-bg.jpeg" alt="" class="absolute inset-0 w-full h-full object-cover object-center" style="transform: scale(1.08); object-position: center 40%;" />
-      <div class="absolute inset-0" style="background: linear-gradient(135deg, rgba(10,8,5,0.65) 0%, rgba(30,20,10,0.45) 100%);"></div>
-      <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, #F5F2EE 100%);"></div>
-      <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(193,154,81,0.6), transparent);"></div>
-      <div class="relative z-10 h-full max-w-4xl mx-auto px-6 flex flex-col justify-end pb-14">
-        <p class="text-[10px] font-black uppercase tracking-[0.28em] mb-2" style="color: #c19a51;">
-          {{ isShippingProtectionMode ? 'Klaim Proteksi Pengiriman' : 'Helpdesk & Komplain' }}
-        </p>
-        <h1 class="text-2xl md:text-3xl font-black text-white leading-tight" style="font-family: 'Outfit', sans-serif;">
-          {{ isShippingProtectionMode ? 'Ajukan Klaim Proteksi Pengiriman' : 'Ajukan Komplain Pesanan' }}
-        </h1>
-        <p class="text-xs text-stone-300 mt-2 max-w-xl leading-relaxed">
-          {{ isShippingProtectionMode
-            ? 'Laporkan paket rusak, hilang, atau bermasalah saat pengiriman pada pesanan berproteksi.'
-            : 'Laporkan kendala pesanan, barang rusak, salah kirim, atau kebutuhan retur lanjutan.' }}
-        </p>
-      </div>
-    </div>
+    <PageHero
+      :title="isShippingProtectionMode ? 'Ajukan Klaim Proteksi Pengiriman' : 'Ajukan Komplain Pesanan'"
+      :subtitle="isShippingProtectionMode
+        ? 'Laporkan paket rusak, hilang, atau bermasalah saat pengiriman pada pesanan berproteksi.'
+        : 'Laporkan kendala pesanan, barang rusak, salah kirim, atau kebutuhan retur lanjutan.'"
+      :breadcrumbs="[{ label: isShippingProtectionMode ? 'Klaim Proteksi Pengiriman' : 'Komplain' }]"
+    />
 
-    <main class="max-w-4xl mx-auto px-6 pb-20">
+    <main class="container-premium max-w-4xl pt-24 pb-20">
 
-    <form @submit.prevent="submitComplaint" class="bg-white border border-stone-200 p-8 shadow-sm space-y-6" style="border-color: rgba(193,154,81,0.15)">
+    <form @submit.prevent="submitComplaint" class="premium-card space-y-6 p-6 sm:p-8" style="border-color: rgba(184,138,68,0.15)">
       <div class="grid gap-6 md:grid-cols-2">
         <div>
-          <label class="block text-xs font-black uppercase tracking-[0.18em] text-stone-500 mb-2">
+          <label class="block text-xs font-black uppercase tracking-[0.18em] text-graphite/65 mb-2">
             {{ isShippingProtectionMode ? 'Pesanan Proteksi' : 'Pesanan Terkait' }}
           </label>
           <select
             v-model="form.order_id"
-            class="w-full border border-stone-300 bg-stone-50 px-4 py-3 text-sm"
+            class="input-field"
             :disabled="isShippingProtectionMode && !!form.order_id"
           >
             <option :value="null">{{ isLoadingOrders ? 'Memuat pesanan...' : 'Pilih pesanan (opsional)' }}</option>
@@ -125,32 +113,32 @@ onMounted(async () => {
         </div>
 
         <div>
-          <label class="block text-xs font-black uppercase tracking-[0.18em] text-stone-500 mb-2">Nomor Kontak</label>
-          <input v-model="form.contact_phone" type="text" class="w-full border border-stone-300 bg-stone-50 px-4 py-3 text-sm" placeholder="08xxxxxxxxxx" />
+          <label class="block text-xs font-black uppercase tracking-[0.18em] text-graphite/65 mb-2">Nomor Kontak</label>
+          <input v-model="form.contact_phone" type="text" class="input-field" placeholder="08xxxxxxxxxx" />
         </div>
       </div>
 
       <div>
-        <label class="block text-xs font-black uppercase tracking-[0.18em] text-stone-500 mb-2">
+        <label class="block text-xs font-black uppercase tracking-[0.18em] text-graphite/65 mb-2">
           {{ isShippingProtectionMode ? 'Subjek Klaim' : 'Subjek Komplain' }}
         </label>
         <input
           v-model="form.subject"
           required
           type="text"
-          class="w-full border border-stone-300 bg-stone-50 px-4 py-3 text-sm"
+          class="input-field"
           :readonly="isShippingProtectionMode"
           :placeholder="isShippingProtectionMode ? 'Klaim Proteksi Pengiriman' : 'Contoh: Lensa tidak sesuai pesanan'"
         />
       </div>
 
       <div>
-        <label class="block text-xs font-black uppercase tracking-[0.18em] text-stone-500 mb-2">Detail Masalah</label>
+        <label class="block text-xs font-black uppercase tracking-[0.18em] text-graphite/65 mb-2">Detail Masalah</label>
         <textarea
           v-model="form.message"
           required
           rows="7"
-          class="w-full border border-stone-300 bg-stone-50 px-4 py-3 text-sm"
+          class="input-field"
           :placeholder="isShippingProtectionMode
             ? 'Jelaskan kondisi paket, jenis kerusakan atau kehilangan, serta kronologi singkatnya.'
             : 'Jelaskan masalah secara detail agar tim admin bisa menindaklanjuti lebih cepat.'"
@@ -158,16 +146,16 @@ onMounted(async () => {
       </div>
 
       <div>
-        <label class="block text-xs font-black uppercase tracking-[0.18em] text-stone-500 mb-2">Lampiran</label>
-        <input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,.mp4,.mov,.webm" @change="handleAttachment" class="block w-full border border-stone-300 bg-stone-50 px-4 py-3 text-sm" />
-        <p class="text-xs text-stone-500 mt-2">Boleh berupa foto, video singkat, atau PDF pendukung. Maksimal 15 MB.</p>
+        <label class="block text-xs font-black uppercase tracking-[0.18em] text-graphite/65 mb-2">Lampiran</label>
+        <input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,.mp4,.mov,.webm" @change="handleAttachment" class="block w-full border border-mist bg-ivory px-4 py-3 text-sm" />
+        <p class="text-xs text-graphite/65 mt-2">Boleh berupa foto, video singkat, atau PDF pendukung. Maksimal 15 MB.</p>
       </div>
 
       <div class="flex flex-col gap-3 sm:flex-row">
-        <button type="submit" :disabled="isSubmitting" class="px-6 py-3 bg-stone-900 text-white text-sm font-black uppercase tracking-[0.16em] disabled:opacity-50">
+        <button type="submit" :disabled="isSubmitting" class="px-6 py-3 text-sm font-black uppercase tracking-[0.16em] disabled:opacity-50" style="background: linear-gradient(135deg, var(--ink) 0%, #3d2c0e 100%); color: #fff;">
           {{ isSubmitting ? 'Mengirim...' : (isShippingProtectionMode ? 'Kirim Klaim Proteksi' : 'Kirim Komplain') }}
         </button>
-        <button type="button" @click="router.back()" class="px-6 py-3 border border-stone-300 text-sm font-black uppercase tracking-[0.16em]">
+        <button type="button" @click="router.back()" class="px-6 py-3 border border-mist text-sm font-black uppercase tracking-[0.16em]">
           Kembali
         </button>
       </div>

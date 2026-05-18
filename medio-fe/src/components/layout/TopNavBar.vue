@@ -13,6 +13,9 @@ const router = useRouter();
 const route = useRoute();
 
 const isScrolled = ref(false);
+const isAuthPage = computed(() => ['Login', 'Register'].includes(route.name as string));
+const isLightNav = computed(() => isScrolled.value || isAuthPage.value);
+const navTextStyle = computed(() => ({ color: isLightNav.value ? 'var(--ink)' : '#fff' }));
 const isSearchOpen = ref(false);
 const isMobileMenuOpen = ref(false);
 const searchQuery = ref('');
@@ -178,7 +181,7 @@ const mobileNavItems = [
   <Transition name="fade">
     <div
       v-if="isMobileMenuOpen"
-      class="md:hidden fixed left-0 right-0 bottom-0 z-40 bg-black/40 backdrop-blur-sm"
+      class="md:hidden fixed left-0 right-0 bottom-0 z-40 bg-ink/45 backdrop-blur-sm"
       :style="{ top: drawerTop }"
       @click="closeMobileMenu"
     />
@@ -188,7 +191,7 @@ const mobileNavItems = [
   <Transition name="slide-left">
     <div
       v-if="isMobileMenuOpen"
-      class="md:hidden fixed right-0 bottom-0 z-50 w-[260px] bg-white shadow-2xl flex flex-col"
+      class="md:hidden fixed right-0 bottom-0 z-50 w-[280px] bg-porcelain shadow-soft flex flex-col border-l border-mist"
       :style="{ top: drawerTop }"
     >
       <!-- Nav items -->
@@ -197,19 +200,19 @@ const mobileNavItems = [
           v-for="item in mobileNavItems"
           :key="item.to"
           :to="item.to"
-          class="flex items-center gap-4 px-5 py-3.5 text-sm font-bold transition-colors active:bg-stone-100"
+          class="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold transition-colors active:bg-gold/10"
           :class="route.path === item.to || route.path.startsWith(item.to + '/')
-            ? 'text-amber-700 bg-amber-50'
-            : 'text-stone-700 hover:bg-stone-50 hover:text-stone-950'"
+            ? 'text-ink bg-gold/15 border border-gold/25'
+            : 'text-graphite hover:bg-ivory hover:text-ink border border-transparent'"
         >
           <span
             class="material-symbols-outlined text-xl shrink-0"
-            :class="route.path === item.to || route.path.startsWith(item.to + '/') ? 'text-amber-600' : 'text-stone-400'"
+            :class="route.path === item.to || route.path.startsWith(item.to + '/') ? 'text-gold' : 'text-taupe'"
           >{{ item.icon }}</span>
           {{ item.label }}
           <span
             v-if="route.path === item.to || route.path.startsWith(item.to + '/')"
-            class="ml-auto w-1.5 h-1.5 rounded-full bg-amber-500"
+            class="ml-auto w-1.5 h-1.5 rounded-full bg-gold"
           />
         </router-link>
       </nav>
@@ -223,59 +226,63 @@ const mobileNavItems = [
     }"
     :class="[
       'fixed w-full z-50',
-      isScrolled
-        ? 'bg-white/95 backdrop-blur-xl shadow-lg h-20'
-        : 'bg-transparent h-24'
+      isLightNav
+        ? 'bg-porcelain/95 backdrop-blur-xl shadow-card h-20 border-b border-mist'
+        : 'bg-graphite/62 backdrop-blur-md h-24 border-b border-white/10'
     ]"
   >
-    <div class="flex justify-between items-center max-w-[1440px] mx-auto px-4 md:px-8 h-full">
+    <div class="container-premium flex justify-between items-center h-full gap-4">
 
       <!-- Logo -->
       <router-link to="/" class="flex items-center gap-2.5 md:gap-3 group">
         <div
-          class="relative overflow-hidden rounded-none group-hover:scale-110 transition-transform duration-300 p-1"
-          :class="isScrolled ? 'bg-white shadow-md' : 'bg-white/10 backdrop-blur-sm shadow-xl'"
+          class="relative overflow-hidden rounded-lg group-hover:scale-[1.03] transition-transform duration-300 p-1 border"
+          :class="isLightNav ? 'bg-white border-mist shadow-card' : 'bg-white/10 border-white/20 backdrop-blur-sm'"
         >
           <img src="/gambar/medio.jpeg" alt="Optik Medio" class="h-9 w-auto object-contain" />
         </div>
         <span
-          class="text-xl font-black tracking-tight transition-all duration-300"
-          :class="isScrolled
-            ? 'text-stone-900'
+          class="font-headline text-2xl font-semibold tracking-normal transition-all duration-300"
+          :class="isLightNav
+            ? 'text-ink'
             : 'text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]'"
-          style="font-family: 'Outfit', sans-serif;"
+          
         >
           Optik Medio
         </span>
       </router-link>
       
       <!-- Center Links (desktop only) -->
-      <div class="hidden md:flex items-center gap-6 ml-10 flex-grow">
+      <div class="hidden md:flex items-center justify-center gap-1 flex-grow">
         <router-link
           to="/products"
-          class="text-xs font-black uppercase tracking-widest transition-colors"
-          :class="isScrolled ? 'text-stone-700 hover:text-stone-950' : 'text-white/85 hover:text-white'"
+          class="rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] transition-colors"
+          :class="isLightNav ? 'hover:bg-ivory' : 'hover:bg-white/10'"
+          :style="navTextStyle"
         >
           Produk
         </router-link>
         <router-link
           to="/face-shape-quiz"
-          class="text-xs font-black uppercase tracking-widest transition-colors"
-          :class="isScrolled ? 'text-stone-700 hover:text-stone-950' : 'text-white/85 hover:text-white'"
+          class="rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] transition-colors"
+          :class="isLightNav ? 'hover:bg-ivory' : 'hover:bg-white/10'"
+          :style="navTextStyle"
         >
           Quiz
         </router-link>
         <router-link
           to="/virtual-try-on"
-          class="text-xs font-black uppercase tracking-widest transition-colors"
-          :class="isScrolled ? 'text-stone-700 hover:text-stone-950' : 'text-white/85 hover:text-white'"
+          class="rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] transition-colors"
+          :class="isLightNav ? 'hover:bg-ivory' : 'hover:bg-white/10'"
+          :style="navTextStyle"
         >
           Coba Virtual
         </router-link>
         <router-link
           to="/compare"
-          class="text-xs font-black uppercase tracking-widest transition-colors"
-          :class="isScrolled ? 'text-stone-700 hover:text-stone-950' : 'text-white/85 hover:text-white'"
+          class="rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] transition-colors"
+          :class="isLightNav ? 'hover:bg-ivory' : 'hover:bg-white/10'"
+          :style="navTextStyle"
         >
           Bandingkan
         </router-link>
@@ -283,19 +290,20 @@ const mobileNavItems = [
 
       <!-- Actions -->
       <div
-        class="flex items-center gap-2 md:gap-6 transition-all duration-300 h-full"
-        :class="isScrolled ? 'text-stone-800' : 'text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]'"
+        class="flex items-center gap-2 transition-all duration-300 h-full"
+        :style="navTextStyle"
       >
         <!-- Integrated Search Bar -->
         <div 
-          class="relative flex items-center h-12 transition-all duration-500 ease-out"
-          :class="isSearchOpen ? 'w-[160px] md:w-[350px] px-4 bg-white/10 backdrop-blur-md border-b border-amber-500/50' : 'w-10'"
+          class="relative flex items-center h-11 rounded-full border transition-all duration-300 ease-out"
+          :class="isSearchOpen ? 'w-[190px] sm:w-[260px] md:w-[360px] px-2 bg-porcelain border-gold/40 shadow-card text-ink' : 'w-11 border-transparent'"
           :style="isSearchOpen && isScrolled ? 'background: rgba(0,0,0,0.03);' : ''"
         >
           <button
             @click="isSearchOpen ? executeSearch() : toggleSearch()"
-            class="shrink-0 w-10 h-10 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-            :class="{ 'text-amber-500': isSearchOpen }"
+            class="shrink-0 w-10 h-10 flex items-center justify-center rounded-full transition-colors active:scale-95"
+            :class="isSearchOpen ? 'text-gold hover:bg-gold/10' : isLightNav ? 'hover:bg-ivory' : 'hover:bg-white/10'"
+            :style="!isSearchOpen ? navTextStyle : undefined"
           >
             <span class="material-symbols-outlined text-2xl">search</span>
           </button>
@@ -305,9 +313,8 @@ const mobileNavItems = [
             id="search-input"
             v-model="searchQuery"
             type="text"
-            placeholder="Cari..."
-            class="w-full bg-transparent border-none text-sm font-bold focus:ring-0 outline-none placeholder:text-stone-500 px-2"
-            :class="isScrolled ? 'text-stone-900' : 'text-white'"
+            placeholder="Cari frame, lensa, kategori"
+            class="w-full min-w-0 bg-transparent border-none text-sm font-medium focus:ring-0 outline-none placeholder:text-graphite/55 px-2 text-ink"
             @keyup.enter="executeSearch"
             @blur="handleSearchBlur"
           />
@@ -315,14 +322,14 @@ const mobileNavItems = [
           <button 
             v-if="isSearchOpen" 
             @click="isSearchOpen = false" 
-            class="shrink-0 text-stone-400 hover:text-stone-600 p-1"
+            class="shrink-0 text-graphite/60 hover:text-ink hover:bg-ivory rounded-full p-1"
           >
             <span class="material-symbols-outlined text-sm">close</span>
           </button>
 
           <div
             v-if="showSuggestionPanel"
-            class="absolute left-0 right-0 top-[calc(100%+10px)] bg-white text-stone-900 border border-stone-100 shadow-2xl p-3 max-h-[420px] overflow-y-auto"
+            class="absolute left-0 right-0 top-[calc(100%+12px)] bg-porcelain text-ink border border-mist shadow-soft p-3 max-h-[420px] overflow-y-auto rounded-lg"
           >
             <div v-if="isSuggestionLoading" class="py-4 text-center text-xs font-bold text-stone-500">
               Mencari...
@@ -335,9 +342,9 @@ const mobileNavItems = [
                   v-for="product in searchSuggestions.products"
                   :key="product.id"
                   @mousedown.prevent="selectProduct(product.slug)"
-                  class="w-full flex items-center gap-3 p-2 text-left hover:bg-stone-50 transition-colors"
+                  class="w-full flex items-center gap-3 p-2 text-left hover:bg-ivory transition-colors rounded-lg"
                 >
-                  <img :src="resolveImageUrl(product)" :alt="product.name" class="w-10 h-10 object-contain bg-stone-50 border border-stone-100 shrink-0" />
+                  <img :src="resolveImageUrl(product)" :alt="product.name" class="w-11 h-11 object-contain bg-ivory border border-mist shrink-0 rounded-md" />
                   <span class="min-w-0">
                     <span class="block text-xs font-black truncate">{{ product.name }}</span>
                     <span class="block text-[11px] text-stone-500 truncate">{{ product.brand || 'Optik Medio' }} · Rp {{ product.price.toLocaleString('id-ID') }}</span>
@@ -353,7 +360,7 @@ const mobileNavItems = [
                   @mousedown.prevent="selectCategory(category.slug)"
                   class="w-full flex items-center gap-2 p-2 text-left text-xs font-bold hover:bg-stone-50 transition-colors"
                 >
-                  <span class="material-symbols-outlined text-base" style="color: #c19a51;">category</span>
+                  <span class="material-symbols-outlined text-base text-gold">category</span>
                   {{ category.name }}
                 </button>
               </div>
@@ -371,7 +378,7 @@ const mobileNavItems = [
                 @mousedown.prevent="selectRecentSearch(query)"
                 class="w-full flex items-center gap-2 p-2 text-left text-xs font-bold hover:bg-stone-50 transition-colors"
               >
-                <span class="material-symbols-outlined text-base" style="color: #c19a51;">history</span>
+                <span class="material-symbols-outlined text-base text-gold">history</span>
                 {{ query }}
               </button>
             </div>
@@ -382,37 +389,40 @@ const mobileNavItems = [
         <div v-if="!isSearchOpen || windowWidth > 768" class="flex items-center gap-2 md:gap-4">
           <router-link
             to="/appointment"
-            class="hidden md:flex w-10 h-10 rounded-none items-center justify-center transition-all hover:scale-110 active:scale-95"
-            :class="isScrolled ? 'hover:bg-stone-100 text-stone-800' : 'hover:bg-white/15 text-white'"
+            class="hidden md:flex w-10 h-10 rounded-full items-center justify-center transition-colors active:scale-95"
+            :class="isLightNav ? 'hover:bg-ivory' : 'hover:bg-white/10'"
+            :style="navTextStyle"
             title="Booking Konsultasi"
           >
             <span class="material-symbols-outlined text-2xl">calendar_today</span>
           </router-link>
           <router-link
             to="/blog"
-            class="hidden md:flex w-10 h-10 rounded-none items-center justify-center transition-all hover:scale-110 active:scale-95"
-            :class="isScrolled ? 'hover:bg-stone-100 text-stone-800' : 'hover:bg-white/15 text-white'"
+            class="hidden md:flex w-10 h-10 rounded-full items-center justify-center transition-colors active:scale-95"
+            :class="isLightNav ? 'hover:bg-ivory' : 'hover:bg-white/10'"
+            :style="navTextStyle"
             title="Blog & Artikel"
           >
             <span class="material-symbols-outlined text-2xl">menu_book</span>
           </router-link>
           <button
             @click="handleUserClick"
-            class="hidden md:flex w-10 h-10 rounded-none items-center justify-center transition-all hover:scale-110 active:scale-95"
-            :class="isScrolled ? 'hover:bg-stone-100' : 'hover:bg-white/15'"
+            class="hidden md:flex w-10 h-10 rounded-full items-center justify-center transition-colors active:scale-95"
+            :class="isLightNav ? 'hover:bg-ivory' : 'hover:bg-white/10'"
+            :style="navTextStyle"
           >
             <span class="material-symbols-outlined text-2xl">person</span>
           </button>
           <button
             @click="goToCart"
-            class="hidden md:flex relative w-10 h-10 rounded-none items-center justify-center transition-all hover:scale-110 active:scale-95"
-            :class="isScrolled ? 'hover:bg-stone-100' : 'hover:bg-white/15'"
+            class="hidden md:flex relative w-10 h-10 rounded-full items-center justify-center transition-colors active:scale-95"
+            :class="isLightNav ? 'hover:bg-ivory' : 'hover:bg-white/10'"
+            :style="navTextStyle"
           >
             <span class="material-symbols-outlined text-2xl">shopping_cart</span>
             <span
               v-if="cartStore.items.length"
-              class="absolute -top-1 -right-1 text-white text-[9px] w-5 h-5 flex items-center justify-center rounded-none border-2 border-white font-black shadow-lg"
-              style="background: #c19a51;"
+              class="absolute -top-1 -right-1 text-ink bg-gold text-[10px] min-w-5 h-5 px-1 flex items-center justify-center rounded-full border-2 border-porcelain font-bold"
             >
               {{ cartStore.items.length }}
             </span>
@@ -421,8 +431,8 @@ const mobileNavItems = [
           <!-- Hamburger — mobile only, di kanan search -->
           <button
             @click="toggleMobileMenu"
-            class="md:hidden w-10 h-10 flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
-            :class="isScrolled ? 'text-stone-800' : 'text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]'"
+            class="md:hidden w-10 h-10 flex items-center justify-center rounded-full transition-colors active:scale-95 shrink-0"
+            :style="navTextStyle"
             aria-label="Buka menu"
           >
             <span class="material-symbols-outlined text-2xl">menu</span>
@@ -435,7 +445,7 @@ const mobileNavItems = [
     <div
       class="absolute bottom-0 left-0 right-0 transition-all duration-500"
       :style="isScrolled
-        ? 'height: 1px; background: linear-gradient(90deg, transparent, rgba(193,154,81,0.3), transparent); opacity: 1;'
+        ? 'height: 1px; background: rgba(184,138,68,0.28); opacity: 1;'
         : 'height: 0; opacity: 0;'"
     ></div>
   </nav>

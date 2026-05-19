@@ -25,43 +25,95 @@ export const useCartStore = defineStore('cart', () => {
   const applicablePromos = computed(() => {
     if (items.value.length === 0) return [];
     
-    return activePromos.value.filter(promo => {
-      // 1. Transaction Discount
+    return activePromos.value.map(promo => {
+      let eligible = false;
+      let reason = '';
+
+      // 1. Transaction Discount — selalu tampil, tapi tandai eligible/tidak
       if (promo.type === 'transaction_discount') {
         const minAmount = Number(promo.min_transaction_amount) || 0;
-        return cartTotal.value >= minAmount;
+        // Gunakan subtotal dari API (sudah include lensa/coating) jika tersedia
+        const effectiveTotal = calculatedData.value?.subtotal != null
+          ? Number(calculatedData.value.subtotal)
+          : cartTotal.value;
+        eligible = effectiveTotal >= minAmount;
+        if (!eligible && minAmount > 0) {
+          const kurang = minAmount - effectiveTotal;
+          reason = `Tambah Rp ${kurang.toLocaleString('id-ID')} lagi untuk memenuhi syarat`;
+        }
+        return { ...promo, eligible, reason };
       }
 
-      // 2. Buy X Get Y or Product Discount
-      // Collect all target product IDs
-      const targetProductIds: number[] = [];
-      if (promo.buy_product_id) targetProductIds.push(promo.buy_product_id);
-      if (promo.discount_product_id) targetProductIds.push(promo.discount_product_id);
-      
-      if (promo.buy_products) {
-        promo.buy_products.forEach((p: any) => targetProductIds.push(p.id));
-      }
-      if (promo.discount_products) {
-        promo.discount_products.forEach((p: any) => targetProductIds.push(p.id));
+      // 2. Buy X Get Y — cek apakah ada item di cart yang cocok dengan buy trigger
+      if (promo.type === 'buy_x_get_y') {
+        const targetProductIds: number[] = [];
+        if (promo.buy_product_id) targetProductIds.push(Number(promo.buy_product_id));
+        if ((promo as any).buy_products) {
+          (promo as any).buy_products.forEach((p: any) => targetProductIds.push(Number(p.id)));
+        }
+
+        const targetBrands: string[] = [];
+        if ((promo as any).buy_brands) {
+          targetBrands.push(...(promo as any).buy_brands.map((b: string) => b.toLowerCase()));
+        }
+
+        const hasMatchingItem = items.value.some((item: CartItem) => {
+          if (item.parent_item_id) return false; // skip lens items
+          const matchesProduct = targetProductIds.length > 0 && targetProductIds.includes(item.id);
+          const matchesBrand = targetBrands.length > 0 && item.brand
+            ? targetBrands.includes(item.brand.toLowerCase())
+            : false;
+          return matchesProduct || matchesBrand;
+        });
+
+        // Tampilkan promo ini jika ada item yang cocok dengan trigger
+        if (!hasMatchingItem && targetProductIds.length === 0 && targetBrands.length === 0) {
+          eligible = true; // general promo tanpa target spesifik
+        } else {
+          eligible = hasMatchingItem;
+        }
+
+        if (!eligible) {
+          reason = 'Tidak ada produk yang sesuai di keranjang';
+        }
+        return { ...promo, eligible, reason };
       }
 
-      // Collect all target brands
-      const targetBrands: string[] = [];
-      if (promo.buy_brands) targetBrands.push(...promo.buy_brands);
-      if (promo.discount_brands) targetBrands.push(...promo.discount_brands);
+      // 3. Product Discount — cek apakah ada item yang cocok
+      if (promo.type === 'product_discount') {
+        const targetProductIds: number[] = [];
+        if (promo.discount_product_id) targetProductIds.push(Number(promo.discount_product_id));
+        if ((promo as any).discount_products) {
+          (promo as any).discount_products.forEach((p: any) => targetProductIds.push(Number(p.id)));
+        }
 
-      // If no specific targets are defined, it might be a general promo
-      if (targetProductIds.length === 0 && targetBrands.length === 0) {
-        return true;
+        const targetBrands: string[] = [];
+        if ((promo as any).discount_brands) {
+          targetBrands.push(...(promo as any).discount_brands.map((b: string) => b.toLowerCase()));
+        }
+
+        if (targetProductIds.length === 0 && targetBrands.length === 0) {
+          return { ...promo, eligible: true, reason: '' };
+        }
+
+        eligible = items.value.some((item: CartItem) => {
+          if (item.parent_item_id) return false;
+          const matchesProduct = targetProductIds.includes(item.id);
+          const matchesBrand = targetBrands.length > 0 && item.brand
+            ? targetBrands.includes(item.brand.toLowerCase())
+            : false;
+          return matchesProduct || matchesBrand;
+        });
+
+        if (!eligible) {
+          reason = 'Tidak ada produk yang sesuai di keranjang';
+        }
+        return { ...promo, eligible, reason };
       }
 
-      // Check if any item in cart matches target products or brands
-      return items.value.some((item: CartItem) => {
-        const matchesProduct = targetProductIds.includes(item.id);
-        const matchesBrand = item.brand ? targetBrands.includes(item.brand) : false;
-        return matchesProduct || matchesBrand;
-      });
+      return { ...promo, eligible: true, reason: '' };
     });
+    // Urutkan: yang eligible dulu
   });
 
   function addToCart(frame: CartItem, prescription?: Prescription, lens?: CartItem) {

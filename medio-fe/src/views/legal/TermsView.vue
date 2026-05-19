@@ -6,7 +6,7 @@
     />
 
     <!-- Main Content -->
-    <main class="max-w-[1000px] mx-auto w-full px-6 pb-20 relative z-20">
+    <main class="container-readable relative z-20 pt-24 pb-20 sm:pt-28">
       <div class="bg-porcelain p-8 md:p-12 border border-outline-variant/15 shadow-card">
         <div class="mb-12">
           <p class="text-xs font-black uppercase tracking-[0.2em] mb-3 text-primary">Aturan Penggunaan</p>

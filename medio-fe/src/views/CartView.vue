@@ -60,6 +60,14 @@ const formatPromoDescription = (desc: string) => {
 };
 
 const handleSetPromo = async (promoId: number | null) => {
+  // Cek apakah promo eligible sebelum apply
+  if (promoId !== null) {
+    const promo = cartStore.applicablePromos.find((p: any) => p.id === promoId);
+    if (promo && !(promo as any).eligible) {
+      showToast((promo as any).reason || 'Promo belum bisa digunakan.', 'error');
+      return;
+    }
+  }
   try {
     await cartStore.setPromo(promoId);
     if (promoId) {
@@ -71,6 +79,44 @@ const handleSetPromo = async (promoId: number | null) => {
     const msg = err.response?.data?.message || 'Gagal menerapkan promo.';
     showToast(msg, 'error');
   }
+};
+
+// ── Promo display helpers ──────────────────────────────────────────────────
+const cartFreeItems = computed(() => {
+  if (!cartStore.calculatedData?.items) return [];
+  return cartStore.calculatedData.items.filter((i: any) => i.is_free);
+});
+
+const cartPromoSummary = computed(() => cartStore.calculatedData?.promo_summary || null);
+
+const promoTypeLabel = (promo: any): string => {
+  if (promo.type === 'buy_x_get_y') return 'Bonus Produk';
+  if (promo.type === 'transaction_discount') return 'Diskon Transaksi';
+  if (promo.type === 'product_discount') return 'Diskon Produk';
+  return 'Promo';
+};
+
+const promoBenefitText = (promo: any): string => {
+  if (promo.type === 'buy_x_get_y') {
+    const buyQty = Number(promo.buy_quantity || 0);
+    const getQty = Number(promo.get_quantity || 0);
+    const freeName = promo.get_product?.name || 'produk pilihan';
+    return buyQty && getQty ? `Beli ${buyQty}, gratis ${getQty} ${freeName}` : 'Bonus produk gratis otomatis';
+  }
+  if (promo.discount_type === 'percentage') {
+    return `Hemat ${Number(promo.discount_value || 0)}%`;
+  }
+  return `Hemat Rp ${Number(promo.discount_value || 0).toLocaleString('id-ID')}`;
+};
+
+const promoRequirementText = (promo: any): string => {
+  if (promo.type === 'transaction_discount' && Number(promo.min_transaction_amount || 0) > 0) {
+    return `Min. transaksi Rp ${Number(promo.min_transaction_amount).toLocaleString('id-ID')}`;
+  }
+  if (promo.type === 'buy_x_get_y' && Number(promo.buy_quantity || 0) > 0) {
+    return `Syarat: beli min. ${promo.buy_quantity} item yang sesuai`;
+  }
+  return '';
 };
 
 const getItemDiscount = (item: any) => {
@@ -96,7 +142,7 @@ const getItemDiscount = (item: any) => {
       <!-- Gradient bleed into page bg -->
       <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, var(--ivory) 100%);"></div>
       <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,138,68,0.6), transparent);"></div>
-      <div class="relative z-10 h-full max-w-[1000px] mx-auto px-6 flex flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 16px)', paddingBottom: '56px' }">
+      <div class="container-commerce relative z-10 flex h-full flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 16px)', paddingBottom: '56px' }">
         <!-- Breadcrumb + Back -->
         <div>
           <nav class="flex items-center gap-2 text-xs font-medium mb-2" style="color: rgba(255,255,255,0.55);">
@@ -115,7 +161,7 @@ const getItemDiscount = (item: any) => {
     </div>
   </div>
 
-  <main class="max-w-[1000px] mx-auto w-full px-6 pb-20 flex-grow" style="padding-top: calc(var(--header-height, 96px) + 40px);">
+  <main class="container-commerce pb-20 flex-grow" style="padding-top: calc(var(--header-height, 96px) + 40px);">
 
     <!-- Store Close Alert Banner -->
     <div v-if="storeStatus?.is_closed" class="mb-6 p-4 border flex items-start gap-3" style="background: rgba(220,38,38,0.06); border-color: rgba(220,38,38,0.25);">
@@ -196,23 +242,36 @@ const getItemDiscount = (item: any) => {
             <span class="material-symbols-outlined text-sm">close</span>
           </button>
         </div>
-      </div>
-      
-      <!-- Free Items from Promo -->
-      <div v-if="cartStore.calculatedData" class="flex flex-col gap-3 mb-6">
-        <template v-for="cItem in cartStore.calculatedData.items" :key="cItem.product_id + (cItem.name || cItem.product_name)">
-          <div v-if="cItem.is_free" class="relative rounded-lg border border-primary/20 bg-primary/5 p-4 flex gap-4 items-center shadow-sm">
-            <div class="w-16 h-16 rounded-lg bg-porcelain p-1 border border-primary/10 flex items-center justify-center">
-              <img v-if="cItem.image" :src="resolveImageUrl(cItem.image, cItem.name || cItem.product_name)" class="w-full h-full object-contain" />
-              <span v-else class="material-symbols-outlined text-primary text-3xl">card_giftcard</span>
-            </div>
-            <div>
-              <p class="text-[9px] font-black uppercase tracking-[0.2em] mb-1" style="color: var(--gold);">Item Gratis Promo</p>
-              <h3 class="font-black text-sm text-ink mb-1" style="font-family: 'Cormorant Garamond', serif;">{{ cItem.name || cItem.product_name }}</h3>
-              <p class="text-xs text-graphite/65 font-bold">Jumlah: {{ cItem.quantity }}</p>
+
+        <!-- ── Free Items dari Promo (Bundle/Bonus) ──────────────────────── -->
+        <div v-if="cartFreeItems.length > 0" class="mt-4">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="material-symbols-outlined text-base" style="color: var(--gold);">card_giftcard</span>
+            <p class="text-[10px] font-black uppercase tracking-[0.18em]" style="color: var(--gold);">Bonus Gratis dari Promo</p>
+          </div>
+          <div class="flex flex-col gap-3">
+            <div
+              v-for="freeItem in cartFreeItems"
+              :key="freeItem.product_id + '-free'"
+              class="flex items-center gap-4 p-4 rounded-lg border"
+              style="background: rgba(184,138,68,0.04); border-color: rgba(184,138,68,0.2);"
+            >
+              <div class="w-16 h-16 rounded-lg overflow-hidden shrink-0 flex items-center justify-center p-1 border" style="background: white; border-color: rgba(184,138,68,0.15);">
+                <img v-if="freeItem.image" :src="resolveImageUrl(freeItem.image, freeItem.name || freeItem.product_name)" class="w-full h-full object-contain mix-blend-multiply" />
+                <span v-else class="material-symbols-outlined text-2xl" style="color: var(--gold);">card_giftcard</span>
+              </div>
+              <div class="flex-grow min-w-0">
+                <p class="text-[9px] font-black uppercase tracking-[0.18em] mb-1" style="color: var(--gold);">Item Gratis</p>
+                <p class="font-black text-sm leading-snug text-ink">{{ freeItem.name || freeItem.product_name }}</p>
+                <p class="text-xs mt-1" style="color: var(--taupe);">Qty: {{ freeItem.quantity }}</p>
+              </div>
+              <div class="shrink-0 text-right">
+                <p class="text-xs line-through" style="color: var(--taupe);">Rp {{ Number(freeItem.original_price || 0).toLocaleString('id-ID') }}</p>
+                <p class="font-black text-sm" style="color: #16a34a;">Rp 0</p>
+              </div>
             </div>
           </div>
-        </template>
+        </div>
       </div>
 
       <!-- Order Summary -->
@@ -224,32 +283,65 @@ const getItemDiscount = (item: any) => {
             <h2 class="font-black text-sm uppercase tracking-wider" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Promo & Voucher</h2>
           </div>
 
-          <div v-if="cartStore.applicablePromos.length > 0" class="flex flex-col gap-3">
+          <div v-if="cartStore.applicablePromos.length > 0" class="flex flex-col gap-2">
             <div 
               v-for="promo in cartStore.applicablePromos" 
               :key="promo.id"
-              @click="handleSetPromo(promo.id === cartStore.appliedPromoId ? null : promo.id)"
-              class="p-3 border cursor-pointer transition-all hover:bg-ivory group"
+              @click="(promo as any).eligible ? handleSetPromo(promo.id === cartStore.appliedPromoId ? null : promo.id) : null"
+              class="p-3 border transition-all group"
+              :class="(promo as any).eligible ? 'cursor-pointer hover:bg-ivory' : 'cursor-not-allowed opacity-60'"
               :style="{
                 borderColor: cartStore.appliedPromoId === promo.id ? 'var(--gold)' : 'rgba(184,138,68,0.1)',
                 background: cartStore.appliedPromoId === promo.id ? 'rgba(184,138,68,0.05)' : 'white'
               }"
             >
               <div class="flex justify-between items-start gap-2">
-                <div>
+                <div class="flex-grow min-w-0">
+                  <!-- Tipe badge -->
+                  <span class="inline-block text-[8px] font-black uppercase tracking-[0.12em] px-1.5 py-0.5 mb-1.5 rounded"
+                    style="background: rgba(184,138,68,0.12); color: #6F4E1D;">
+                    {{ promoTypeLabel(promo) }}
+                  </span>
                   <p class="font-black text-[11px] leading-tight mb-1" :style="{ color: cartStore.appliedPromoId === promo.id ? '#6F4E1D' : 'var(--ink)' }">{{ promo.name }}</p>
-                  <p class="text-[10px] leading-relaxed" style="color: var(--taupe);">{{ formatPromoDescription(promo.description) }}</p>
+                  <!-- Benefit text -->
+                  <p class="text-[10px] font-bold mb-0.5" style="color: #16a34a;">{{ promoBenefitText(promo) }}</p>
+                  <p v-if="promo.description" class="text-[9px] text-graphite/65">{{ formatPromoDescription(promo.description) }}</p>
+                  <!-- Requirement / not-eligible reason -->
+                  <p v-if="(promo as any).reason" class="text-[9px] font-bold" style="color: #d97706;">⚠ {{ (promo as any).reason }}</p>
+                  <p v-else-if="promoRequirementText(promo)" class="text-[9px]" style="color: var(--taupe);">{{ promoRequirementText(promo) }}</p>
                 </div>
-                <span v-if="cartStore.appliedPromoId === promo.id" class="material-symbols-outlined text-sm" style="color: var(--gold);">check_circle</span>
+                <span v-if="cartStore.appliedPromoId === promo.id" class="material-symbols-outlined text-sm shrink-0" style="color: var(--gold);">check_circle</span>
+                <span v-else-if="(promo as any).eligible" class="material-symbols-outlined text-sm shrink-0 opacity-25 group-hover:opacity-50 transition-opacity">add_circle</span>
+                <span v-else class="material-symbols-outlined text-sm shrink-0 opacity-30" style="color: #d97706;">lock</span>
               </div>
             </div>
           </div>
           <div v-else class="py-4 text-center border border-dashed border-mist">
             <p class="text-[10px] text-graphite/45">Tidak ada promo tersedia saat ini</p>
           </div>
-          
-          <!-- Auto-applied indicator -->
-          <div v-if="cartStore.calculatedData?.applied_promo" class="mt-3 p-2 bg-olive/10 border border-olive/20 flex items-center gap-2">
+
+          <!-- Active promo summary -->
+          <div v-if="cartPromoSummary" class="mt-3 p-3 rounded-lg border" style="background: rgba(22,163,74,0.05); border-color: rgba(22,163,74,0.2);">
+            <div class="flex items-start gap-2">
+              <span class="material-symbols-outlined text-sm mt-0.5 shrink-0" style="color: #16a34a;">check_circle</span>
+              <div class="flex-grow min-w-0">
+                <p class="text-[10px] font-black uppercase tracking-[0.12em] mb-0.5" style="color: #16a34a;">Promo Aktif</p>
+                <p class="text-xs font-bold text-ink">{{ cartPromoSummary.name }}</p>
+                <p v-if="cartPromoSummary.discount_amount > 0" class="text-xs font-black mt-1" style="color: #16a34a;">
+                  Hemat Rp {{ Number(cartPromoSummary.discount_amount).toLocaleString('id-ID') }}
+                </p>
+                <!-- Free items preview -->
+                <div v-if="cartFreeItems.length > 0" class="mt-2 flex flex-col gap-1">
+                  <p class="text-[9px] font-bold" style="color: var(--taupe);">Produk bonus:</p>
+                  <p v-for="fi in cartFreeItems" :key="fi.product_id" class="text-[10px] font-bold text-ink">
+                    {{ fi.quantity }}× {{ fi.name || fi.product_name }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Auto-applied indicator (buy_x_get_y tanpa explicit select) -->
+          <div v-else-if="cartStore.calculatedData?.applied_promo && !cartStore.appliedPromoId" class="mt-3 p-2 bg-olive/10 border border-olive/20 flex items-center gap-2">
             <span class="material-symbols-outlined text-xs text-olive">auto_awesome</span>
             <p class="text-[9px] font-bold text-olive uppercase tracking-normal">Promo Otomatis Terpasang</p>
           </div>
@@ -268,7 +360,7 @@ const getItemDiscount = (item: any) => {
               <span class="font-bold">- Rp {{ cartStore.calculatedData.discount_amount.toLocaleString('id-ID') }}</span>
             </div>
             <div v-if="cartStore.calculatedData?.promo_discount_amount > 0" class="flex justify-between text-olive">
-              <span>Promo Diskon</span>
+              <span>{{ cartPromoSummary?.label || 'Promo Eksklusif' }}</span>
               <span class="font-bold">- Rp {{ cartStore.calculatedData.promo_discount_amount.toLocaleString('id-ID') }}</span>
             </div>
             <div class="flex justify-between">

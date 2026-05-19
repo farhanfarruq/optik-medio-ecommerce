@@ -175,27 +175,27 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
-      <div class="flex min-h-screen items-center justify-center px-5 py-10 sm:px-8">
-        <div class="w-full max-w-lg">
-          <div class="mb-8 text-center lg:text-left">
-            <img src="/gambar/medio.jpeg" alt="Optik Medio" class="mx-auto mb-5 h-14 w-auto lg:mx-0" />
+      <div class="flex min-h-screen items-start justify-center px-5 py-8 sm:px-8 lg:pt-36">
+        <div class="w-full max-w-[520px]">
+          <div class="mb-6 text-center lg:text-left">
+            <img src="/gambar/medio.jpeg" alt="Optik Medio" class="mx-auto mb-4 h-12 w-auto lg:mx-0" />
             <p class="text-xs font-semibold uppercase tracking-[0.22em] text-gold">{{ step === 'otp' ? 'Verifikasi Email' : 'Daftar Akun' }}</p>
-            <h2 class="mt-3 font-headline text-4xl font-semibold text-ink">{{ step === 'otp' ? 'Masukkan kode OTP' : 'Buat akun Optik Medio' }}</h2>
-            <p class="mt-3 text-sm leading-6 text-graphite/70">{{ step === 'otp' ? 'Kode 6 digit dikirim ke email yang terdaftar.' : 'Gunakan data aktif agar pesanan dan layanan purna jual mudah diproses.' }}</p>
+            <h2 class="mt-3 font-headline text-3xl font-semibold text-ink">{{ step === 'otp' ? 'Masukkan kode OTP' : 'Buat akun Optik Medio' }}</h2>
+            <p class="mt-2 text-sm leading-6 text-graphite/70">{{ step === 'otp' ? 'Kode 6 digit dikirim ke email yang terdaftar.' : 'Gunakan data aktif agar pesanan dan layanan purna jual mudah diproses.' }}</p>
           </div>
-          <form v-if="step === 'register'" @submit.prevent="handleRegister" class="premium-card space-y-5 p-6 sm:p-8">
+          <form v-if="step === 'register'" @submit.prevent="handleRegister" class="premium-card space-y-4 p-5 sm:p-6">
             <div v-if="errorMessage" class="alert-error">{{ errorMessage }}</div>
-            <label class="block"><span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-graphite/65">Nama Lengkap</span><input v-model="form.name" type="text" required class="input-field" placeholder="Nama sesuai penerima pesanan" /></label>
-            <div class="grid gap-4 sm:grid-cols-2">
-              <label class="block"><span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-graphite/65">Email</span><input v-model="form.email" type="email" required class="input-field" placeholder="nama@email.com" /></label>
-              <label class="block"><span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-graphite/65">No. HP</span><input v-model="form.phone" type="tel" required class="input-field" placeholder="08xxxxxxxxxx" /></label>
+            <label class="block"><span class="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-graphite/65">Nama Lengkap</span><input v-model="form.name" type="text" required class="input-field py-2.5" placeholder="Nama sesuai penerima pesanan" /></label>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <label class="block"><span class="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-graphite/65">Email</span><input v-model="form.email" type="email" required class="input-field py-2.5" placeholder="nama@email.com" /></label>
+              <label class="block"><span class="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-graphite/65">No. HP</span><input v-model="form.phone" type="tel" required class="input-field py-2.5" placeholder="08xxxxxxxxxx" /></label>
             </div>
-            <div class="grid gap-4 sm:grid-cols-2">
-              <label class="block"><span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-graphite/65">Password</span><input v-model="form.password" type="password" required class="input-field" placeholder="Minimal 8 karakter" /></label>
-              <label class="block"><span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-graphite/65">Konfirmasi</span><input v-model="form.password_confirmation" type="password" required class="input-field" placeholder="Ulangi password" /></label>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <label class="block"><span class="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-graphite/65">Password</span><input v-model="form.password" type="password" required class="input-field py-2.5" placeholder="Minimal 8 karakter" /></label>
+              <label class="block"><span class="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-graphite/65">Konfirmasi</span><input v-model="form.password_confirmation" type="password" required class="input-field py-2.5" placeholder="Ulangi password" /></label>
             </div>
-            <label class="block"><span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-graphite/65">Kode Referral</span><input v-model="form.referral_code" type="text" class="input-field" placeholder="Opsional" /></label>
-            <button type="submit" :disabled="isLoading" class="btn-primary w-full"><span v-if="isLoading" class="material-symbols-outlined animate-spin text-base">sync</span><span>{{ isLoading ? 'Memproses...' : 'Daftar & Kirim OTP' }}</span></button>
+            <label class="block"><span class="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-graphite/65">Kode Referral</span><input v-model="form.referral_code" type="text" class="input-field py-2.5" placeholder="Opsional" /></label>
+            <button type="submit" :disabled="isLoading" class="btn-primary w-full py-2.5"><span v-if="isLoading" class="material-symbols-outlined animate-spin text-base">sync</span><span>{{ isLoading ? 'Memproses...' : 'Daftar & Kirim OTP' }}</span></button>
             <p class="text-center text-sm text-graphite/70">Sudah punya akun? <router-link to="/login" class="font-semibold text-gold hover:text-ink">Masuk</router-link></p>
           </form>
           <section v-else class="premium-card space-y-6 p-6 text-center sm:p-8">

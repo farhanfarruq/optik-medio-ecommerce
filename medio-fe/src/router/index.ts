@@ -54,8 +54,8 @@ const routes = [
       { path: 'blog', name: 'Blog', component: () => import('../views/blog/ArticleList.vue'), meta: { title: 'Blog & Artikel | Optik Medio' } },
       { path: 'blog/:slug', name: 'ArticleDetail', component: () => import('../views/blog/ArticleDetail.vue'), meta: { title: 'Artikel | Optik Medio' } },
       // Halaman Legal statis
-      { path: 'privacy', name: 'Privacy', component: () => import('../views/legal/PrivacyView.vue'), meta: { title: 'Kebijakan Privasi | Optik Medio' } },
-      { path: 'terms', name: 'Terms', component: () => import('../views/legal/TermsView.vue'), meta: { title: 'Syarat & Ketentuan | Optik Medio' } },
+      { path: 'privacy', alias: ['/kebijakan-privasi'], name: 'Privacy', component: () => import('../views/legal/PrivacyView.vue'), meta: { title: 'Kebijakan Privasi | Optik Medio' } },
+      { path: 'terms', alias: ['/syarat-ketentuan'], name: 'Terms', component: () => import('../views/legal/TermsView.vue'), meta: { title: 'Syarat & Ketentuan | Optik Medio' } },
       { path: 'faq', name: 'FAQ', component: () => import('../views/legal/FAQView.vue'), meta: { title: 'FAQ | Optik Medio' } },
       // Referral
       { path: 'referral', name: 'Referral', component: () => import('../views/ReferralPage.vue'), meta: { title: 'Program Referral | Optik Medio' } },

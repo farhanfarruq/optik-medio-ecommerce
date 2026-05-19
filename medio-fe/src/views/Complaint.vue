@@ -30,6 +30,15 @@ const form = ref({
   contact_phone: '',
 });
 
+const selectedOrder = computed(() => orders.value.find((order) => order.id === form.value.order_id) || null);
+const complaintSteps = computed(() => [
+  { label: 'Pesanan', done: !!form.value.order_id || !isShippingProtectionMode.value },
+  { label: 'Tipe', done: !!complaintMode.value },
+  { label: 'Detail', done: !!form.value.subject && !!form.value.message },
+  { label: 'Bukti', done: !!attachment.value },
+  { label: 'Review', done: !!form.value.contact_phone },
+]);
+
 const loadOrders = async () => {
   isLoadingOrders.value = true;
 
@@ -93,8 +102,29 @@ onMounted(async () => {
     />
 
     <main class="container-premium max-w-4xl pt-24 pb-20">
+      <div class="premium-card mb-6 p-5">
+        <div class="grid grid-cols-5 gap-2 text-center">
+          <div v-for="(step, index) in complaintSteps" :key="step.label" class="flex flex-col items-center gap-2">
+            <span class="flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-black" :style="step.done ? 'background: var(--ink); color: var(--ivory); border-color: var(--ink);' : 'background: var(--porcelain); color: var(--taupe); border-color: var(--mist);'">{{ index + 1 }}</span>
+            <span class="text-[9px] font-black uppercase tracking-[0.12em] text-graphite/60">{{ step.label }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert-info mb-6">Tim Optik Medio meninjau komplain pada jam operasional. Sertakan bukti foto/video yang jelas agar proses validasi dan SLA penanganan lebih cepat.</div>
 
     <form @submit.prevent="submitComplaint" class="premium-card space-y-6 p-6 sm:p-8" style="border-color: rgba(184,138,68,0.15)">
+      <div class="grid gap-3 sm:grid-cols-2">
+        <button type="button" @click="complaintMode = 'general'" class="rounded-lg border px-4 py-3 text-left transition-all" :style="complaintMode === 'general' ? 'border-color: var(--gold); background: rgba(184,138,68,0.08);' : 'border-color: var(--mist); background: white;'">
+          <span class="block text-xs font-black uppercase tracking-[0.16em] text-ink">Komplain Pesanan</span>
+          <span class="mt-1 block text-xs text-graphite/65">Produk salah, rusak, retur, atau layanan lanjutan.</span>
+        </button>
+        <button type="button" @click="complaintMode = 'shipping_protection'" class="rounded-lg border px-4 py-3 text-left transition-all" :style="complaintMode === 'shipping_protection' ? 'border-color: var(--gold); background: rgba(184,138,68,0.08);' : 'border-color: var(--mist); background: white;'">
+          <span class="block text-xs font-black uppercase tracking-[0.16em] text-ink">Proteksi Pengiriman</span>
+          <span class="mt-1 block text-xs text-graphite/65">Paket rusak, hilang, atau bermasalah saat dikirim.</span>
+        </button>
+      </div>
+
       <div class="grid gap-6 md:grid-cols-2">
         <div>
           <label class="block text-xs font-black uppercase tracking-[0.18em] text-graphite/65 mb-2">
@@ -110,6 +140,12 @@ onMounted(async () => {
               {{ order.order_number }} - {{ order.status }}
             </option>
           </select>
+        </div>
+
+        <div v-if="selectedOrder" class="rounded-lg border border-mist bg-porcelain p-4 text-xs">
+          <p class="font-black uppercase tracking-[0.16em] text-graphite/60">Pesanan dipilih</p>
+          <p class="mt-1 font-bold text-ink">{{ selectedOrder.order_number }}</p>
+          <p class="mt-1 text-graphite/65">Status: {{ selectedOrder.status }}</p>
         </div>
 
         <div>
@@ -147,8 +183,13 @@ onMounted(async () => {
 
       <div>
         <label class="block text-xs font-black uppercase tracking-[0.18em] text-graphite/65 mb-2">Lampiran</label>
-        <input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,.mp4,.mov,.webm" @change="handleAttachment" class="block w-full border border-mist bg-ivory px-4 py-3 text-sm" />
-        <p class="text-xs text-graphite/65 mt-2">Boleh berupa foto, video singkat, atau PDF pendukung. Maksimal 15 MB.</p>
+        <label class="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-gold/40 bg-gold/5 px-4 py-6 text-center transition-all hover:bg-gold/10">
+          <span class="material-symbols-outlined text-3xl" style="color: var(--gold);">upload_file</span>
+          <span class="mt-2 text-sm font-bold text-ink">{{ attachment ? attachment.name : 'Unggah bukti pendukung' }}</span>
+          <span class="mt-1 text-xs text-graphite/65">Foto, video singkat, atau PDF. Maksimal 15 MB.</span>
+          <input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,.mp4,.mov,.webm" @change="handleAttachment" class="sr-only" />
+        </label>
+        <p class="text-xs text-graphite/65 mt-2">Bukti yang jelas membantu tim memvalidasi kondisi produk dan resolusi yang tepat.</p>
       </div>
 
       <div class="flex flex-col gap-3 sm:flex-row">

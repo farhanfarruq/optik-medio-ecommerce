@@ -31,6 +31,15 @@ const statusColor = computed(() => {
   return map[complain.value?.status] ?? 'var(--taupe)';
 });
 
+const statusTimeline = computed(() => {
+  const status = complain.value?.status;
+  return [
+    { label: 'Diterima', done: true, note: formatDate(complain.value?.created_at) },
+    { label: 'Ditinjau', done: ['in_progress', 'resolved', 'rejected'].includes(status), note: 'Validasi bukti dan pesanan' },
+    { label: 'Resolusi', done: ['resolved', 'rejected'].includes(status), note: complain.value?.resolved_at ? formatDate(complain.value.resolved_at) : 'Menunggu keputusan tim' },
+  ];
+});
+
 const breadcrumbs = computed(() => {
   if (complain.value?.order) {
     return [
@@ -128,6 +137,19 @@ onMounted(async () => {
           </div>
         </div>
 
+        <div class="premium-card mb-6 p-6">
+          <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: var(--taupe);">Timeline Penanganan</p>
+          <div class="grid gap-3 sm:grid-cols-3">
+            <div v-for="item in statusTimeline" :key="item.label" class="rounded-lg border p-4" :style="item.done ? 'background: rgba(184,138,68,0.08); border-color: rgba(184,138,68,0.28);' : 'background: white; border-color: var(--mist);'">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-base" :style="item.done ? 'color: var(--gold);' : 'color: var(--taupe);'">{{ item.done ? 'check_circle' : 'radio_button_unchecked' }}</span>
+                <p class="text-xs font-black uppercase tracking-[0.14em]" style="color: var(--ink);">{{ item.label }}</p>
+              </div>
+              <p class="mt-2 text-xs leading-relaxed" style="color: var(--taupe);">{{ item.note }}</p>
+            </div>
+          </div>
+        </div>
+
         <!-- Pesan Komplain -->
         <div class="premium-card mb-6 p-6">
           <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-3" style="color: var(--taupe);">Pesan Komplain Anda</p>
@@ -135,7 +157,7 @@ onMounted(async () => {
 
           <!-- Lampiran -->
           <div v-if="complain.attachment_path" class="mt-4 pt-4 border-t" style="border-color: #f0ece4;">
-            <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-2" style="color: var(--taupe);">Lampiran</p>
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-2" style="color: var(--taupe);">Evidence / Lampiran</p>
             <a :href="`${apiOrigin}/storage/${complain.attachment_path}`"
                target="_blank"
                class="inline-flex items-center gap-1.5 text-xs font-bold underline"
@@ -150,7 +172,7 @@ onMounted(async () => {
         <div class="border p-6 mb-6" :style="`background: ${complain.admin_notes ? 'var(--porcelain)' : 'white'}; border-color: ${complain.admin_notes ? 'rgba(184,138,68,0.4)' : 'rgba(184,138,68,0.15)'};`">
           <div class="flex items-center gap-2 mb-3">
             <span class="material-symbols-outlined text-base" style="color: var(--gold);">support_agent</span>
-            <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: var(--taupe);">Respons Tim Optik Medio</p>
+            <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: var(--taupe);">Resolusi Tim Optik Medio</p>
           </div>
 
           <div v-if="complain.admin_notes">

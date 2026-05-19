@@ -71,7 +71,7 @@ onMounted(() => {
   <div>
     <PageHero title="Loyalty Points" subtitle="Belanja, kumpulkan poin, nikmati diskon" :breadcrumbs="breadcrumbs" />
 
-    <main class="container-premium max-w-4xl py-12">
+    <main class="container-commerce py-12">
 
       <!-- Cara Kerja -->
       <section class="mb-12">

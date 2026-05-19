@@ -161,8 +161,8 @@ const handleUserClick = () => {
 
 // Computed top offset for drawer — matches navbar height + optional promo banner
 const drawerTop = computed(() => {
-  const bannerH = cartStore.isPromoBannerVisible ? 40 : 0;
-  const navH = isScrolled.value ? 80 : 96;
+  const bannerH = cartStore.isPromoBannerVisible ? 36 : 0;
+  const navH = 72;
   return `${bannerH + navH}px`;
 });
 
@@ -221,14 +221,14 @@ const mobileNavItems = [
 
   <nav
     :style="{
-      top: cartStore.isPromoBannerVisible ? '40px' : '0',
+      top: cartStore.isPromoBannerVisible ? '36px' : '0',
       transition: 'top 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.5s ease, height 0.5s ease, box-shadow 0.5s ease'
     }"
     :class="[
       'fixed w-full z-50',
       isLightNav
-        ? 'bg-porcelain/95 backdrop-blur-xl shadow-card h-20 border-b border-mist'
-        : 'bg-graphite/62 backdrop-blur-md h-24 border-b border-white/10'
+        ? 'bg-porcelain/70 backdrop-blur-2xl shadow-card h-[72px] border-b border-mist/80'
+        : 'bg-graphite/50 backdrop-blur-2xl shadow-card h-[72px] border-b border-white/10'
     ]"
   >
     <div class="container-premium flex justify-between items-center h-full gap-4">
@@ -236,13 +236,13 @@ const mobileNavItems = [
       <!-- Logo -->
       <router-link to="/" class="flex items-center gap-2.5 md:gap-3 group">
         <div
-          class="relative overflow-hidden rounded-lg group-hover:scale-[1.03] transition-transform duration-300 p-1 border"
+          class="relative overflow-hidden rounded-lg group-hover:scale-[1.03] transition-transform duration-300 p-0.5 border"
           :class="isLightNav ? 'bg-white border-mist shadow-card' : 'bg-white/10 border-white/20 backdrop-blur-sm'"
         >
-          <img src="/gambar/medio.jpeg" alt="Optik Medio" class="h-9 w-auto object-contain" />
+          <img src="/gambar/medio.jpeg" alt="Optik Medio" class="h-8 w-auto object-contain" />
         </div>
         <span
-          class="font-headline text-2xl font-semibold tracking-normal transition-all duration-300"
+          class="font-headline text-xl font-semibold tracking-normal transition-all duration-300"
           :class="isLightNav
             ? 'text-ink'
             : 'text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]'"
@@ -256,7 +256,7 @@ const mobileNavItems = [
       <div class="hidden md:flex items-center justify-center gap-1 flex-grow">
         <router-link
           to="/products"
-          class="rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] transition-colors"
+          class="rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors"
           :class="isLightNav ? 'hover:bg-ivory' : 'hover:bg-white/10'"
           :style="navTextStyle"
         >
@@ -264,7 +264,7 @@ const mobileNavItems = [
         </router-link>
         <router-link
           to="/face-shape-quiz"
-          class="rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] transition-colors"
+          class="rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors"
           :class="isLightNav ? 'hover:bg-ivory' : 'hover:bg-white/10'"
           :style="navTextStyle"
         >
@@ -272,7 +272,7 @@ const mobileNavItems = [
         </router-link>
         <router-link
           to="/virtual-try-on"
-          class="rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] transition-colors"
+          class="rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors"
           :class="isLightNav ? 'hover:bg-ivory' : 'hover:bg-white/10'"
           :style="navTextStyle"
         >
@@ -280,7 +280,7 @@ const mobileNavItems = [
         </router-link>
         <router-link
           to="/compare"
-          class="rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] transition-colors"
+          class="rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors"
           :class="isLightNav ? 'hover:bg-ivory' : 'hover:bg-white/10'"
           :style="navTextStyle"
         >
@@ -295,13 +295,13 @@ const mobileNavItems = [
       >
         <!-- Integrated Search Bar -->
         <div 
-          class="relative flex items-center h-11 rounded-full border transition-all duration-300 ease-out"
+          class="relative flex items-center h-10 rounded-full border transition-all duration-300 ease-out"
           :class="isSearchOpen ? 'w-[190px] sm:w-[260px] md:w-[360px] px-2 bg-porcelain border-gold/40 shadow-card text-ink' : 'w-11 border-transparent'"
           :style="isSearchOpen && isScrolled ? 'background: rgba(0,0,0,0.03);' : ''"
         >
           <button
             @click="isSearchOpen ? executeSearch() : toggleSearch()"
-            class="shrink-0 w-10 h-10 flex items-center justify-center rounded-full transition-colors active:scale-95"
+            class="shrink-0 w-9 h-9 flex items-center justify-center rounded-full transition-colors active:scale-95"
             :class="isSearchOpen ? 'text-gold hover:bg-gold/10' : isLightNav ? 'hover:bg-ivory' : 'hover:bg-white/10'"
             :style="!isSearchOpen ? navTextStyle : undefined"
           >
@@ -389,7 +389,7 @@ const mobileNavItems = [
         <div v-if="!isSearchOpen || windowWidth > 768" class="flex items-center gap-2 md:gap-4">
           <router-link
             to="/appointment"
-            class="hidden md:flex w-10 h-10 rounded-full items-center justify-center transition-colors active:scale-95"
+            class="hidden md:flex w-9 h-9 rounded-full items-center justify-center transition-colors active:scale-95"
             :class="isLightNav ? 'hover:bg-ivory' : 'hover:bg-white/10'"
             :style="navTextStyle"
             title="Booking Konsultasi"
@@ -398,7 +398,7 @@ const mobileNavItems = [
           </router-link>
           <router-link
             to="/blog"
-            class="hidden md:flex w-10 h-10 rounded-full items-center justify-center transition-colors active:scale-95"
+            class="hidden md:flex w-9 h-9 rounded-full items-center justify-center transition-colors active:scale-95"
             :class="isLightNav ? 'hover:bg-ivory' : 'hover:bg-white/10'"
             :style="navTextStyle"
             title="Blog & Artikel"
@@ -407,7 +407,7 @@ const mobileNavItems = [
           </router-link>
           <button
             @click="handleUserClick"
-            class="hidden md:flex w-10 h-10 rounded-full items-center justify-center transition-colors active:scale-95"
+            class="hidden md:flex w-9 h-9 rounded-full items-center justify-center transition-colors active:scale-95"
             :class="isLightNav ? 'hover:bg-ivory' : 'hover:bg-white/10'"
             :style="navTextStyle"
           >
@@ -415,7 +415,7 @@ const mobileNavItems = [
           </button>
           <button
             @click="goToCart"
-            class="hidden md:flex relative w-10 h-10 rounded-full items-center justify-center transition-colors active:scale-95"
+            class="hidden md:flex relative w-9 h-9 rounded-full items-center justify-center transition-colors active:scale-95"
             :class="isLightNav ? 'hover:bg-ivory' : 'hover:bg-white/10'"
             :style="navTextStyle"
           >

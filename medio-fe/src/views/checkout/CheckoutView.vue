@@ -218,6 +218,7 @@ const handlePromoSelect = async (promoId: number) => {
       selectedLoyaltyPoints.value,
       form.value.id,
       shippingProtectionOpted.value,
+      fulfillmentMethod.value,
     );
     if (targetId) {
       showToast('Promo berhasil diterapkan!', 'success');
@@ -242,6 +243,50 @@ const discountAmount = computed(() => {
 const formatPromoDescription = (desc: string) => {
   if (!desc) return '';
   return desc.replace(/(\d+)\.00%/g, '$1%');
+};
+
+const formatCurrency = (value: number | string | null | undefined) =>
+  `Rp ${Number(value || 0).toLocaleString('id-ID')}`;
+
+const checkoutFreeItems = computed(() => {
+  const fromItems = (cartStore.calculatedData?.items || []).filter((item: any) => item.is_free);
+  if (fromItems.length > 0) return fromItems;
+  return cartStore.calculatedData?.free_items || [];
+});
+
+const promoSummary = computed(() => cartStore.calculatedData?.promo_summary || null);
+
+const promoTypeLabel = (promo: any) => {
+  if (promo.type === 'buy_x_get_y') return 'Bonus Produk';
+  if (promo.type === 'transaction_discount') return 'Diskon Transaksi';
+  return 'Diskon Produk';
+};
+
+const promoBenefitText = (promo: any) => {
+  if (promo.type === 'buy_x_get_y') {
+    const buyQty = Number(promo.buy_quantity || 0);
+    const getQty = Number(promo.get_quantity || 0);
+    const freeName = promo.get_product?.name || 'produk pilihan';
+    return buyQty && getQty ? `Beli ${buyQty}, gratis ${getQty} ${freeName}` : 'Bonus produk gratis otomatis saat syarat terpenuhi';
+  }
+
+  if (promo.discount_type === 'percentage') {
+    return `Hemat ${Number(promo.discount_value || 0).toLocaleString('id-ID')}%`;
+  }
+
+  return `Hemat ${formatCurrency(promo.discount_value)}`;
+};
+
+const promoRequirementText = (promo: any) => {
+  if (promo.type === 'transaction_discount' && Number(promo.min_transaction_amount || 0) > 0) {
+    return `Minimal transaksi ${formatCurrency(promo.min_transaction_amount)}`;
+  }
+
+  if (promo.type === 'buy_x_get_y' && Number(promo.buy_quantity || 0) > 0) {
+    return `Syarat: beli minimal ${promo.buy_quantity} item yang sesuai promo`;
+  }
+
+  return '';
 };
 
 const selectAddress = async (addr: any) => {
@@ -671,7 +716,7 @@ const submitOrder = async () => {
         <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, var(--ivory) 100%);"></div>
         <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,138,68,0.6), transparent);"></div>
 
-        <div class="relative z-10 h-full max-w-[1440px] mx-auto px-6 md:px-12 flex flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 16px)', paddingBottom: '56px' }">
+        <div class="container-commerce relative z-10 flex h-full flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 16px)', paddingBottom: '56px' }">
           <!-- Breadcrumb + Back -->
           <div>
             <nav class="flex items-center gap-2 text-xs font-medium mb-2" style="color: rgba(255,255,255,0.55);">
@@ -692,7 +737,7 @@ const submitOrder = async () => {
       </div>
     </div>
 
-    <main class="relative z-10 max-w-7xl mx-auto px-6 pb-24" style="padding-top: calc(var(--header-height, 96px) + 40px);">
+    <main class="container-commerce relative z-10 pb-24" style="padding-top: calc(var(--header-height, 96px) + 40px);">
 
       <!-- Store Close Alert Banner -->
       <div v-if="storeStatus?.is_closed" class="mb-8 p-5 border flex items-start gap-4" style="background: rgba(220,38,38,0.06); border-color: rgba(220,38,38,0.3);">
@@ -701,6 +746,23 @@ const submitOrder = async () => {
           <p class="font-black text-sm" style="color: #dc2626;">Toko Sedang Tutup</p>
           <p class="text-xs mt-1" style="color: #b91c1c;" v-if="storeStatus.current_close?.reason">{{ storeStatus.current_close.reason }}</p>
           <p class="text-xs mt-1" style="color: #ef4444;">Checkout tidak dapat diproses saat ini. Silakan coba lagi nanti.</p>
+        </div>
+      </div>
+
+      <div class="premium-card mb-8 p-5">
+        <div class="grid grid-cols-3 gap-3 text-center">
+          <div class="flex flex-col items-center gap-2">
+            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-ink text-sm font-black text-ivory">1</span>
+            <span class="text-[10px] font-black uppercase tracking-[0.14em] text-ink">Pemenuhan</span>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <span class="flex h-9 w-9 items-center justify-center rounded-lg border border-mist bg-porcelain text-sm font-black text-taupe">2</span>
+            <span class="text-[10px] font-black uppercase tracking-[0.14em] text-graphite/60">Pengiriman</span>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <span class="flex h-9 w-9 items-center justify-center rounded-lg border border-mist bg-porcelain text-sm font-black text-taupe">3</span>
+            <span class="text-[10px] font-black uppercase tracking-[0.14em] text-graphite/60">Pembayaran</span>
+          </div>
         </div>
       </div>
 
@@ -859,19 +921,58 @@ const submitOrder = async () => {
 
             <div v-if="cartStore.applicablePromos.length > 0" class="mb-6 flex flex-col gap-3">
               <h3 class="font-bold text-sm text-ink">Pilih Promo Eksklusif</h3>
-              <div 
-                v-for="promo in cartStore.applicablePromos" 
+              <div
+                v-for="promo in cartStore.applicablePromos"
                 :key="promo.id"
-                @click="handlePromoSelect(promo.id)"
-                class="p-4 border rounded-lg cursor-pointer transition-all hover:bg-ivory flex justify-between items-center"
-                :class="cartStore.appliedPromoId === promo.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-mist'"
+                @click="(promo as any).eligible ? handlePromoSelect(promo.id) : null"
+                class="p-4 border rounded-lg transition-all"
+                :class="[
+                  (promo as any).eligible ? 'cursor-pointer hover:bg-ivory' : 'cursor-not-allowed opacity-60',
+                  cartStore.appliedPromoId === promo.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-mist'
+                ]"
               >
-                <div>
-                  <p class="font-bold text-ink text-sm">{{ promo.name }}</p>
-                  <p class="text-xs text-graphite/65 mt-1">{{ formatPromoDescription(promo.description) }}</p>
+                <div class="flex justify-between items-start gap-4">
+                  <div class="min-w-0 flex-grow">
+                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                      <span class="text-[9px] font-black uppercase tracking-[0.16em] px-2 py-1 rounded" style="background: rgba(184,138,68,0.12); color: #6F4E1D;">{{ promoTypeLabel(promo) }}</span>
+                      <span v-if="cartStore.appliedPromoId === promo.id" class="text-[9px] font-black uppercase tracking-[0.16em] px-2 py-1 rounded bg-olive/10 text-olive">Terpasang</span>
+                      <span v-else-if="!(promo as any).eligible" class="text-[9px] font-black uppercase tracking-[0.16em] px-2 py-1 rounded" style="background: rgba(217,119,6,0.1); color: #d97706;">Belum Memenuhi Syarat</span>
+                    </div>
+                    <p class="font-bold text-ink text-sm">{{ promo.name }}</p>
+                    <p class="text-xs font-bold mt-1" style="color: var(--gold);">{{ promoBenefitText(promo) }}</p>
+                    <!-- Reason / requirement -->
+                    <p v-if="(promo as any).reason" class="text-[10px] font-bold mt-1" style="color: #d97706;">⚠ {{ (promo as any).reason }}</p>
+                    <p v-else-if="promoRequirementText(promo)" class="text-[10px] text-graphite/55 mt-1">{{ promoRequirementText(promo) }}</p>
+                    <p v-if="promo.description" class="text-xs text-graphite/65 mt-2 leading-relaxed">{{ formatPromoDescription(promo.description) }}</p>
+                  </div>
+                  <div class="shrink-0">
+                    <span v-if="cartStore.appliedPromoId === promo.id" class="material-symbols-outlined text-primary">check_circle</span>
+                    <span v-else-if="(promo as any).eligible" class="material-symbols-outlined text-graphite/30">add_circle</span>
+                    <span v-else class="material-symbols-outlined" style="color: #d97706;">lock</span>
+                  </div>
                 </div>
-                <div v-if="cartStore.appliedPromoId === promo.id" class="text-primary">
-                  <span class="material-symbols-outlined">check_circle</span>
+              </div>
+            </div>
+
+            <div v-if="promoSummary" class="mb-6 rounded-lg border border-olive/25 bg-olive/10 p-4">
+              <div class="flex items-start gap-3">
+                <span class="material-symbols-outlined text-olive">verified</span>
+                <div class="min-w-0 flex-1">
+                  <p class="text-[10px] font-black uppercase tracking-[0.18em] text-olive">Promo aktif</p>
+                  <p class="mt-1 text-sm font-black text-ink">{{ promoSummary.name }}</p>
+                  <p class="mt-1 text-xs text-graphite/65">{{ promoSummary.label }}</p>
+                  <p v-if="promoSummary.discount_amount > 0" class="mt-2 text-sm font-black text-olive">Hemat {{ formatCurrency(promoSummary.discount_amount) }}</p>
+                  <div v-if="checkoutFreeItems.length > 0" class="mt-3 flex flex-col gap-2">
+                    <div v-for="freeItem in checkoutFreeItems" :key="freeItem.product_id" class="flex items-center gap-3 rounded-lg border border-olive/15 bg-white/60 p-2">
+                      <div class="h-10 w-10 shrink-0 rounded bg-porcelain p-1">
+                        <img v-if="freeItem.image" :src="resolveImageUrl(freeItem.image, freeItem.name || freeItem.product_name)" class="h-full w-full object-contain" />
+                      </div>
+                      <div class="min-w-0">
+                        <p class="text-xs font-bold text-ink line-clamp-1">{{ freeItem.name || freeItem.product_name }}</p>
+                        <p class="text-[10px] font-bold text-olive">{{ freeItem.quantity }} item gratis</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1061,6 +1162,26 @@ const submitOrder = async () => {
               </div>
             </div>
 
+            <div v-if="checkoutFreeItems.length > 0" class="mb-8 rounded-lg border border-primary/15 bg-primary/5 p-4">
+              <div class="mb-3 flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">redeem</span>
+                <p class="text-xs font-black uppercase tracking-[0.18em] text-primary">Bonus Gratis dari Promo</p>
+              </div>
+              <div class="flex flex-col gap-3">
+                <div v-for="freeItem in checkoutFreeItems" :key="freeItem.product_id" class="flex items-center gap-3 rounded-lg border border-primary/10 bg-white p-3">
+                  <div class="h-14 w-14 shrink-0 rounded-lg bg-porcelain p-1">
+                    <img v-if="freeItem.image" :src="resolveImageUrl(freeItem.image, freeItem.name || freeItem.product_name)" class="h-full w-full object-contain" />
+                    <span v-else class="material-symbols-outlined flex h-full w-full items-center justify-center text-primary">card_giftcard</span>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-black text-ink line-clamp-2">{{ freeItem.name || freeItem.product_name }}</p>
+                    <p class="mt-1 text-xs font-bold text-primary">Qty {{ freeItem.quantity }} · Gratis</p>
+                  </div>
+                  <span class="rounded bg-olive/10 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-olive">Rp 0</span>
+                </div>
+              </div>
+            </div>
+
             <div class="flex flex-col gap-4 text-sm mb-8">
                             <div class="flex justify-between text-graphite/65">
                 <span>Subtotal ({{ cartStore.calculatedData ? cartStore.calculatedData.items.length : cartStore.items.length }} item)</span>
@@ -1081,7 +1202,7 @@ const submitOrder = async () => {
                 <span class="font-bold">-Rp {{ cartStore.calculatedData.discount_amount.toLocaleString('id-ID') }}</span>
               </div>
               <div v-if="cartStore.calculatedData && cartStore.calculatedData.promo_discount_amount > 0" class="flex justify-between text-olive">
-                <span>Promo Eksklusif</span>
+                <span>{{ promoSummary?.label || 'Promo Eksklusif' }}</span>
                 <span class="font-bold">-Rp {{ cartStore.calculatedData.promo_discount_amount.toLocaleString('id-ID') }}</span>
               </div>
 
@@ -1122,22 +1243,7 @@ const submitOrder = async () => {
                   <span class="text-xs font-bold">-Rp {{ loyaltyDiscountAmount.toLocaleString('id-ID') }}</span>
                 </div>
               </div>
-              
-              <!-- Free Items -->
-              <div v-if="cartStore.calculatedData" class="mt-4 border-t border-mist pt-4">
-                <div v-for="cItem in cartStore.calculatedData.items" :key="cItem.product_id + (cItem.name || cItem.product_name)">
-                  <div v-if="cItem.is_free" class="flex items-center gap-3 p-3 bg-primary/5 border border-primary/10 mb-2">
-                    <div class="w-12 h-12 rounded-lg bg-porcelain border border-primary/10 flex items-center justify-center p-1 shrink-0">
-                      <img :src="resolveImageUrl(cItem.image, cItem.name || cItem.product_name)" class="w-full h-full object-contain" />
-                    </div>
-                    <div class="flex flex-col flex-grow min-w-0">
-                      <p class="text-[9px] font-black uppercase tracking-[0.1em] text-primary mb-0.5">Bonus Hadiah</p>
-                      <h3 class="text-[11px] font-bold text-ink leading-tight line-clamp-2">{{ cItem.name || cItem.product_name }}</h3>
-                      <p class="text-[10px] text-graphite/65 mt-1 font-bold">Qty: {{ cItem.quantity }} <span class="ml-2 text-primary">GRATIS</span></p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+
 
               <div class="h-px bg-mist my-2"></div>
               <div class="flex justify-between items-center">

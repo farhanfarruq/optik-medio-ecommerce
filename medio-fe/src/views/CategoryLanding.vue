@@ -63,7 +63,7 @@ onMounted(loadCategory);
     <!-- Hero -->
     <div class="relative overflow-hidden" style="height: 280px; background: linear-gradient(135deg, var(--ink) 0%, var(--graphite) 100%);">
       <div class="absolute inset-0" style="background: url('/gambar/hero-bg.jpeg') center/cover; opacity: 0.2;"></div>
-      <div class="relative z-10 h-full container-premium flex flex-col justify-end pb-12 pt-24">
+      <div class="relative z-10 h-full container-commerce flex flex-col justify-end pb-12 pt-24">
         <nav class="flex items-center gap-2 text-xs mb-3" style="color: rgba(255,255,255,0.5);">
           <router-link to="/" class="hover:text-white">Beranda</router-link>
           <span>›</span>
@@ -81,7 +81,7 @@ onMounted(loadCategory);
       </div>
     </div>
 
-    <main class="container-premium py-12">
+    <main class="container-commerce py-12">
       <div v-if="isLoading" class="flex justify-center py-20">
         <span class="material-symbols-outlined animate-spin text-4xl" style="color: var(--gold);">sync</span>
       </div>

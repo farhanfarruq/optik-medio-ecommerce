@@ -3,6 +3,7 @@ import { computed, ref, reactive, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCartStore } from '../stores/cartStore';
 import { useWishlistStore } from '../stores/wishlistStore';
+import { useCompareStore } from '../stores/compareStore';
 import { useAuthStore } from '../stores/authStore';
 import { productRepository } from '../repositories/ProductRepository';
 import { reviewRepository, type Review } from '../repositories/ReviewRepository';
@@ -22,6 +23,7 @@ const route = useRoute();
 const router = useRouter();
 const cartStore = useCartStore();
 const wishlistStore = useWishlistStore();
+const compareStore = useCompareStore();
 const authStore = useAuthStore();
 const { setSeo, setJsonLd, buildProductJsonLd } = useSeoMeta();
 const { trackProductViewed } = useAnalytics();
@@ -390,6 +392,7 @@ const chooseFrameBeforeCheckout = () => {
 };
 
 const isWishlisted = computed(() => product.value ? wishlistStore.isWishlisted(product.value.id) : false);
+const isCompared = computed(() => product.value ? compareStore.isCompared(product.value.id) : false);
 
 const toggleWishlist = async () => {
   if (!product.value) return;
@@ -399,6 +402,18 @@ const toggleWishlist = async () => {
     added ? 'Produk ditambahkan ke wishlist.' : 'Produk dihapus dari wishlist.',
     'success',
   );
+};
+
+const toggleCompare = () => {
+  if (!product.value) return;
+
+  const result = compareStore.toggle(product.value);
+  if (result === 'full') {
+    showToast('Maksimal 4 produk untuk dibandingkan.', 'error');
+    return;
+  }
+
+  showToast(result === 'added' ? 'Produk ditambahkan ke compare.' : 'Produk dihapus dari compare.', 'success');
 };
 
 const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50', '-0.25', '0.00', '+0.25', '+0.50', '+0.75', '+1.00', '+1.25', '+1.50', '+1.75', '+2.00'];
@@ -597,7 +612,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
         <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, var(--ivory) 100%);"></div>
         <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,138,68,0.6), transparent);"></div>
 
-        <div class="relative z-10 h-full max-w-[1440px] mx-auto px-6 md:px-12 flex flex-col justify-end pb-24 pt-24">
+        <div class="container-commerce relative z-10 flex h-full flex-col justify-end pb-24 pt-24">
           <!-- Breadcrumb -->
           <nav class="flex items-center gap-2 text-xs font-medium mb-3" style="color: rgba(255,255,255,0.55);">
             <router-link to="/" class="hover:text-white transition-colors">Beranda</router-link>
@@ -619,7 +634,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
       <div class="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12">
 
         <!-- ── Left: Image Gallery ── -->
-        <div class="lg:col-span-7 flex flex-col gap-5">
+        <div class="lg:col-span-7 flex flex-col gap-5 lg:sticky lg:top-28 lg:self-start">
           <!-- Main Image -->
           <div
             class="relative aspect-[4/3] rounded-lg overflow-hidden flex items-center justify-center group border border-mist bg-porcelain shadow-card"
@@ -667,7 +682,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
         </div>
 
         <!-- ── Right: Product Info ── -->
-        <div class="lg:col-span-5 flex flex-col gap-6">
+        <div class="lg:col-span-5 flex flex-col gap-6 lg:sticky lg:top-28 lg:self-start">
 
           <!-- Category + Badges -->
           <div class="flex flex-col gap-2">
@@ -768,6 +783,17 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
           >
             <span class="material-symbols-outlined text-lg">{{ isWishlisted ? 'favorite' : 'favorite_border' }}</span>
             {{ isWishlisted ? 'Tersimpan di Wishlist' : 'Tambah ke Wishlist' }}
+          </button>
+
+          <button
+            @click="toggleCompare"
+            class="w-full py-3 px-5 rounded-lg border flex items-center justify-center gap-3 text-sm font-black uppercase tracking-[0.16em] transition-all"
+            :style="isCompared
+              ? 'background: rgba(63,111,143,0.12); color: var(--optical-blue); border-color: rgba(63,111,143,0.28);'
+              : 'background: white; color: var(--graphite); border-color: rgba(184,138,68,0.18);'"
+          >
+            <span class="material-symbols-outlined text-lg">compare_arrows</span>
+            {{ isCompared ? 'Ada di Compare' : 'Bandingkan' }}
           </button>
 
           <!-- Divider -->
@@ -1044,7 +1070,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
       </div>
     </div>
 
-    <section v-if="hasRecommendationSection" class="max-w-[1440px] mx-auto px-6 md:px-12 pb-16">
+    <section v-if="hasRecommendationSection" class="container-commerce pb-16">
       <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
         <div>
           <p class="text-xs font-black uppercase tracking-[0.25em] mb-2" style="color: var(--gold);">Rekomendasi Optik</p>
@@ -1101,7 +1127,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
       </div>
     </section>
 
-    <section class="max-w-[1440px] mx-auto px-6 md:px-12 pb-16">
+    <section class="container-commerce pb-16">
       <div class="border rounded-lg p-8" style="background: white; border-color: rgba(184,138,68,0.15); box-shadow: 0 2px 12px rgba(0,0,0,0.04);">
         <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
           <div>

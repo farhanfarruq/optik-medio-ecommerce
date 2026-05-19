@@ -70,9 +70,6 @@ class DatabaseSeeder extends Seeder
         $this->call(ProductPhotoSeeder::class);
         $this->call(OpticalConfigurationSeeder::class);
         $this->call(ShippingRateSeeder::class);
-
-        $this->command->info('✅ Seeder selesai: data master, katalog demo, order workflow, inventori, appointment, warranty, referral, dan data admin showcase berhasil dibuat.');
-        $this->command->info('');
-        $this->command->info('📦 Admin demo terisi untuk pengujian halaman order kanban, inventori, stock opname, appointment, warranty, referral, dan dashboard.');
+        
     }
 }

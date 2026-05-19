@@ -130,6 +130,8 @@ class OrderController extends Controller
 
         $discountAmount = 0;
         $promoDiscountAmount = 0;
+        $promoSummary = null;
+        $freePromoItems = [];
 
         if ($request->discount_id) {
             $discount = Discount::find($request->discount_id);
@@ -213,14 +215,35 @@ class OrderController extends Controller
                         if ($getProd) {
                             $items[] = [
                                 'product_id'    => $getProd->id,
-                                'product_name'  => $getProd->name . ' (Free)',
-                                'name'          => $getProd->name . ' (Free)',
+                                'product_name'  => $getProd->name,
+                                'name'          => $getProd->name,
                                 'product_price' => 0,
                                 'price'         => 0,
+                                'original_price'=> $getProd->price,
                                 'quantity'      => $freeQty,
                                 'is_free'       => true,
+                                'promo_id'      => $promo->id,
+                                'promo_name'    => $promo->name,
                                 'image'         => $getProd->primaryImagePath(),
                                 'variant'       => null,
+                            ];
+
+                            $freePromoItems[] = [
+                                'product_id'    => $getProd->id,
+                                'name'          => $getProd->name,
+                                'quantity'      => $freeQty,
+                                'image'         => $getProd->primaryImagePath(),
+                                'original_price'=> $getProd->price,
+                            ];
+
+                            $promoSummary = [
+                                'id'          => $promo->id,
+                                'name'        => $promo->name,
+                                'type'        => $promo->type,
+                                'label'       => 'Bonus produk gratis',
+                                'description' => $promo->description,
+                                'free_items'  => $freePromoItems,
+                                'discount_amount' => 0,
                             ];
                         }
                     }
@@ -232,6 +255,18 @@ class OrderController extends Controller
                             $promoDiscountAmount = $promo->discount_value;
                         }
                         $promoDiscountAmount = min($promoDiscountAmount, $subtotal);
+
+                        if ($promoDiscountAmount > 0) {
+                            $promoSummary = [
+                                'id'          => $promo->id,
+                                'name'        => $promo->name,
+                                'type'        => $promo->type,
+                                'label'       => 'Diskon transaksi',
+                                'description' => $promo->description,
+                                'discount_amount' => $promoDiscountAmount,
+                                'free_items'  => [],
+                            ];
+                        }
                     }
                 } elseif ($promo->type === 'product_discount') {
                     $discBase = $this->getPromoDiscountBase($promo, $productQty, $cartProducts);
@@ -242,6 +277,18 @@ class OrderController extends Controller
                             $promoDiscountAmount = $promo->discount_value * $discBase['qty'];
                         }
                         $promoDiscountAmount = min($promoDiscountAmount, $subtotal);
+
+                        if ($promoDiscountAmount > 0) {
+                            $promoSummary = [
+                                'id'          => $promo->id,
+                                'name'        => $promo->name,
+                                'type'        => $promo->type,
+                                'label'       => 'Diskon produk',
+                                'description' => $promo->description,
+                                'discount_amount' => $promoDiscountAmount,
+                                'free_items'  => [],
+                            ];
+                        }
                     }
                 }
             }
@@ -294,7 +341,8 @@ class OrderController extends Controller
                 
                 if (!$isMatch && $appliedPromo->discount_brands) {
                     $p = collect($cartProducts)->firstWhere('id', $item['product_id']);
-                    if ($p && in_array($p->brand, $appliedPromo->discount_brands)) {
+                    $normalizedBrands = array_map('strtolower', $appliedPromo->discount_brands);
+                    if ($p && in_array(strtolower((string) $p->brand), $normalizedBrands)) {
                         $isMatch = true;
                     }
                 }
@@ -325,6 +373,8 @@ class OrderController extends Controller
             'loyalty_discount_amount' => $loyaltyDiscountAmount,
             'total_price'             => $totalPrice,
             'items'                   => $items,
+            'free_items'              => $freePromoItems,
+            'promo_summary'           => $promoSummary,
             'applied_promo'           => $appliedPromo,
             'payment_method'          => $paymentMethod,
             'selected_bank'           => $bank,
@@ -480,8 +530,8 @@ class OrderController extends Controller
                 ->where('start_date', '<=', now())
                 ->where('end_date', '>=', now())
                 ->get()
-                ->first(function($p) use ($productQty) {
-                    return isset($productQty[$p->buy_product_id]) && $productQty[$p->buy_product_id] >= $p->buy_quantity;
+                ->first(function($p) use ($productQty, $cartProducts) {
+                    return $this->getPromoBuyQty($p, $productQty, $cartProducts) >= $p->buy_quantity;
                 });
             
             if ($applicablePromo) {
@@ -495,7 +545,8 @@ class OrderController extends Controller
         }
 
         if ($promoId) {
-            $promo = Promo::where('is_active', true)
+            $promo = Promo::with(['buyProducts', 'discountProducts', 'getProduct', 'discountProduct'])
+                ->where('is_active', true)
                 ->where('start_date', '<=', now())
                 ->where('end_date', '>=', now())
                 ->find($promoId);
@@ -518,13 +569,15 @@ class OrderController extends Controller
                         if ($getProd) {
                             $items[] = [
                                 'product_id'        => $getProd->id,
-                                'product_name'      => $getProd->name . ' (Free)',
+                                'product_name'      => $getProd->name,
                                 'product_price'     => 0,
                                 'quantity'          => $freeQty,
                                 'weight'            => $getProd->weight,
                                 'variant'           => null,
                                 'prescription'      => null,
                                 'linked_item_index' => null,
+                                'is_free'           => true,
+                                'image'             => $getProd->primaryImagePath(),
                             ];
                         }
                     }
@@ -974,10 +1027,11 @@ class OrderController extends Controller
             }
         }
 
-        // 3. Brands
+        // 3. Brands (case-insensitive)
         if ($promo->buy_brands && count($promo->buy_brands) > 0) {
+            $normalizedBuyBrands = array_map('strtolower', $promo->buy_brands);
             foreach ($cartProducts as $p) {
-                if (!in_array($p->id, $countedIds) && in_array($p->brand, $promo->buy_brands)) {
+                if (!in_array($p->id, $countedIds) && in_array(strtolower((string) $p->brand), $normalizedBuyBrands)) {
                     $totalQty += ($productQty[$p->id] ?? 0);
                     $countedIds[] = $p->id;
                 }
@@ -1012,10 +1066,11 @@ class OrderController extends Controller
             }
         }
 
-        // 3. Brands
+        // 3. Brands (case-insensitive)
         if ($promo->discount_brands && count($promo->discount_brands) > 0) {
+            $normalizedDiscBrands = array_map('strtolower', $promo->discount_brands);
             foreach ($cartProducts as $p) {
-                if (!in_array($p->id, $countedIds) && in_array($p->brand, $promo->discount_brands)) {
+                if (!in_array($p->id, $countedIds) && in_array(strtolower((string) $p->brand), $normalizedDiscBrands)) {
                     $qty += ($productQty[$p->id] ?? 0);
                     $totalPrice += ($p->price * ($productQty[$p->id] ?? 0));
                     $countedIds[] = $p->id;

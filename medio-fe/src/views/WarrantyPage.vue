@@ -191,7 +191,7 @@ onMounted(() => {
   <div>
     <PageHero v-if="!props.embedded" title="Garansi & Servis" subtitle="Kelola garansi dan klaim servis produk Anda" :breadcrumbs="breadcrumbs" />
 
-    <main :class="props.embedded ? 'w-full' : 'max-w-4xl mx-auto px-6 py-12'">
+    <main :class="props.embedded ? 'w-full' : 'container-commerce py-12'">
 
       <div v-if="!isLoggedIn" class="text-center py-16 border" style="background: var(--porcelain); border-color: rgba(184,138,68,0.2);">
         <span class="material-symbols-outlined text-5xl mb-4 block" style="color: var(--gold);">shield</span>

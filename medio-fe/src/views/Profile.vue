@@ -751,7 +751,7 @@ const deleteAddress = async (id: number) => {
       <div class="absolute inset-0" style="background: linear-gradient(135deg, rgba(10,8,5,0.65) 0%, rgba(30,20,10,0.45) 100%);"></div>
       <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, var(--ivory) 100%);"></div>
       <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,138,68,0.6), transparent);"></div>
-      <div class="relative z-10 h-full container-premium max-w-[1000px] flex flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 16px)', paddingBottom: '56px' }">
+      <div class="container-commerce relative z-10 flex h-full flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 16px)', paddingBottom: '56px' }">
         <!-- Breadcrumb + Back -->
         <div>
           <nav class="flex items-center gap-2 text-xs font-medium mb-2" style="color: rgba(255,255,255,0.55);">
@@ -770,10 +770,10 @@ const deleteAddress = async (id: number) => {
     </div>
   </div>
 
-  <main class="max-w-[1000px] mx-auto w-full px-6 pb-20 flex-grow" style="padding-top: calc(var(--header-height, 96px) + 40px);">
-    <div class="flex flex-col md:flex-row gap-10">
+  <main class="container-commerce pb-20 flex-grow" style="padding-top: calc(var(--header-height, 96px) + 40px);">
+    <div class="flex flex-col lg:flex-row gap-8 xl:gap-10">
 
-      <aside class="w-full md:w-56 shrink-0">
+      <aside class="w-full lg:w-64 xl:w-72 shrink-0">
         <nav class="flex flex-col gap-1 rounded-lg overflow-hidden border p-2" style="background: white; border-color: rgba(184,138,68,0.15); box-shadow: 0 2px 12px rgba(0,0,0,0.05);">
           <button
             @click="router.push('/profile')"
@@ -857,9 +857,9 @@ const deleteAddress = async (id: number) => {
         </nav>
       </aside>
 
-      <div class="flex-grow">
+      <div class="min-w-0 flex-grow">
         
-        <div v-if="currentSection === 'profile'" class="bg-surface-container-low p-8 rounded-lg border border-outline-variant/15">
+        <div v-if="currentSection === 'profile'" class="bg-surface-container-low p-6 lg:p-8 rounded-lg border border-outline-variant/15">
           <div class="flex flex-col gap-6 mb-8">
             <div class="flex items-center justify-between">
               <h2 class="font-headline text-2xl text-primary">Informasi Akun</h2>

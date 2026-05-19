@@ -1,6 +1,6 @@
 <template>
   <div class="relative w-full" style="margin-bottom: -60px;">
-    <div class="relative overflow-hidden" style="height: 280px;">
+    <div class="relative overflow-hidden" style="height: 320px;">
       <img
         src="/gambar/hero-bg.jpeg"
         alt=""
@@ -12,8 +12,8 @@
       <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,138,68,0.6), transparent);"></div>
 
       <div
-        class="relative z-10 mx-auto flex h-full max-w-[1000px] flex-col justify-between px-6"
-        :style="{ paddingTop: 'calc(var(--header-height, 96px) + 16px)', paddingBottom: '56px' }"
+        class="container-commerce relative z-10 flex h-full flex-col justify-between"
+        :style="{ paddingTop: 'calc(var(--header-height, 72px) + 44px)', paddingBottom: '64px' }"
       >
         <div>
           <nav class="mb-2 flex flex-wrap items-center gap-2 text-xs font-medium" style="color: rgba(255,255,255,0.55);" aria-label="Breadcrumb">

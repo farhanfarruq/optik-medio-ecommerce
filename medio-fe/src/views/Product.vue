@@ -484,26 +484,26 @@ onUnmounted(() => {
   <main class="container-premium pt-4 pb-16 w-full flex-grow relative z-10">
 
     <!-- Banner Carousel Dinamis -->
-    <div v-if="activeBanner" class="relative mb-8 w-full overflow-hidden" style="border-radius: 0; margin-top: 85px;">
-      <div class="relative w-full overflow-hidden bg-graphite shadow-soft">
+    <div v-if="activeBanner" class="relative mb-8 w-full overflow-hidden" style="border-radius: 0; margin-top: 72px;">
+      <div class="relative flex aspect-[16/9] w-full justify-center overflow-hidden bg-graphite shadow-soft sm:aspect-[16/7] md:aspect-auto md:justify-end">
         <img
           v-if="activeBanner.image_path"
           :src="resolveImageUrl(activeBanner.image_path)"
           :alt="activeBanner.title || 'Banner Optik Medio'"
-          class="block w-full h-auto object-contain"
+          class="block h-full w-full object-contain object-bottom md:ml-auto md:h-auto md:w-auto md:max-w-full md:max-h-[380px] md:object-right xl:max-h-[420px] 2xl:max-h-[440px]"
         />
-        <div v-else class="aspect-[16/7] w-full bg-graphite"></div>
+        <div v-else class="h-full w-full bg-graphite md:aspect-[16/6] md:max-h-[420px]"></div>
         <!-- Subtle gradient for text readability without cropping the image -->
         <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(90deg, rgba(0,0,0,0.58) 0%, rgba(0,0,0,0.22) 42%, rgba(0,0,0,0.04) 100%);"></div>
-        <div class="absolute inset-y-0 left-0 z-10 flex max-w-2xl items-center px-8 py-8 md:px-16">
+        <div class="absolute inset-y-0 left-0 z-10 flex max-w-[82%] items-center px-5 py-5 sm:max-w-2xl md:px-12">
           <div>
-            <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-2" style="color: var(--gold);">Penawaran Spesial</p>
-            <h3 class="text-2xl md:text-3xl font-black text-white mb-2" style="font-family: Outfit, sans-serif;">{{ activeBanner.title }}</h3>
-            <p v-if="activeBanner.subtitle" class="text-sm text-white mb-4">{{ activeBanner.subtitle }}</p>
+            <p class="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.22em] sm:tracking-[0.3em] mb-1 sm:mb-2" style="color: var(--gold);">Penawaran Spesial</p>
+            <h3 class="text-sm leading-tight sm:text-2xl md:text-3xl font-black text-white mb-1.5 sm:mb-2" style="font-family: Outfit, sans-serif;">{{ activeBanner.title }}</h3>
+            <p v-if="activeBanner.subtitle" class="text-[10px] leading-snug sm:text-sm text-white mb-2 sm:mb-4 line-clamp-2">{{ activeBanner.subtitle }}</p>
             <a
               v-if="activeBanner.cta_label"
               :href="activeBanner.external_url || (activeBanner.product ? `/products/${activeBanner.product.slug}` : activeBanner.category ? `/products/category/${activeBanner.category.slug}` : '#')"
-              class="inline-flex items-center gap-2 px-6 py-2 text-xs font-black uppercase tracking-wider text-white border border-white/30 hover:bg-porcelain/10 transition-all"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] sm:gap-2 sm:px-6 sm:py-2 sm:text-xs font-black uppercase tracking-wider text-white border border-white/30 hover:bg-porcelain/10 transition-all"
             >{{ activeBanner.cta_label }}</a>
           </div>
         </div>
@@ -744,7 +744,7 @@ onUnmounted(() => {
       </button>
     </div>
 
-    <div v-else-if="isLoading" class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-7">
+    <div v-else-if="isLoading" class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-6">
       <div v-for="i in 12" :key="i" class="animate-pulse rounded-lg overflow-hidden" style="background: rgba(245,242,238,0.9);">
         <div class="aspect-[4/5]" style="background: linear-gradient(135deg, var(--mist), var(--taupe));"></div>
         <div class="p-5 space-y-3">
@@ -761,7 +761,7 @@ onUnmounted(() => {
       <p class="text-graphite/65">Coba pilih kategori lain atau kembali lagi nanti.</p>
     </div>
 
-    <div v-else class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+    <div v-else class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-6">
       <article
         v-for="product in products"
         :key="product.id"
@@ -1023,11 +1023,11 @@ onUnmounted(() => {
     </section>
 
     <section class="mt-24 mb-12">
-      <div class="flex flex-col md:flex-row justify-between items-end mb-10 gap-4">
-        <div class="text-left">
+      <div class="flex flex-col items-center justify-between gap-4 text-center md:flex-row md:items-end md:text-left mb-10">
+        <div class="text-center md:text-left">
           <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-3" style="color: var(--gold);">Wawasan & Tips</p>
           <h2 class="text-3xl md:text-4xl font-black tracking-normal" style="font-family: 'Cormorant Garamond', serif; color: var(--ink);">Blog & Edukasi</h2>
-          <div class="w-12 h-1 bg-gold mt-4"></div>
+          <div class="w-12 h-1 bg-gold mx-auto mt-4 md:mx-0"></div>
         </div>
         <router-link to="/blog" class="text-xs font-black uppercase tracking-widest text-gold hover:text-gold transition-all flex items-center gap-2 group">
           Lihat Semua Artikel
@@ -1070,7 +1070,7 @@ onUnmounted(() => {
         <div class="w-12 h-1 bg-gold mx-auto mt-4"></div>
       </div>
 
-      <div class="flex overflow-x-auto md:grid md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto pb-4 md:pb-0 snap-x snap-mandatory scrollbar-hide">
+      <div class="flex overflow-x-auto md:grid md:grid-cols-3 2xl:grid-cols-4 gap-6 md:gap-8 pb-4 md:pb-0 snap-x snap-mandatory scrollbar-hide">
         <div 
           v-for="(t, idx) in testimonials" 
           :key="idx"

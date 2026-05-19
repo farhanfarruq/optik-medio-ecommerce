@@ -12,7 +12,7 @@ const route = useRoute();
 const cartStore = useCartStore();
 
 const isAuthPage = computed(() => ['Login', 'Register'].includes(route.name as string));
-const headerHeight = computed(() => cartStore.isPromoBannerVisible ? '136px' : '96px');
+const headerHeight = computed(() => cartStore.isPromoBannerVisible ? '108px' : '72px');
 </script>
 
 <template>
@@ -28,7 +28,7 @@ const headerHeight = computed(() => cartStore.isPromoBannerVisible ? '136px' : '
       <router-view :key="route.fullPath" />
     </main>
 
-    <Footer v-if="!isAuthPage" class="relative z-10 mb-16 md:mb-0" />
+    <Footer v-if="!isAuthPage" class="relative z-10 hidden md:block" />
     <BottomTabBar v-if="!isAuthPage" />
   </div>
 </template>

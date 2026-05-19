@@ -223,7 +223,7 @@ onUnmounted(stopPolling);
         backLabel="Lihat Detail Pesanan"
       />
 
-      <main class="container-premium max-w-4xl pt-40 pb-10">
+      <main class="container-commerce pt-40 pb-10">
 
         <!-- Banner Expired -->
         <div v-if="isExpired" class="alert-error mb-6 flex items-start gap-4 p-5">

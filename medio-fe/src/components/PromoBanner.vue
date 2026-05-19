@@ -47,8 +47,8 @@ const handleAmbil = () => {
   <Transition name="slide-down">
     <div
       v-if="activePromo"
-      class="fixed top-0 z-[100] flex h-10 w-full items-center border-b px-3 shadow-card transition-colors duration-300"
-      :class="isLightBanner ? 'border-mist bg-porcelain' : 'border-gold/25 bg-ink'"
+      class="fixed top-0 z-[100] flex h-9 w-full items-center border-b px-3 shadow-card backdrop-blur-2xl transition-colors duration-300"
+      :class="isLightBanner ? 'border-mist/80 bg-porcelain/70' : 'border-gold/25 bg-ink/50'"
       :style="bannerTextStyle"
     >
       <div class="container-premium flex items-center justify-between gap-3 px-0">

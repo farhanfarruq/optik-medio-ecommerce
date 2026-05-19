@@ -352,7 +352,7 @@ const submitReview = async (item: any) => {
       <div class="absolute inset-0" style="background: linear-gradient(135deg, rgba(10,8,5,0.65) 0%, rgba(30,20,10,0.45) 100%);"></div>
       <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, var(--ivory) 100%);"></div>
       <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,138,68,0.6), transparent);"></div>
-      <div class="relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 16px)', paddingBottom: '56px' }">
+      <div class="container-commerce relative z-10 flex h-full flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 16px)', paddingBottom: '56px' }">
         <!-- Breadcrumb + Back -->
         <div>
           <nav class="flex items-center gap-2 text-xs font-medium mb-2" style="color: rgba(255,255,255,0.55);">
@@ -373,7 +373,7 @@ const submitReview = async (item: any) => {
     </div>
   </div>
 
-  <main class="max-w-6xl mx-auto px-6 pb-20 flex-grow" style="padding-top: calc(var(--header-height, 96px) + 40px);">
+  <main class="container-commerce pb-20 flex-grow" style="padding-top: calc(var(--header-height, 96px) + 40px);">
     <div v-if="isLoading" class="animate-pulse space-y-6">
       <div class="h-12 rounded-lg w-1/3" style="background: rgba(184,138,68,0.1);"></div>
       <div class="h-64 rounded-lg" style="background: rgba(184,138,68,0.07);"></div>

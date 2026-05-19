@@ -14,7 +14,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <footer class="w-full border-t border-white/10 bg-graphite text-ivory">
+  <footer class="w-full border-t border-white/10 bg-graphite/80 text-ivory backdrop-blur-2xl">
     <div class="container-premium py-14 md:py-16">
       <div class="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-[1.2fr_1fr_0.8fr_1fr]">
         <section class="space-y-5">
@@ -61,8 +61,11 @@ onMounted(async () => {
       </div>
 
       <div class="mt-12 flex flex-col gap-4 border-t border-white/10 pt-6 text-[11px] font-semibold text-ivory/45 md:flex-row md:items-center md:justify-between">
-        <p>© 2026 Optik Medio. All Rights Reserved.</p>
-        <div class="flex items-center gap-5"><a href="#" class="transition-colors hover:text-ivory/80">Syarat & Ketentuan</a><a href="#" class="transition-colors hover:text-ivory/80">Kebijakan Privasi</a></div>
+        <p>© 2026 Optik Medio. Seluruh hak cipta dilindungi.</p>
+        <div class="flex items-center gap-5">
+          <router-link to="/terms" class="transition-colors hover:text-ivory/80">Syarat & Ketentuan</router-link>
+          <router-link to="/privacy" class="transition-colors hover:text-ivory/80">Kebijakan Privasi</router-link>
+        </div>
       </div>
     </div>
   </footer>

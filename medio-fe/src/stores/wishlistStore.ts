@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import type { Product } from '../types';
 import { apiClient } from '../core/api/axiosclient';
 import { useAuthStore } from './authStore';
+import { logger } from '../core/utils/logger';
 
 export const useWishlistStore = defineStore('wishlist', () => {
   const items = ref<Product[]>([]);
@@ -26,7 +27,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
         .map((item: any) => item.product ?? item)
         .filter((p: any) => p && p.id);
     } catch (error) {
-      console.error('Failed to fetch wishlist', error);
+      logger.error('Failed to fetch wishlist', error);
     } finally {
       isLoading.value = false;
     }
@@ -46,7 +47,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
       try {
         await apiClient.post('/wishlist/toggle', { product_id: product.id });
       } catch (error) {
-        console.error('Failed to toggle wishlist', error);
+        logger.error('Failed to toggle wishlist', error);
         // Revert on error
         if (wasWishlisted) {
           items.value = [{ ...product }, ...items.value];
@@ -67,7 +68,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
       try {
         await apiClient.post('/wishlist/toggle', { product_id: productId });
       } catch (error) {
-        console.error('Failed to remove from wishlist', error);
+        logger.error('Failed to remove from wishlist', error);
         // Revert on error
         if (productToRestore) {
           items.value = [productToRestore, ...items.value];

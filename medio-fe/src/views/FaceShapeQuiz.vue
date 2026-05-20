@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { productRepository } from '../repositories/ProductRepository';
 import { resolveImageUrl } from '../core/utils/image';
 import type { Product } from '../types';
 import PageHero from '../components/layout/PageHero.vue';
+import { useSeoMeta } from '../composables/useSeoMeta';
 
 const router = useRouter();
 const faceShape = ref('');
@@ -95,6 +96,17 @@ const openFilteredProducts = () => {
 
   router.push({ path: '/products', query });
 };
+
+onMounted(() => {
+  // SEO-2 (Phase 6)
+  const { setSeo } = useSeoMeta();
+  setSeo({
+    title: 'Kuis Bentuk Wajah — Cari Frame yang Tepat',
+    description:
+      'Temukan frame kacamata yang paling cocok dengan bentuk wajah Anda. Kuis cepat untuk rekomendasi eyewear dari Optik Medio.',
+    ogType: 'website',
+  });
+});
 </script>
 
 <template>
@@ -200,7 +212,7 @@ const openFilteredProducts = () => {
                 class="group premium-card cursor-pointer transition-all hover:-translate-y-1 hover:shadow-soft"
               >
                 <div class="aspect-[4/5] bg-ivory flex items-center justify-center p-5">
-                  <img :src="resolveImageUrl(product)" :alt="product.name" class="w-full h-full object-contain transition-transform group-hover:scale-105" />
+                  <img :src="resolveImageUrl(product)" :alt="product.name" class="w-full h-full object-contain transition-transform group-hover:scale-105" loading="lazy" decoding="async" />
                 </div>
                 <div class="p-4">
                   <p class="text-[10px] font-black uppercase tracking-widest text-graphite/65 mb-1">{{ product.brand || 'Optik Medio' }}</p>

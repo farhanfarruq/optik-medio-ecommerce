@@ -5,8 +5,7 @@
         src="/gambar/hero-bg.jpeg"
         alt=""
         class="absolute inset-0 h-full w-full object-cover object-center"
-        style="transform: scale(1.08); object-position: center 40%;"
-      />
+        style="transform: scale(1.08); object-position: center 40%;" loading="lazy" decoding="async" />
       <div class="absolute inset-0" style="background: linear-gradient(135deg, rgba(10,8,5,0.65) 0%, rgba(30,20,10,0.45) 100%);"></div>
       <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, var(--ivory) 100%);"></div>
       <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,138,68,0.6), transparent);"></div>

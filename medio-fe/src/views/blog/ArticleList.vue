@@ -60,8 +60,7 @@
                 v-if="article.featured_image" 
                 :src="resolveImageUrl(article.featured_image)" 
                 :alt="article.title" 
-                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              >
+                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" decoding="async">
               <div v-else class="w-full h-full flex items-center justify-center">
                 <span class="material-symbols-outlined text-4xl text-outline-variant">image</span>
               </div>
@@ -128,10 +127,12 @@
 </template>
 
 <script setup lang="ts">
+import { logger } from '../../core/utils/logger';
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import PageHero from '../../components/layout/PageHero.vue';
 import { apiClient } from '../../core/api/axiosclient';
 import { resolveImageUrl } from '../../core/utils/image';
+import { useSeoMeta } from '../../composables/useSeoMeta';
 
 const articles = ref<any[]>([]);
 const loading = ref(true);
@@ -142,6 +143,14 @@ const searchQuery = ref('');
 let searchTimeout: ReturnType<typeof setTimeout> | undefined;
 
 onMounted(() => {
+  // SEO-2 (Phase 6): set meta tags untuk halaman daftar artikel.
+  const { setSeo } = useSeoMeta();
+  setSeo({
+    title: 'Blog & Artikel',
+    description: 'Tips kesehatan mata, panduan memilih frame, dan update layanan Optik Medio.',
+    ogType: 'website',
+  });
+
   fetchArticles();
 });
 
@@ -171,7 +180,7 @@ const fetchArticles = async (page = 1) => {
     currentPage.value = response.data.current_page || 1;
     totalPages.value = response.data.last_page || 1;
   } catch (err: any) {
-    console.error('Error fetching articles:', err);
+    logger.error('Error fetching articles:', err);
     error.value = err.response?.data?.message || 'Terjadi kesalahan saat memuat artikel.';
   } finally {
     loading.value = false;

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { logger } from '../core/utils/logger';
 import { computed, ref, watch } from 'vue';
 import { productRepository, type ProductSearchSuggestions } from '../repositories/ProductRepository';
 import { resolveImageUrl } from '../core/utils/image';
@@ -144,7 +145,7 @@ const compositeToDataUrl = async (
     ctx.globalCompositeOperation = 'source-over';
   } catch (e) {
     // If glasses image fails to load, still save the face photo
-    console.warn('Could not load glasses image for composite:', e);
+    logger.warn('Could not load glasses image for composite:', e);
   }
 
   try {
@@ -251,12 +252,12 @@ watch(searchQuery, (query) => {
       <div class="grid grid-cols-[1fr_360px] gap-8">
         <section class="premium-card p-6">
           <div class="relative mx-auto max-w-3xl aspect-[4/5] bg-mist overflow-hidden flex items-center justify-center">
-            <img v-if="photoDataUrl" :src="photoDataUrl" alt="Foto wajah" class="absolute inset-0 w-full h-full object-contain" />
+            <img v-if="photoDataUrl" :src="photoDataUrl" alt="Foto wajah" class="absolute inset-0 w-full h-full object-contain" loading="lazy" decoding="async" />
             <div v-else class="text-center p-8">
               <span class="material-symbols-outlined text-6xl mb-4 block" style="color: var(--gold);">add_a_photo</span>
               <p class="text-sm font-bold text-graphite/65">Upload foto wajah dari depan untuk mulai mencoba frame.</p>
             </div>
-            <img v-if="photoDataUrl && selectedProduct" :src="resolveImageUrl(selectedProduct)" :alt="selectedProduct.name" class="absolute object-contain pointer-events-none mix-blend-multiply" :style="frameStyle" />
+            <img v-if="photoDataUrl && selectedProduct" :src="resolveImageUrl(selectedProduct)" :alt="selectedProduct.name" class="absolute object-contain pointer-events-none mix-blend-multiply" :style="frameStyle" loading="lazy" decoding="async" />
           </div>
         </section>
         <aside class="premium-card p-6 h-fit space-y-5">
@@ -272,7 +273,7 @@ watch(searchQuery, (query) => {
             <div v-if="searchQuery.trim().length >= 2 && (suggestions.products.length > 0 || isSearching)" class="absolute z-20 left-0 right-0 mt-2 premium-card shadow-soft p-2 max-h-72 overflow-y-auto">
               <p v-if="isSearching" class="p-3 text-xs font-bold text-graphite/65">Mencari...</p>
               <button v-for="product in suggestions.products" :key="product.id" @click="selectProduct(product)" class="w-full flex items-center gap-3 p-2 text-left hover:bg-ivory">
-                <img :src="resolveImageUrl(product)" :alt="product.name" class="w-10 h-10 object-contain bg-ivory border border-mist" />
+                <img :src="resolveImageUrl(product)" :alt="product.name" class="w-10 h-10 object-contain bg-ivory border border-mist" loading="lazy" decoding="async" />
                 <span class="min-w-0">
                   <span class="block text-xs font-black truncate">{{ product.name }}</span>
                   <span class="block text-[11px] text-graphite/65 truncate">{{ product.brand || 'Optik Medio' }}</span>
@@ -317,8 +318,8 @@ watch(searchQuery, (query) => {
         <div class="grid grid-cols-4 gap-4">
           <article v-for="preview in savedPreviews" :key="preview.id" class="premium-card p-3">
             <div class="relative aspect-[4/5] bg-mist overflow-hidden">
-              <img v-if="preview.compositeImage" :src="preview.compositeImage" :alt="preview.productName" class="absolute inset-0 w-full h-full object-contain" />
-              <img v-else :src="preview.photo" alt="Preview tersimpan" class="absolute inset-0 w-full h-full object-contain" />
+              <img v-if="preview.compositeImage" :src="preview.compositeImage" :alt="preview.productName" class="absolute inset-0 w-full h-full object-contain" loading="lazy" decoding="async" />
+              <img v-else :src="preview.photo" alt="Preview tersimpan" class="absolute inset-0 w-full h-full object-contain" loading="lazy" decoding="async" />
             </div>
             <p class="mt-3 text-xs font-black line-clamp-2" style="color: var(--ink);">{{ preview.productName || preview.product?.name }}</p>
             <p class="text-[11px] text-graphite/65 mt-0.5">{{ preview.productBrand || preview.product?.brand || 'Optik Medio' }}</p>
@@ -375,7 +376,7 @@ watch(searchQuery, (query) => {
             @click="selectProduct(product)"
             class="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-ivory transition-colors border-b border-mist last:border-0"
           >
-            <img :src="resolveImageUrl(product)" :alt="product.name" class="w-12 h-12 object-contain bg-ivory rounded-xl border border-mist shrink-0" />
+            <img :src="resolveImageUrl(product)" :alt="product.name" class="w-12 h-12 object-contain bg-ivory rounded-xl border border-mist shrink-0" loading="lazy" decoding="async" />
             <span class="min-w-0">
               <span class="block text-sm font-black truncate text-ink">{{ product.name }}</span>
               <span class="block text-xs text-graphite/65 truncate">{{ product.brand || 'Optik Medio' }}</span>
@@ -386,7 +387,7 @@ watch(searchQuery, (query) => {
 
       <!-- Selected product chip -->
       <div v-if="selectedProduct" class="mx-4 mb-3 flex items-center gap-3 bg-gold/10 border border-gold/25 rounded-xl px-3 py-2.5">
-        <img :src="resolveImageUrl(selectedProduct)" :alt="selectedProduct.name" class="w-10 h-10 object-contain rounded-lg premium-card shrink-0" />
+        <img :src="resolveImageUrl(selectedProduct)" :alt="selectedProduct.name" class="w-10 h-10 object-contain rounded-lg premium-card shrink-0" loading="lazy" decoding="async" />
         <div class="min-w-0 flex-1">
           <p class="text-xs font-black text-ink truncate">{{ selectedProduct.name }}</p>
           <p class="text-[11px] text-graphite/65">{{ (selectedProduct as any).brand || 'Optik Medio' }}</p>
@@ -400,12 +401,12 @@ watch(searchQuery, (query) => {
     <!-- Preview canvas -->
     <div class="mx-4 mt-4 bg-porcelain rounded-2xl overflow-hidden shadow-card">
       <div class="relative aspect-[4/5] bg-mist flex items-center justify-center">
-        <img v-if="photoDataUrl" :src="photoDataUrl" alt="Foto wajah" class="absolute inset-0 w-full h-full object-contain" />
+        <img v-if="photoDataUrl" :src="photoDataUrl" alt="Foto wajah" class="absolute inset-0 w-full h-full object-contain" loading="lazy" decoding="async" />
         <div v-else class="text-center p-8">
           <span class="material-symbols-outlined text-5xl mb-3 block" style="color: var(--gold);">add_a_photo</span>
           <p class="text-sm font-bold text-graphite/45">Upload foto wajah dari depan</p>
         </div>
-        <img v-if="photoDataUrl && selectedProduct" :src="resolveImageUrl(selectedProduct)" :alt="selectedProduct.name" class="absolute object-contain pointer-events-none mix-blend-multiply" :style="frameStyle" />
+        <img v-if="photoDataUrl && selectedProduct" :src="resolveImageUrl(selectedProduct)" :alt="selectedProduct.name" class="absolute object-contain pointer-events-none mix-blend-multiply" :style="frameStyle" loading="lazy" decoding="async" />
       </div>
     </div>
 
@@ -418,8 +419,8 @@ watch(searchQuery, (query) => {
       <div class="grid grid-cols-2 gap-3">
         <article v-for="preview in savedPreviews" :key="preview.id" class="bg-porcelain rounded-2xl p-3 shadow-card">
           <div class="relative aspect-[4/5] bg-mist rounded-xl overflow-hidden">
-            <img v-if="preview.compositeImage" :src="preview.compositeImage" :alt="preview.productName" class="absolute inset-0 w-full h-full object-contain" />
-            <img v-else :src="preview.photo" alt="Preview" class="absolute inset-0 w-full h-full object-contain" />
+            <img v-if="preview.compositeImage" :src="preview.compositeImage" :alt="preview.productName" class="absolute inset-0 w-full h-full object-contain" loading="lazy" decoding="async" />
+            <img v-else :src="preview.photo" alt="Preview" class="absolute inset-0 w-full h-full object-contain" loading="lazy" decoding="async" />
           </div>
           <p class="mt-2 text-xs font-black line-clamp-1" style="color: var(--ink);">{{ preview.productName || preview.product?.name }}</p>
           <button @click="downloadPreview(preview)" class="mt-2 w-full flex items-center justify-center gap-1 py-2 text-[10px] font-black uppercase tracking-widest bg-ivory border border-mist rounded-lg text-graphite active:bg-mist transition-colors">

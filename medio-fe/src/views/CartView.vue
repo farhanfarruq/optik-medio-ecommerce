@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { logger } from '../core/utils/logger';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useCartStore } from '../stores/cartStore';
 import { useRouter } from 'vue-router';
@@ -29,7 +30,7 @@ onMounted(async () => {
   try {
     storeStatus.value = await masterDataRepository.getStoreStatus();
   } catch (e) {
-    console.warn('Could not load store status', e);
+    logger.warn('Could not load store status', e);
   }
 });
 
@@ -184,7 +185,7 @@ const getItemDiscount = (item: any) => {
           <div class="flex gap-5 p-5">
             <!-- Image -->
             <div class="w-28 h-28 rounded-lg overflow-hidden shrink-0 flex items-center justify-center p-2 border" style="background: linear-gradient(145deg, var(--ivory), var(--mist)); border-color: rgba(184,138,68,0.1);">
-              <img :src="resolveImageUrl(item.images || item.image_url, item.name)" class="w-full h-full object-contain mix-blend-multiply" />
+              <img alt="" :src="resolveImageUrl(item.images || item.image_url, item.name)" class="w-full h-full object-contain mix-blend-multiply" loading="lazy" decoding="async" />
             </div>
 
             <!-- Info -->
@@ -239,7 +240,7 @@ const getItemDiscount = (item: any) => {
               style="background: rgba(184,138,68,0.04); border-color: rgba(184,138,68,0.2);"
             >
               <div class="w-16 h-16 rounded-lg overflow-hidden shrink-0 flex items-center justify-center p-1 border" style="background: white; border-color: rgba(184,138,68,0.15);">
-                <img v-if="freeItem.image" :src="resolveImageUrl(freeItem.image, freeItem.name || freeItem.product_name)" class="w-full h-full object-contain mix-blend-multiply" />
+                <img alt="" v-if="freeItem.image" :src="resolveImageUrl(freeItem.image, freeItem.name || freeItem.product_name)" class="w-full h-full object-contain mix-blend-multiply" loading="lazy" decoding="async" />
                 <span v-else class="material-symbols-outlined text-2xl" style="color: var(--gold);">card_giftcard</span>
               </div>
               <div class="flex-grow min-w-0">

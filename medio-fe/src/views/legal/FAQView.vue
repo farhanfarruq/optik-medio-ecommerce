@@ -104,11 +104,13 @@
 </template>
 
 <script setup lang="ts">
+import { logger } from '../../core/utils/logger';
 import { ref, onMounted, computed, watch } from 'vue';
 import PageHero from '../../components/layout/PageHero.vue';
 import { apiClient } from '../../core/api/axiosclient';
 import { settingRepository, type AppSettings } from '../../repositories/SettingRepository';
 import { sanitizeHtml } from '../../core/utils/sanitize';
+import { useSeoMeta } from '../../composables/useSeoMeta';
 
 interface Faq {
   id: number;
@@ -145,7 +147,7 @@ const fetchFaqs = async () => {
     const response = await apiClient.get('/faqs');
     faqs.value = response.data.data;
   } catch (error) {
-    console.error('Failed to fetch FAQs', error);
+    logger.error('Failed to fetch FAQs', error);
   } finally {
     isLoading.value = false;
   }
@@ -155,7 +157,7 @@ const fetchSettings = async () => {
   try {
     settings.value = await settingRepository.getSettings();
   } catch (error) {
-    console.error('Failed to load settings', error);
+    logger.error('Failed to load settings', error);
   }
 };
 
@@ -172,6 +174,15 @@ watch(selectedCategory, () => {
 });
 
 onMounted(() => {
+  // SEO-2 (Phase 6)
+  const { setSeo } = useSeoMeta();
+  setSeo({
+    title: 'FAQ — Pertanyaan Umum',
+    description:
+      'Jawaban pertanyaan umum seputar belanja kacamata di Optik Medio: pemesanan, pengiriman, garansi, dan layanan.',
+    ogType: 'article',
+  });
+
   fetchFaqs();
   fetchSettings();
 });

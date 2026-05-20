@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { logger } from '../core/utils/logger';
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { orderRepository } from '../repositories/OrderRepository';
@@ -58,11 +59,11 @@ const loadOrder = async () => {
           order.value = syncResponse.data.order;
         }
       } catch (syncError) {
-        console.warn('Silent sync failed', syncError);
+        logger.warn('Silent sync failed', syncError);
       }
     }
   } catch (error) {
-    console.error('Failed to fetch order', error);
+    logger.error('Failed to fetch order', error);
     showToast('Gagal memuat detail pesanan.', 'error');
   } finally {
     isLoading.value = false;
@@ -519,7 +520,7 @@ const submitReview = async (item: any) => {
                     class="w-20 h-20 rounded-lg overflow-hidden shrink-0 flex items-center justify-center p-2 border transition-all hover:scale-105 active:scale-95 shadow-card" 
                     style="background: linear-gradient(145deg, var(--ivory), var(--mist)); border-color: rgba(184,138,68,0.1);"
                   >
-                    <img :src="resolveImageUrl(item.product, item.product.name)" class="w-full h-full object-contain mix-blend-multiply" />
+                    <img alt="" :src="resolveImageUrl(item.product, item.product.name)" class="w-full h-full object-contain mix-blend-multiply" loading="lazy" decoding="async" />
                   </router-link>
                   <div v-else class="w-20 h-20 rounded-lg overflow-hidden shrink-0 flex items-center justify-center p-2 border" style="background: linear-gradient(145deg, var(--ivory), var(--mist)); border-color: rgba(184,138,68,0.1);">
                     <span class="material-symbols-outlined text-2xl" style="color: var(--gold); opacity: 0.5;">image</span>

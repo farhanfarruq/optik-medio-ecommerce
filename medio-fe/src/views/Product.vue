@@ -1,7 +1,14 @@
 <script setup lang="ts">
+// ─────────────────────────────────────────────────────────────────────────
+// FIXME P1-12 (Phase 3): God component (1.189 LOC) — refactor ke sub-tree.
+// Lihat: medio-fe/src/views/REFACTOR_PLAN.md untuk migration plan lengkap.
+// Composables baru tersedia: useFormatMoney.
+// ─────────────────────────────────────────────────────────────────────────
+import { logger } from '../core/utils/logger';
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { productRepository, type Category, type ProductFilters } from '../repositories/ProductRepository';
+import { useSeoMeta } from '../composables/useSeoMeta';
 import type { Product } from '../types';
 import { resolveImageUrl } from '../core/utils/image';
 import { settingRepository, type Testimonial } from '../repositories/SettingRepository';
@@ -252,7 +259,7 @@ const fetchProducts = async (isLoadMore = false) => {
       totalProducts.value = products.value.length;
     }
   } catch (error) {
-    console.error('Failed to fetch products', error);
+    logger.error('Failed to fetch products', error);
     hasError.value = true;
     if (!isLoadMore) {
       products.value = [];
@@ -275,7 +282,7 @@ const fetchLensShowcaseProducts = async () => {
 
     lensShowcaseProducts.value = response.data || response;
   } catch (error) {
-    console.warn('Could not load lens showcase products', error);
+    logger.warn('Could not load lens showcase products', error);
     lensShowcaseProducts.value = [];
   } finally {
     isLoadingLensShowcase.value = false;
@@ -293,7 +300,7 @@ const fetchBrands = async () => {
   try {
     brands.value = await productRepository.getBrands();
   } catch (e) {
-    console.warn('Could not load brands', e);
+    logger.warn('Could not load brands', e);
   }
 };
 
@@ -302,7 +309,7 @@ const fetchFilterMetadata = async () => {
     productFilters.value = await productRepository.getFilters();
     brands.value = productFilters.value.brands || [];
   } catch (e) {
-    console.warn('Could not load product filters', e);
+    logger.warn('Could not load product filters', e);
     fetchBrands();
   }
 };
@@ -311,11 +318,21 @@ const fetchCategories = async () => {
   try {
     categories.value = await productRepository.getCategories();
   } catch (e) {
-    console.warn('Could not load categories', e);
+    logger.warn('Could not load categories', e);
   }
 };
 
 onMounted(() => {
+  // SEO-2 (Phase 6): set meta tags untuk Home/Products page.
+  const { setSeo } = useSeoMeta();
+  setSeo({
+    title: 'Belanja Kacamata & Lensa Premium',
+    description: 'Optik Medio menyediakan eyewear premium, lensa optik berkualitas, dan layanan profesional. Pilih frame favorit Anda dengan harga terbaik.',
+    ogTitle: 'Optik Medio — Curated Lens Experience',
+    ogDescription: 'Belanja eyewear premium, promo optik, dan konsultasi visual di Optik Medio.',
+    ogType: 'website',
+  });
+
   fetchCategories();
   fetchFilterMetadata();
   fetchLensShowcaseProducts();
@@ -490,8 +507,7 @@ onUnmounted(() => {
         src="/gambar/hero-bg.jpeg"
         alt="Optik Medio hero"
         class="absolute inset-0 w-full h-full object-cover object-center"
-        style="transform: scale(1.04); object-position: center 40%;"
-      />
+        style="transform: scale(1.04); object-position: center 40%;" loading="lazy" decoding="async" />
       <div class="absolute inset-0" style="background: linear-gradient(160deg, rgba(10,8,5,0.45) 0%, rgba(30,20,10,0.25) 60%, transparent 100%);"></div>
       <div class="absolute bottom-0 left-0 right-0" style="height: 180px; background: linear-gradient(to bottom, transparent 0%, var(--ivory) 100%);"></div>
       <div class="absolute" style="bottom: 180px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,138,68,0.5), transparent);"></div>
@@ -528,8 +544,7 @@ onUnmounted(() => {
           v-if="activeBanner.image_path"
           :src="resolveImageUrl(activeBanner.image_path)"
           :alt="activeBanner.title || 'Banner Optik Medio'"
-          class="block h-full w-full object-contain object-bottom md:ml-auto md:h-auto md:w-auto md:max-w-full md:max-h-[380px] md:object-right xl:max-h-[420px] 2xl:max-h-[440px]"
-        />
+          class="block h-full w-full object-contain object-bottom md:ml-auto md:h-auto md:w-auto md:max-w-full md:max-h-[380px] md:object-right xl:max-h-[420px] 2xl:max-h-[440px]" loading="lazy" decoding="async" />
         <div v-else class="h-full w-full bg-graphite md:aspect-[16/6] md:max-h-[420px]"></div>
         <!-- Subtle gradient for text readability without cropping the image -->
         <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(90deg, rgba(0,0,0,0.58) 0%, rgba(0,0,0,0.22) 42%, rgba(0,0,0,0.04) 100%);"></div>
@@ -618,8 +633,7 @@ onUnmounted(() => {
               :src="resolveCategoryImage(cat)!"
               :alt="cat.name"
               class="h-9 w-9 object-contain mix-blend-multiply transition-transform duration-200 group-hover:scale-110"
-              loading="lazy"
-            />
+              loading="lazy" decoding="async" />
             <!-- Fallback icon when no image -->
             <span v-else class="material-symbols-outlined text-2xl">category</span>
               <span class="line-clamp-2 text-[10px] font-black uppercase leading-tight tracking-[0.12em]">{{ cat.name }}</span>
@@ -1101,7 +1115,10 @@ onUnmounted(() => {
       <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
         <div class="group cursor-pointer" @click="router.push('/blog/cara-memilih-frame-sesuai-bentuk-wajah')">
           <div class="aspect-[4/3] overflow-hidden mb-3 relative">
-            <img src="/blog_feature_1_face_shape_1777451535680.png" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+            <picture>
+              <source srcset="/blog_feature_1_face_shape_1777451535680.webp" type="image/webp" />
+              <img alt="Panduan memilih frame kacamata sesuai bentuk wajah" src="/blog_feature_1_face_shape_1777451535680.png" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" decoding="async" width="800" height="600" />
+            </picture>
             <div class="absolute inset-0 bg-graphite/20 group-hover:bg-transparent transition-all"></div>
           </div>
           <h3 class="font-bold text-sm md:text-lg mb-1 md:mb-2 group-hover:text-gold transition-colors leading-snug" style="font-family: 'Cormorant Garamond', serif;">Cara Memilih Frame Sesuai Bentuk Wajah</h3>
@@ -1109,7 +1126,10 @@ onUnmounted(() => {
         </div>
         <div class="group cursor-pointer" @click="router.push('/blog/pentingnya-perlindungan-lensa-blueray')">
           <div class="aspect-[4/3] overflow-hidden mb-3 relative">
-            <img src="/blog_feature_2_blueray_lens_1777451550672.png" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+            <picture>
+              <source srcset="/blog_feature_2_blueray_lens_1777451550672.webp" type="image/webp" />
+              <img alt="Lensa blueray melindungi mata dari radiasi layar" src="/blog_feature_2_blueray_lens_1777451550672.png" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" decoding="async" width="800" height="600" />
+            </picture>
             <div class="absolute inset-0 bg-graphite/20 group-hover:bg-transparent transition-all"></div>
           </div>
           <h3 class="font-bold text-sm md:text-lg mb-1 md:mb-2 group-hover:text-gold transition-colors leading-snug" style="font-family: 'Cormorant Garamond', serif;">Pentingnya Perlindungan Lensa Blueray</h3>
@@ -1117,7 +1137,10 @@ onUnmounted(() => {
         </div>
         <div class="group cursor-pointer col-span-2 md:col-span-1" @click="router.push('/blog/update-tren-kacamata-2026')">
           <div class="aspect-[16/7] md:aspect-[4/3] overflow-hidden mb-3 relative">
-            <img src="/blog_feature_3_trends_2026_1777451566973.png" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+            <picture>
+              <source srcset="/blog_feature_3_trends_2026_1777451566973.webp" type="image/webp" />
+              <img alt="Tren kacamata 2026 — gaya retro hingga futuristik" src="/blog_feature_3_trends_2026_1777451566973.png" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" decoding="async" width="1200" height="800" />
+            </picture>
             <div class="absolute inset-0 bg-graphite/20 group-hover:bg-transparent transition-all"></div>
           </div>
           <h3 class="font-bold text-sm md:text-lg mb-1 md:mb-2 group-hover:text-gold transition-colors leading-snug" style="font-family: 'Cormorant Garamond', serif;">Update Tren Kacamata 2026</h3>

@@ -69,7 +69,7 @@ onMounted(async () => {
           class="group bg-white border border-mist cursor-pointer transition-all hover:-translate-y-1 hover:shadow-soft"
         >
           <div class="aspect-[4/5] bg-ivory flex items-center justify-center p-5">
-            <img :src="resolveImageUrl(product)" :alt="product.name" class="w-full h-full object-contain transition-transform group-hover:scale-105" />
+            <img :src="resolveImageUrl(product)" :alt="product.name" class="w-full h-full object-contain transition-transform group-hover:scale-105" loading="lazy" decoding="async" />
           </div>
           <div class="p-4">
             <p class="text-[10px] font-black uppercase tracking-widest text-graphite/65 mb-1">{{ product.brand || 'Optik Medio' }}</p>

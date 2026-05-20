@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Cart\AddCartItemRequest;
+use App\Http\Requests\Cart\SyncCartRequest;
+use App\Http\Requests\Cart\UpdateCartItemRequest;
 use App\Models\Cart;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
@@ -37,19 +40,8 @@ class CartController extends Controller
      * DB::transaction + lockForUpdate untuk mencegah race condition pada
      * stok produk saat order placement berjalan paralel.
      */
-    public function addItem(Request $request): JsonResponse
+    public function addItem(AddCartItemRequest $request): JsonResponse
     {
-        $request->validate([
-            'product_id'              => 'required|exists:products,id',
-            'quantity'                => 'required|integer|min:1|max:99',
-            'variant'                 => 'nullable|array',
-            'prescription'            => 'nullable|array',
-            'lens_option_id'          => 'nullable|exists:lens_options,id',
-            'lens_coating_id'         => 'nullable|exists:lens_coatings,id',
-            'prescription_profile_id' => 'nullable|exists:prescription_profiles,id',
-            'configuration_snapshot'  => 'nullable|array',
-        ]);
-
         $cart = DB::transaction(function () use ($request) {
             // Lock baris produk agar pembacaan stok konsisten dengan transaksi
             // lain yang sedang decrement stok (order placement).
@@ -114,12 +106,8 @@ class CartController extends Controller
      * NOTE (P0-1): pembacaan stok di-lock agar tidak race dengan
      * decrement stok di order placement.
      */
-    public function updateItem(Request $request, int $itemId): JsonResponse
+    public function updateItem(UpdateCartItemRequest $request, int $itemId): JsonResponse
     {
-        $request->validate([
-            'quantity' => 'required|integer|min:1|max:99',
-        ]);
-
         $cart = DB::transaction(function () use ($request, $itemId) {
             $cart = Cart::activeForUser($request->user()->id);
             $item = $cart->items()->findOrFail($itemId);
@@ -182,20 +170,8 @@ class CartController extends Controller
      * NOTE (P0-1): dibungkus transaction + lockForUpdate per produk untuk
      * konsistensi dengan operasi order yang berjalan paralel.
      */
-    public function sync(Request $request): JsonResponse
+    public function sync(SyncCartRequest $request): JsonResponse
     {
-        $request->validate([
-            'items'                          => 'required|array',
-            'items.*.product_id'             => 'required|exists:products,id',
-            'items.*.quantity'               => 'required|integer|min:1',
-            'items.*.variant'                => 'nullable|array',
-            'items.*.prescription'           => 'nullable|array',
-            'items.*.lens_option_id'         => 'nullable|exists:lens_options,id',
-            'items.*.lens_coating_id'        => 'nullable|exists:lens_coatings,id',
-            'items.*.prescription_profile_id'=> 'nullable|exists:prescription_profiles,id',
-            'items.*.configuration_snapshot' => 'nullable|array',
-        ]);
-
         $cart = DB::transaction(function () use ($request) {
             $cart = Cart::activeForUser($request->user()->id);
 

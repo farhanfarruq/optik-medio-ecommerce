@@ -36,7 +36,7 @@
       <article v-else-if="article" class="premium-card overflow-hidden p-5 sm:p-6 md:p-8">
         <!-- Featured Image -->
         <div v-if="article.featured_image" class="mx-auto w-full max-w-3xl aspect-[16/9] overflow-hidden rounded-lg bg-surface-container">
-          <img :src="resolveImageUrl(article.featured_image)" :alt="article.title" class="h-full w-full object-cover">
+          <img :src="resolveImageUrl(article.featured_image)" :alt="article.title" class="h-full w-full object-cover" loading="lazy" decoding="async">
         </div>
 
         <div class="p-8 md:p-16">
@@ -115,8 +115,7 @@
                   v-if="related.featured_image" 
                   :src="resolveImageUrl(related.featured_image)" 
                   :alt="related.title" 
-                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                >
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async">
               </div>
               <h4 class="text-base font-bold text-on-surface group-hover:text-primary transition-colors line-clamp-2 mb-2 leading-snug">
                 {{ related.title }}
@@ -131,12 +130,14 @@
 </template>
 
 <script setup lang="ts">
+import { logger } from '../../core/utils/logger';
 import { computed, ref, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import PageHero from '../../components/layout/PageHero.vue';
 import { apiClient } from '../../core/api/axiosclient';
 import { resolveImageUrl } from '../../core/utils/image';
 import { sanitizeHtml } from '../../core/utils/sanitize';
+import { useSeoMeta } from '../../composables/useSeoMeta';
 
 const route = useRoute();
 const article = ref<any>(null);
@@ -166,10 +167,27 @@ const fetchArticle = async (slug: string) => {
     relatedArticles.value = response.data.related;
     
     if (article.value) {
-      document.title = `${article.value.meta_title || article.value.title} | Optik Medio`;
+      // SEO-2 (Phase 6): set comprehensive meta tags untuk article detail
+      // (judul + description + OG + Twitter card untuk social sharing).
+      const { setSeo } = useSeoMeta();
+      const articleData = article.value;
+      const heroImage = articleData.featured_image
+        ? resolveImageUrl(articleData.featured_image)
+        : undefined;
+      setSeo({
+        title: articleData.meta_title || articleData.title,
+        description: articleData.meta_description || articleData.excerpt,
+        ogTitle: articleData.title,
+        ogDescription: articleData.excerpt || articleData.meta_description,
+        ogImage: heroImage,
+        ogType: 'article',
+        twitterTitle: articleData.title,
+        twitterDescription: articleData.excerpt,
+        twitterImage: heroImage,
+      });
     }
   } catch (err: any) {
-    console.error('Error fetching article:', err);
+    logger.error('Error fetching article:', err);
     error.value = err.response?.data?.message || 'Gagal memuat artikel.';
   } finally {
     loading.value = false;

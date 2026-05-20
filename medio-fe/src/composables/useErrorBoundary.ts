@@ -5,6 +5,7 @@
  */
 
 import { onErrorCaptured, ref } from 'vue';
+import { logger } from '../core/utils/logger';
 
 export interface AppError {
   message: string;
@@ -32,7 +33,7 @@ function captureError(error: unknown, type: AppError['type'] = 'unhandled'): voi
   errorLog.value = [entry, ...errorLog.value].slice(0, MAX_LOG);
 
   // Log ke console dengan format yang jelas
-  console.error(`[AppError:${type}]`, err.message, err);
+  logger.error(`[AppError:${type}]`, err.message, err);
 
   // TODO: kirim ke error monitoring service (Sentry, Bugsnag, dll)
   // Contoh: Sentry.captureException(err, { extra: { type, url: entry.url } });

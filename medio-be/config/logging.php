@@ -1,5 +1,6 @@
 <?php
 
+use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -103,6 +104,28 @@ return [
             ],
             'formatter' => env('LOG_STDERR_FORMATTER'),
             'processors' => [PsrLogMessageProcessor::class],
+        ],
+
+        // OBS-2 (Phase 6): channel JSON terstruktur untuk production.
+        // Activate dengan set LOG_CHANNEL=json (atau add ke LOG_STACK).
+        // Output 1 baris JSON per log entry → mudah di-ingest log aggregator
+        // (CloudWatch, ELK, Datadog, Loki, dst).
+        'json' => [
+            'driver' => 'monolog',
+            'level' => env('LOG_LEVEL', 'info'),
+            'handler' => StreamHandler::class,
+            'handler_with' => [
+                'stream' => 'php://stderr',
+            ],
+            'formatter' => JsonFormatter::class,
+            'formatter_with' => [
+                // BatchHandlerInterface::BATCH_MODE_JSON → array, BATCH_MODE_NEWLINES → JSON-Lines
+                'batchMode' => JsonFormatter::BATCH_MODE_NEWLINES,
+                'appendNewline' => true,
+            ],
+            'processors' => [
+                PsrLogMessageProcessor::class,
+            ],
         ],
 
         'syslog' => [

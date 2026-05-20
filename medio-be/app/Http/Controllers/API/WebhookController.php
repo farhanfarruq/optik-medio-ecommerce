@@ -132,9 +132,16 @@ class WebhookController extends Controller
                 $order->load('user');
                 Mail::to($order->user->email)
                     ->send(new OrderConfirmedMail($order->load(['items.product', 'payment'])));
-                Log::info('Order confirmation email sent to ' . $order->user->email);
+                Log::info('Order confirmation email sent', [
+                    'order_number' => $orderNumber,
+                    'recipient' => $order->user->email,
+                ]);
             } catch (\Exception $e) {
-                Log::error('Failed to send order confirmation email: ' . $e->getMessage());
+                Log::error('Failed to send order confirmation email', [
+                    'order_number' => $orderNumber,
+                    'exception' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
             }
         }
 

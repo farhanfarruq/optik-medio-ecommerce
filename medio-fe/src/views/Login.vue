@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from 'vue-router';
 import { useToast } from '../composables/useToast';
-import PageHero from '../components/layout/PageHero.vue';
+import AuthShell from '../components/layout/AuthShell.vue';
 
 const { showToast } = useToast();
 const authStore = useAuthStore();
@@ -37,43 +37,31 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <PageHero
-    title="Masuk Akun"
-    subtitle="Akses pesanan, resep optik, wishlist, komplain, dan layanan purna jual."
-    :breadcrumbs="[{ label: 'Masuk Akun' }]"
-  />
-
-  <main class="bg-ivory text-ink">
-    <section class="container-commerce flex justify-center pt-40 pb-20">
-      <div class="w-full">
-        <div class="w-full max-w-lg">
-          <div class="mb-8 text-center lg:text-left">
-            <img src="/gambar/medio.jpeg" alt="Optik Medio" class="mx-auto mb-5 h-14 w-auto lg:mx-0" />
-            <p class="text-xs font-semibold uppercase tracking-[0.22em] text-gold">Masuk Akun</p>
-            <h2 class="mt-3 font-headline text-4xl font-semibold text-ink">Selamat datang kembali</h2>
-            <p class="mt-3 text-sm leading-6 text-graphite/70">Masuk untuk melihat status pesanan, alamat, resep optik, wishlist, dan komplain.</p>
-          </div>
-          <form @submit.prevent="handleLogin" class="premium-card space-y-5 p-6 sm:p-8">
-            <div v-if="errorMessage" class="alert-error">{{ errorMessage }}</div>
-              <label class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-graphite/65">Email</span>
-                <input v-model="form.email" type="email" required class="input-field" placeholder="nama@email.com" />
-              </label>
-              <label class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-graphite/65">Password</span>
-                <input v-model="form.password" type="password" required class="input-field" placeholder="Masukkan password" />
-              </label>
-              <button type="submit" :disabled="isLoading" class="btn-primary w-full">
-                <span v-if="isLoading" class="material-symbols-outlined animate-spin text-base">sync</span>
-                <span>{{ isLoading ? 'Memproses...' : 'Masuk' }}</span>
-              </button>
-            <p class="text-center text-sm text-graphite/70">
-              Belum punya akun?
-              <router-link to="/register" class="font-semibold text-gold hover:text-ink">Daftar sekarang</router-link>
-            </p>
-          </form>
-        </div>
-      </div>
-    </section>
-  </main>
+  <AuthShell
+    eyebrow="Masuk Akun"
+    title="Selamat datang kembali"
+    description="Masuk untuk melihat status pesanan, alamat, resep optik, wishlist, dan komplain."
+    panel-title="Kelola kebutuhan optik dari satu akun."
+    panel-subtitle="Pantau pesanan, simpan resep, akses warranty, dan lanjutkan wishlist frame favorit tanpa mengulang data."
+  >
+    <form @submit.prevent="handleLogin" class="premium-card space-y-5 p-6 sm:p-8">
+      <div v-if="errorMessage" class="alert-error">{{ errorMessage }}</div>
+      <label class="block">
+        <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-graphite/65">Email</span>
+        <input v-model="form.email" type="email" required class="input-field" placeholder="nama@email.com" />
+      </label>
+      <label class="block">
+        <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-graphite/65">Password</span>
+        <input v-model="form.password" type="password" required class="input-field" placeholder="Masukkan password" />
+      </label>
+      <button type="submit" :disabled="isLoading" class="btn-primary w-full">
+        <span v-if="isLoading" class="material-symbols-outlined animate-spin text-base">sync</span>
+        <span>{{ isLoading ? 'Memproses...' : 'Masuk' }}</span>
+      </button>
+      <p class="text-center text-sm text-graphite/70">
+        Belum punya akun?
+        <router-link to="/register" class="font-semibold text-gold transition-colors hover:text-ink">Daftar sekarang</router-link>
+      </p>
+    </form>
+  </AuthShell>
 </template>

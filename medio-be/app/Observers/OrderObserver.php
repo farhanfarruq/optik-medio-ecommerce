@@ -9,6 +9,11 @@ use App\Models\Order;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
+/**
+ * OBS-3 (Phase 6): Standardized log format — semua Log::* pakai array context
+ * (bukan string concat). Lebih mudah di-parse oleh log aggregator (CloudWatch,
+ * Datadog, ELK), dan exception object di-include sebagai field terstruktur.
+ */
 class OrderObserver
 {
     /** Email admin yang menerima notifikasi. */
@@ -24,9 +29,16 @@ class OrderObserver
             $order->loadMissing(['user', 'items', 'bank']);
             Mail::to($this->adminEmail())
                 ->send(new AdminOrderNotificationMail($order, 'new_order'));
-            Log::info("Admin notified: new order #{$order->order_number}");
+            Log::info('Admin notified: new order', [
+                'order_number' => $order->order_number,
+                'order_id' => $order->id,
+            ]);
         } catch (\Exception $e) {
-            Log::error("Failed to notify admin for new order #{$order->order_number}: " . $e->getMessage());
+            Log::error('Failed to notify admin for new order', [
+                'order_number' => $order->order_number,
+                'order_id' => $order->id,
+                'exception' => $e->getMessage(),
+            ]);
         }
     }
 
@@ -38,9 +50,16 @@ class OrderObserver
                 $order->loadMissing(['user', 'items', 'bank']);
                 Mail::to($this->adminEmail())
                     ->send(new AdminOrderNotificationMail($order, 'payment_proof'));
-                Log::info("Admin notified: payment proof uploaded for order #{$order->order_number}");
+                Log::info('Admin notified: payment proof uploaded', [
+                    'order_number' => $order->order_number,
+                    'order_id' => $order->id,
+                ]);
             } catch (\Exception $e) {
-                Log::error("Failed to notify admin for payment proof #{$order->order_number}: " . $e->getMessage());
+                Log::error('Failed to notify admin for payment proof', [
+                    'order_number' => $order->order_number,
+                    'order_id' => $order->id,
+                    'exception' => $e->getMessage(),
+                ]);
             }
         }
 
@@ -55,7 +74,12 @@ class OrderObserver
                 try {
                     ReferralController::rewardInviterIfEligible($order->user_id);
                 } catch (\Exception $e) {
-                    Log::error("Failed to reward referral for order #{$order->order_number}: " . $e->getMessage());
+                    Log::error('Failed to reward referral', [
+                        'order_number' => $order->order_number,
+                        'order_id' => $order->id,
+                        'user_id' => $order->user_id,
+                        'exception' => $e->getMessage(),
+                    ]);
                 }
             }
         }
@@ -71,9 +95,19 @@ class OrderObserver
         try {
             $order->loadMissing('user');
             Mail::to($order->user->email)->send(new OrderStatusMail($order, $eventType));
-            Log::info("Order status email ({$eventType}) sent to {$order->user->email} for order #{$order->order_number}");
+            Log::info('Order status email sent', [
+                'event_type' => $eventType,
+                'order_number' => $order->order_number,
+                'order_id' => $order->id,
+                'recipient' => $order->user->email,
+            ]);
         } catch (\Exception $e) {
-            Log::error("Failed to send order status email ({$eventType}) for order #{$order->order_number}: " . $e->getMessage());
+            Log::error('Failed to send order status email', [
+                'event_type' => $eventType,
+                'order_number' => $order->order_number,
+                'order_id' => $order->id,
+                'exception' => $e->getMessage(),
+            ]);
         }
     }
 }

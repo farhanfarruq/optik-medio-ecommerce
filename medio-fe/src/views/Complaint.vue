@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { logger } from '../core/utils/logger';
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { complaintRepository } from '../repositories/ComplaintRepository';
@@ -46,7 +47,7 @@ const loadOrders = async () => {
     const response = await orderRepository.getUserOrders(1, 100);
     orders.value = response.data || [];
   } catch (error) {
-    console.error('Failed to load orders', error);
+    logger.error('Failed to load orders', error);
   } finally {
     isLoadingOrders.value = false;
   }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { logger } from '../../core/utils/logger';
 import { useCartStore } from '../../stores/cartStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useRouter, useRoute } from 'vue-router';
@@ -145,7 +146,7 @@ watch(searchQuery, (query) => {
         trackSearchNoResult(term);
       }
     } catch (error) {
-      console.warn('Failed to fetch search suggestions', error);
+      logger.warn('Failed to fetch search suggestions', error);
       searchSuggestions.value = { products: [], categories: [] };
     } finally {
       isSuggestionLoading.value = false;
@@ -240,7 +241,7 @@ const mobileNavItems = [
           class="relative overflow-hidden rounded-lg group-hover:scale-[1.03] transition-transform duration-300 p-0.5 border"
           :class="isLightNav ? 'bg-white border-mist shadow-card' : 'bg-white/10 border-white/20 backdrop-blur-sm'"
         >
-          <img src="/gambar/medio.jpeg" alt="Optik Medio" class="h-8 w-auto object-contain" />
+          <img src="/gambar/medio.jpeg" alt="Optik Medio" class="h-8 w-auto object-contain" loading="lazy" decoding="async" />
         </div>
         <span
           class="font-headline text-xl font-semibold tracking-normal transition-all duration-300"
@@ -353,7 +354,7 @@ const mobileNavItems = [
                   @mousedown.prevent="selectProduct(product.slug)"
                   class="w-full flex items-center gap-3 p-2 text-left hover:bg-ivory transition-colors rounded-lg"
                 >
-                  <img :src="resolveImageUrl(product)" :alt="product.name" class="w-11 h-11 object-contain bg-ivory border border-mist shrink-0 rounded-md" />
+                  <img :src="resolveImageUrl(product)" :alt="product.name" class="w-11 h-11 object-contain bg-ivory border border-mist shrink-0 rounded-md" loading="lazy" decoding="async" />
                   <span class="min-w-0">
                     <span class="block text-xs font-black truncate">{{ product.name }}</span>
                     <span class="block text-[11px] text-stone-500 truncate">{{ product.brand || 'Optik Medio' }} · Rp {{ product.price.toLocaleString('id-ID') }}</span>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { logger } from '../../core/utils/logger';
 import { ref, onMounted } from 'vue';
 import { settingRepository, type AppSettings } from '../../repositories/SettingRepository';
 
@@ -8,7 +9,7 @@ onMounted(async () => {
   try {
     settings.value = await settingRepository.getSettings();
   } catch (error) {
-    console.error('Failed to load settings', error);
+    logger.error('Failed to load settings', error);
   }
 });
 </script>

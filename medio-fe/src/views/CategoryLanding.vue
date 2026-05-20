@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { logger } from '../core/utils/logger';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { productRepository } from '../repositories/ProductRepository';
@@ -49,7 +50,7 @@ const loadCategory = async () => {
       });
     }
   } catch (e) {
-    console.error('Failed to load category', e);
+    logger.error('Failed to load category', e);
   } finally {
     isLoading.value = false;
   }

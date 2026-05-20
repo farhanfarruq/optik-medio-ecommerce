@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { logger } from '../core/utils/logger';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { productRepository } from '../repositories/ProductRepository';
@@ -29,7 +30,7 @@ const loadBrand = async () => {
       ogUrl: window.location.href,
     });
   } catch (e) {
-    console.error('Failed to load brand', e);
+    logger.error('Failed to load brand', e);
   } finally {
     isLoading.value = false;
   }

@@ -50,5 +50,18 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue';
 import PageHero from '../../components/layout/PageHero.vue';
+import { useSeoMeta } from '../../composables/useSeoMeta';
+
+onMounted(() => {
+  // SEO-2 (Phase 6)
+  const { setSeo } = useSeoMeta();
+  setSeo({
+    title: 'Syarat & Ketentuan',
+    description:
+      'Syarat dan ketentuan penggunaan layanan Optik Medio — pembelian, pengiriman, retur, dan kebijakan layanan.',
+    ogType: 'article',
+  });
+});
 </script>

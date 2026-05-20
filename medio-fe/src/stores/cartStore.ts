@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import type { CartItem, Prescription, Promo } from '../types';
 import { apiClient } from '../core/api/axiosclient';
+import { logger } from '../core/utils/logger';
 
 export const useCartStore = defineStore('cart', () => {
   const items = ref<CartItem[]>([]);
@@ -243,7 +244,7 @@ export const useCartStore = defineStore('cart', () => {
       // Always reset dismissed state on refresh/new fetch to ensure banner reappears as requested
       isPromoBannerDismissed.value = false;
     } catch (err) {
-      console.error('Failed to fetch promos', err);
+      logger.error('Failed to fetch promos', err);
     }
   }
 
@@ -265,7 +266,7 @@ export const useCartStore = defineStore('cart', () => {
       const response = await apiClient.post('/orders/calculate', buildCalculatePayload(discountId, shippingCost, loyaltyPointsUsed, shippingAddressId, shippingProtectionOpted, fulfillmentMethod));
       calculatedData.value = response.data;
     } catch (err: any) {
-      console.error('Calculate failed', err);
+      logger.error('Calculate failed', err);
       if (err.response?.status === 422) {
         if (isStaleCartValidationError(err)) {
           clearCart();

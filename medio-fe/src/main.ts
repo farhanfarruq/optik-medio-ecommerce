@@ -6,6 +6,7 @@ import './style.css';
 import App from './App.vue';
 import { setupGlobalErrorHandlers } from './composables/useErrorBoundary';
 import { setupWebVitals } from './composables/useWebVitals';
+import { logger } from './core/utils/logger';
 
 const app = createApp(App);
 const pinia = createPinia();
@@ -19,13 +20,13 @@ setupWebVitals();
 
 // Vue global error handler
 app.config.errorHandler = (err, _instance, info) => {
-  console.error('[Vue Error]', err, info);
+  logger.error('[Vue Error]', err, info);
 };
 
 // Vue global warning handler (dev only)
 app.config.warnHandler = (msg, _instance, trace) => {
   if (import.meta.env.DEV) {
-    console.warn('[Vue Warn]', msg, trace);
+    logger.warn('[Vue Warn]', msg, trace);
   }
 };
 

@@ -6,6 +6,7 @@ import { useCompareStore } from '../stores/compareStore';
 import { resolveImageUrl } from '../core/utils/image';
 import type { Product } from '../types';
 import PageHero from '../components/layout/PageHero.vue';
+import { useSeoMeta } from '../composables/useSeoMeta';
 
 const router = useRouter();
 const compareStore = useCompareStore();
@@ -61,7 +62,18 @@ const loadCompare = async () => {
   }
 };
 
-onMounted(loadCompare);
+onMounted(() => {
+  // SEO-2 (Phase 6)
+  const { setSeo } = useSeoMeta();
+  setSeo({
+    title: 'Bandingkan Produk',
+    description:
+      'Bandingkan kacamata dan lensa secara berdampingan untuk menemukan pilihan terbaik di Optik Medio.',
+    ogType: 'website',
+  });
+
+  loadCompare();
+});
 watch(() => compareStore.items.map(item => item.id).join(','), loadCompare);
 </script>
 
@@ -110,7 +122,7 @@ watch(() => compareStore.items.map(item => item.id).join(','), loadCompare);
               <th class="w-48 p-4 text-left text-xs font-black uppercase tracking-widest text-graphite/65 bg-ivory">Atribut</th>
               <th v-for="product in products" :key="product.id" class="min-w-56 p-4 text-left align-top border-l border-mist">
                 <button @click="router.push(`/products/${product.slug}`)" class="text-left group">
-                  <img :src="resolveImageUrl(product)" :alt="product.name" class="h-24 w-24 rounded-lg border border-mist bg-ivory object-contain p-2 mb-3" />
+                  <img :src="resolveImageUrl(product)" :alt="product.name" class="h-24 w-24 rounded-lg border border-mist bg-ivory object-contain p-2 mb-3" loading="lazy" decoding="async" />
                   <p class="text-[10px] font-black uppercase tracking-widest text-graphite/65">{{ product.brand || 'Optik Medio' }}</p>
                   <h2 class="font-black text-ink group-hover:text-gold">{{ product.name }}</h2>
                 </button>

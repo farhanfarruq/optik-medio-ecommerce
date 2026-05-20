@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Actions\Order\DecrementProductStockAction;
+use App\Actions\Order\RestoreProductStockAction;
 use App\Http\Controllers\Controller;
 use App\Models\Bank;
 use App\Models\LoyaltyPointLog;
@@ -28,6 +30,8 @@ class OrderController extends Controller
         private OrderRepositoryInterface $orderRepo,
         private RajaOngkirService $shippingService,
         private OpticalPricingService $opticalPricingService,
+        private DecrementProductStockAction $decrementStock,
+        private RestoreProductStockAction $restoreStock,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -680,36 +684,12 @@ class OrderController extends Controller
         }
 
         $order = DB::transaction(function () use ($request, $orderData, $items, $promoId, $loyaltyPointsToUse, $discountToRecord) {
-            // ── P0-1: Lock semua baris produk yang akan didekremen sebelum apapun ──
-            // Mencegah race condition: 2 user checkout produk yang sama bersamaan
-            // → tanpa lock, keduanya bisa baca stok cukup, lalu sama-sama decrement
-            //   sehingga stok bisa minus / overselling.
-            // Dengan lockForUpdate, transaksi kedua menunggu yang pertama commit/rollback.
-            $productIds = collect($request->items)->pluck('product_id')->unique()->values()->all();
-            if (!empty($productIds)) {
-                Product::whereIn('id', $productIds)
-                    ->lockForUpdate()
-                    ->get(['id', 'stock', 'name']);
-            }
-
-            // ── Re-check stok di dalam lock (defense in depth) ──
-            // Stok di-load ulang setelah lock untuk pastikan nilai paling baru.
-            // Untuk linked lens (lensa optik yang menempel ke frame), behavior
-            // validasi mengikuti pola lama: tidak di-recheck di sini, biarkan
-            // atomic CAS di bagian decrement yang menjadi guard akhirnya.
-            $lockedProducts = Product::whereIn('id', $productIds)->get()->keyBy('id');
-            foreach ($request->items as $item) {
-                $isLinkedLens = isset($item['linked_item_index']);
-                if ($isLinkedLens) {
-                    continue;
-                }
-                $locked = $lockedProducts->get($item['product_id']);
-                if (!$locked || $locked->stock < $item['quantity']) {
-                    throw ValidationException::withMessages([
-                        'items' => ['Stok produk "' . ($locked->name ?? '#'.$item['product_id']) . '" berubah saat checkout. Silakan periksa keranjang kembali.'],
-                    ]);
-                }
-            }
+            // ── P0-1 + P1-6 (Phase 3): lock + recheck + decrement stok ──
+            // Logic dipindahkan ke DecrementProductStockAction agar bisa
+            // di-test secara unit dan reuse oleh Action lain (mis. PlaceOrderAction).
+            // Action ini WAJIB dipanggil di dalam DB::transaction caller agar
+            // rollback bersama jika ada step lain yang gagal.
+            $this->decrementStock->execute($request->items);
 
             $order = $this->orderRepo->create($orderData, $items);
 
@@ -741,21 +721,6 @@ class OrderController extends Controller
                 if (!$redeemed) {
                     throw ValidationException::withMessages([
                         'loyalty_points_used' => ['Saldo loyalty points tidak mencukupi.'],
-                    ]);
-                }
-            }
-
-            // Decrement stok untuk semua items (mengikuti behavior asli sebelum P0-1).
-            // Atomic CAS (WHERE stock >= qty) tetap dipertahankan sebagai second-line
-            // defense walaupun sudah ada lockForUpdate di awal transaction.
-            foreach ($request->items as $item) {
-                $updated = Product::where('id', $item['product_id'])
-                    ->where('stock', '>=', $item['quantity'])
-                    ->decrement('stock', $item['quantity']);
-
-                if ($updated === 0) {
-                    throw ValidationException::withMessages([
-                        'items' => ['Stok produk berubah saat checkout. Silakan periksa keranjang kembali.'],
                     ]);
                 }
             }
@@ -1013,11 +978,9 @@ class OrderController extends Controller
         }
 
         DB::transaction(function () use ($order) {
-            foreach ($order->items as $item) {
-                if (!$item->parent_item_id) {
-                    Product::where('id', $item->product_id)->increment('stock', $item->quantity);
-                }
-            }
+            // P1-6 (Phase 3): logic restore stock dipindahkan ke
+            // RestoreProductStockAction agar reusable & testable.
+            $this->restoreStock->execute($order);
 
             $order->update(['status' => 'cancelled']);
         });

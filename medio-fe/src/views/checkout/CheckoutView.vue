@@ -1,4 +1,10 @@
 <script setup lang="ts">
+// ─────────────────────────────────────────────────────────────────────────
+// FIXME P1-10 (Phase 3): God component (1.375 LOC) — refactor ke sub-tree.
+// Lihat: medio-fe/src/views/REFACTOR_PLAN.md untuk migration plan lengkap.
+// Composables baru tersedia: useFormatMoney.
+// ─────────────────────────────────────────────────────────────────────────
+import { logger } from '../../core/utils/logger';
 import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useCartStore } from '../../stores/cartStore';
 import { shippingRepository, type Location } from '../../repositories/ShippingRepository';
@@ -325,7 +331,7 @@ const selectAddress = async (addr: any) => {
     form.value.id = addr.id;
     
   } catch (error) {
-    console.error('Failed to select address', error);
+    logger.error('Failed to select address', error);
   } finally {
     // Use nextTick so all pending watchers fire with isAutoFilling=true before we release the guard
     await nextTick();
@@ -393,7 +399,7 @@ onMounted(async () => {
 
     await calculateCheckoutTotals(0);
   } catch (error) {
-    console.error('Failed to initialize checkout', error);
+    logger.error('Failed to initialize checkout', error);
   } finally {
     isProvLoading.value = false;
     isLoadingPayment.value = false;
@@ -424,7 +430,7 @@ watch(fulfillmentMethod, async () => {
 // Watchers
 watch(() => form.value.province_id, async (newVal) => {
   if (newVal) {
-    console.log('Fetching cities for province_id:', newVal);
+    logger.debug('Fetching cities for province_id:', newVal);
     const selectedProv = provinces.value.find(p => (p.id || (p as any).province_id) == newVal) as any;
     form.value.province = selectedProv ? (selectedProv.name || selectedProv.province_name || selectedProv.province) : '';
 
@@ -442,7 +448,7 @@ watch(() => form.value.province_id, async (newVal) => {
         name: c.name || c.city_name || `${c.type} ${c.city}`
       }));
     } catch (e) {
-      console.error('Failed to load cities', e);
+      logger.error('Failed to load cities', e);
     } finally {
       isCityLoading.value = false;
     }
@@ -468,7 +474,7 @@ watch(() => form.value.city_id, async (newVal) => {
         postal_code: String(d.zip_code || d.postal_code || '')
       }));
     } catch (e) {
-      console.error('Failed to load districts', e);
+      logger.error('Failed to load districts', e);
     } finally {
       isDistLoading.value = false;
     }
@@ -555,7 +561,7 @@ const calculateShipping = async () => {
         shippingError.value = 'Tidak ada layanan pengiriman yang tersedia untuk kecamatan ini.';
       }
     } catch (error: any) {
-      console.error('Failed to calculate shipping', error);
+      logger.error('Failed to calculate shipping', error);
       shippingError.value = error?.response?.data?.message || 'Gagal menghitung ongkir untuk tujuan ini.';
     } finally {
       isCalculating.value = false;
@@ -686,7 +692,7 @@ const submitOrder = async () => {
       router.push('/orders');
     }
   } catch (error: any) {
-    console.error('Order failed', error);
+    logger.error('Order failed', error);
     const validationErrors = error.response?.data?.errors;
     if (validationErrors) {
       const firstError = Object.values(validationErrors)[0];
@@ -944,7 +950,7 @@ const submitOrder = async () => {
                   <div v-if="checkoutFreeItems.length > 0" class="mt-3 flex flex-col gap-2">
                     <div v-for="freeItem in checkoutFreeItems" :key="freeItem.product_id" class="flex items-center gap-3 rounded-lg border border-olive/15 bg-white/60 p-2">
                       <div class="h-10 w-10 shrink-0 rounded bg-porcelain p-1">
-                        <img v-if="freeItem.image" :src="resolveImageUrl(freeItem.image, freeItem.name || freeItem.product_name)" class="h-full w-full object-contain" />
+                        <img alt="" v-if="freeItem.image" :src="resolveImageUrl(freeItem.image, freeItem.name || freeItem.product_name)" class="h-full w-full object-contain" loading="lazy" decoding="async" />
                       </div>
                       <div class="min-w-0">
                         <p class="text-xs font-bold text-ink line-clamp-1">{{ freeItem.name || freeItem.product_name }}</p>
@@ -1121,7 +1127,7 @@ const submitOrder = async () => {
                 class="flex gap-3 border-b border-mist pb-4 last:border-b-0 last:pb-0"
               >
                 <div class="w-16 h-16 border border-mist bg-ivory flex items-center justify-center shrink-0">
-                  <img :src="resolveImageUrl(item.image_url || item.images?.[0], item.name)" :alt="item.name" class="w-full h-full object-contain p-1" />
+                  <img :src="resolveImageUrl(item.image_url || item.images?.[0], item.name)" :alt="item.name" class="w-full h-full object-contain p-1" loading="lazy" decoding="async" />
                 </div>
                 <div class="min-w-0 flex-1">
                   <div class="flex items-start justify-between gap-3">
@@ -1149,7 +1155,7 @@ const submitOrder = async () => {
               <div class="flex flex-col gap-3">
                 <div v-for="freeItem in checkoutFreeItems" :key="freeItem.product_id" class="flex items-center gap-3 rounded-lg border border-primary/10 bg-white p-3">
                   <div class="h-14 w-14 shrink-0 rounded-lg bg-porcelain p-1">
-                    <img v-if="freeItem.image" :src="resolveImageUrl(freeItem.image, freeItem.name || freeItem.product_name)" class="h-full w-full object-contain" />
+                    <img alt="" v-if="freeItem.image" :src="resolveImageUrl(freeItem.image, freeItem.name || freeItem.product_name)" class="h-full w-full object-contain" loading="lazy" decoding="async" />
                     <span v-else class="material-symbols-outlined flex h-full w-full items-center justify-center text-primary">card_giftcard</span>
                   </div>
                   <div class="min-w-0 flex-1">
@@ -1254,12 +1260,12 @@ const submitOrder = async () => {
 
     <!-- Address Selector Modal -->
     <Teleport to="body">
-      <div v-if="showAddressModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div v-if="showAddressModal" role="dialog" aria-modal="true" aria-labelledby="checkout-address-modal-title" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
         <div class="bg-porcelain w-full max-w-lg rounded-lg shadow-soft p-8 flex flex-col max-h-[80vh]">
           <div class="flex items-center justify-between mb-8">
-            <h2 class="text-2xl font-bold text-ink" style="font-family: 'Cormorant Garamond', serif;">Pilih Alamat</h2>
-            <button @click="showAddressModal = false" class="w-10 h-10 rounded-lg hover:bg-mist flex items-center justify-center transition-all">
-              <span class="material-symbols-outlined">close</span>
+            <h2 id="checkout-address-modal-title" class="text-2xl font-bold text-ink" style="font-family: 'Cormorant Garamond', serif;">Pilih Alamat</h2>
+            <button @click="showAddressModal = false" aria-label="Tutup dialog pilih alamat" class="w-10 h-10 rounded-lg hover:bg-mist flex items-center justify-center transition-all">
+              <span class="material-symbols-outlined" aria-hidden="true">close</span>
             </button>
           </div>
 
@@ -1290,6 +1296,9 @@ const submitOrder = async () => {
     <Teleport to="body">
       <div
         v-if="showXenditModal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Pembayaran via Xendit"
         class="fixed inset-0 z-[9999] flex items-center justify-center"
         style="background: rgba(10,8,5,0.75); backdrop-filter: blur(20px);"
       >

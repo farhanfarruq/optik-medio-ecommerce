@@ -1,4 +1,10 @@
 <script setup lang="ts">
+// ─────────────────────────────────────────────────────────────────────────
+// FIXME P1-9 (Phase 3): God component (1.520 LOC) — refactor ke sub-tree.
+// Lihat: medio-fe/src/views/REFACTOR_PLAN.md untuk migration plan lengkap.
+// Composables baru tersedia: useOrderStatus, useFormatMoney.
+// ─────────────────────────────────────────────────────────────────────────
+import { logger } from '../core/utils/logger';
 import { computed, ref, onMounted, watch } from 'vue';
 import { useAuthStore } from '../stores/authStore';
 import { orderRepository } from '../repositories/OrderRepository';
@@ -247,7 +253,7 @@ const fetchLoyaltyHistory = async () => {
     const response = await apiClient.get('/orders/loyalty-history');
     loyaltyHistory.value = response.data.history ? response.data.history.data : [];
   } catch (error) {
-    console.error('Failed to fetch loyalty history', error);
+    logger.error('Failed to fetch loyalty history', error);
   } finally {
     isLoadingHistory.value = false;
   }
@@ -259,7 +265,7 @@ const fetchLevelMembers = async () => {
     const response = await apiClient.get('/level-members');
     levelMembers.value = response.data;
   } catch (error) {
-    console.error('Failed to fetch level members', error);
+    logger.error('Failed to fetch level members', error);
   }
 };
 
@@ -299,7 +305,7 @@ onMounted(async () => {
       fetchAffiliateData();
     }
   } catch (error) {
-    console.error('Failed to fetch profile data', error);
+    logger.error('Failed to fetch profile data', error);
   } finally {
     isLoadingOrders.value = false;
   }
@@ -329,7 +335,7 @@ const fetchPrescriptions = async () => {
     isLoadingPrescriptions.value = true;
     prescriptions.value = await prescriptionRepository.list();
   } catch (error) {
-    console.error('Failed to fetch prescriptions', error);
+    logger.error('Failed to fetch prescriptions', error);
   } finally {
     isLoadingPrescriptions.value = false;
   }
@@ -493,7 +499,7 @@ const savePrescriptionEdit = async (profile: PrescriptionProfile) => {
     await fetchPrescriptions();
     showToast('Resep berhasil diperbarui.', 'success');
   } catch (error) {
-    console.error('Failed to update prescription', error);
+    logger.error('Failed to update prescription', error);
     showToast('Gagal memperbarui resep.', 'error');
   }
 };
@@ -504,7 +510,7 @@ const setDefaultPrescription = async (id: number) => {
     await fetchPrescriptions();
     showToast('Resep default diperbarui.', 'success');
   } catch (error) {
-    console.error('Failed to set default prescription', error);
+    logger.error('Failed to set default prescription', error);
     showToast('Gagal mengubah resep default.', 'error');
   }
 };
@@ -517,7 +523,7 @@ const deletePrescription = async (id: number) => {
     await fetchPrescriptions();
     showToast('Resep berhasil dihapus.', 'success');
   } catch (error) {
-    console.error('Failed to delete prescription', error);
+    logger.error('Failed to delete prescription', error);
     showToast('Gagal menghapus resep.', 'error');
   }
 };
@@ -538,7 +544,7 @@ const fetchAffiliateData = async () => {
       affiliateCommissions.value = [];
       affiliateEarnings.value = [];
     }
-  } catch (error) { console.warn('Failed affiliate data', error); }
+  } catch (error) { logger.warn('Failed affiliate data', error); }
   finally { isLoadingAffiliate.value = false; }
 };
 const applyAffiliate = async () => {
@@ -601,7 +607,7 @@ const loadMoreOrders = async () => {
   try {
     await loadOrders(currentOrderPage.value + 1, true);
   } catch (error) {
-    console.error('Failed to load more orders', error);
+    logger.error('Failed to load more orders', error);
     showToast('Gagal memuat pesanan tambahan.', 'error');
   } finally {
     isLoadingMoreOrders.value = false;
@@ -657,7 +663,7 @@ const openAddressModal = async () => {
       isProvLoading.value = true;
       provinces.value = await shippingRepository.getProvinces();
     } catch (error) {
-      console.error('Failed to load provinces', error);
+      logger.error('Failed to load provinces', error);
     } finally {
       isProvLoading.value = false;
     }
@@ -679,7 +685,7 @@ watch(() => addressForm.value.province_id, async (newVal) => {
         name: c.name || c.city_name || `${c.type} ${c.city}`
       }));
     } catch (e) {
-      console.error('Failed to load cities', e);
+      logger.error('Failed to load cities', e);
     } finally {
       isCityLoading.value = false;
     }
@@ -701,7 +707,7 @@ watch(() => addressForm.value.city_id, async (newVal) => {
         zip_code: String(d.zip_code || d.postal_code || '')
       }));
     } catch (e) {
-      console.error('Failed to load districts', e);
+      logger.error('Failed to load districts', e);
     } finally {
       isDistLoading.value = false;
     }
@@ -719,7 +725,7 @@ watch(() => addressForm.value.district_id, (newVal) => {
 const saveAddress = async () => {
   try {
     isSavingAddress.value = true;
-    console.log('Saving address payload:', addressForm.value);
+    logger.debug('Saving address payload:', addressForm.value);
     await apiClient.post('/addresses', addressForm.value);
     await authStore.fetchUser();
     showAddressModal.value = false;
@@ -738,7 +744,7 @@ const saveAddress = async () => {
       is_default: false
     };
   } catch (error) {
-    console.error('Failed to save address', error);
+    logger.error('Failed to save address', error);
     showToast('Gagal menyimpan alamat. Periksa kembali data Anda.', 'error');
   } finally {
     isSavingAddress.value = false;
@@ -751,7 +757,7 @@ const deleteAddress = async (id: number) => {
     await apiClient.delete(`/addresses/${id}`);
     await authStore.fetchUser();
   } catch (error) {
-    console.error('Failed to delete address', error);
+    logger.error('Failed to delete address', error);
   }
 };
 </script>
@@ -1235,10 +1241,9 @@ const deleteAddress = async (id: number) => {
               <div class="flex items-center gap-4">
                 <!-- Product Thumbnail Preview -->
                 <div v-if="order.items && order.items.length > 0" class="w-16 h-16 shrink-0 bg-mist border p-1 rounded-lg flex items-center justify-center overflow-hidden">
-                  <img 
+                  <img alt="" 
                     :src="resolveImageUrl(order.items[0].product, order.items[0].product?.name)" 
-                    class="w-full h-full object-contain mix-blend-multiply"
-                  />
+                    class="w-full h-full object-contain mix-blend-multiply" loading="lazy" decoding="async" />
                 </div>
                 <div v-else class="w-16 h-16 shrink-0 bg-ivory border p-1 rounded-lg flex items-center justify-center">
                   <span class="material-symbols-outlined text-graphite/40">shopping_bag</span>
@@ -1309,10 +1314,9 @@ const deleteAddress = async (id: number) => {
               class="bg-surface-container-low p-5 rounded-lg border border-outline-variant/15 flex gap-4 items-start"
             >
               <div class="w-20 h-20 shrink-0 bg-mist border p-2 rounded-lg flex items-center justify-center overflow-hidden">
-                <img
+                <img alt=""
                   :src="resolveImageUrl(product, product.name)"
-                  class="w-full h-full object-contain mix-blend-multiply"
-                />
+                  class="w-full h-full object-contain mix-blend-multiply" loading="lazy" decoding="async" />
               </div>
 
               <div class="flex-grow">
@@ -1455,12 +1459,12 @@ const deleteAddress = async (id: number) => {
 
   <!-- Address Modal -->
   <Teleport to="body">
-    <div v-if="showAddressModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-6 py-10">
+    <div v-if="showAddressModal" role="dialog" aria-modal="true" aria-labelledby="address-modal-title" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-6 py-10">
       <div class="bg-surface-container-low w-full max-w-2xl rounded-lg p-8 max-h-full overflow-y-auto shadow-soft border border-outline-variant/20">
         <div class="flex justify-between items-center mb-8">
-          <h3 class="text-2xl font-headline text-primary">Tambah Alamat Baru</h3>
-          <button @click="showAddressModal = false" class="text-on-surface-variant hover:text-primary transition-colors p-2 hover:bg-surface-container-highest rounded-lg flex items-center justify-center">
-            <span class="material-symbols-outlined">close</span>
+          <h3 id="address-modal-title" class="text-2xl font-headline text-primary">Tambah Alamat Baru</h3>
+          <button @click="showAddressModal = false" aria-label="Tutup dialog tambah alamat" class="text-on-surface-variant hover:text-primary transition-colors p-2 hover:bg-surface-container-highest rounded-lg flex items-center justify-center">
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
         </div>
 

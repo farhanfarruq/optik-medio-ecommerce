@@ -1,26 +1,41 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import DefaultLayout from '../components/layout/DefaultLayout.vue';
+
+// PERF-2 (Phase 4): semua route component dilazy-load via dynamic import.
+// Sebelum perubahan: 16 import eager (Home, ProductDetail, Login, Profile,
+// CheckoutView, OrderDetail, dll) memaksa Vite memasukkan semua ke initial
+// `index.js` chunk (~396 KB di build sebelumnya).
+//
+// Sesudah perubahan: hanya DefaultLayout yang eager (shell layout app).
+// Setiap route component dimuat saat dibutuhkan → initial bundle lebih kecil
+// dan TTI lebih cepat. Vue Router akan otomatis cache module yang sudah dimuat.
+//
+// Catatan: Home (Product.vue) sengaja TIDAK di-lazy karena route entry
+// pertama (LCP critical). Sisanya di-lazy via () => import().
+
 import Home from '../views/Product.vue';
-import ProductDetail from '../views/ProductDetail.vue';
-import Login from '../views/Login.vue';
-import Register from '../views/Register.vue';
-import CartView from '../views/CartView.vue';
-import Profile from '../views/Profile.vue';
-import ProductCompare from '../views/ProductCompare.vue';
-import SharedWishlist from '../views/SharedWishlist.vue';
-import FaceShapeQuiz from '../views/FaceShapeQuiz.vue';
-import VirtualTryOn from '../views/VirtualTryOn.vue';
-import CheckoutView from '../views/checkout/CheckoutView.vue';
-import OrderDetail from '../views/OrderDetail.vue';
-import WaitingPayment from '../views/checkout/WaitingPayment.vue';
-import Tracking from '../views/Tracking.vue';
-import Complaint from '../views/Complaint.vue';
 
 // Rute yang memerlukan autentikasi
 const AUTH_REQUIRED_ROUTES = ['Profile', 'Addresses', 'Prescriptions', 'Orders', 'Wishlist', 'Warranty', 'Checkout', 'OrderDetail', 'AffiliateDashboard', 'WaitingPayment', 'Tracking', 'Complaint'];
 
 // Rute yang hanya bisa diakses saat BELUM login
 const GUEST_ONLY_ROUTES = ['Login', 'Register'];
+
+// Lazy import helpers — chunk name comments membantu debugging di DevTools.
+const ProductDetail = () => import(/* webpackChunkName: "product-detail" */ '../views/ProductDetail.vue');
+const Login = () => import(/* webpackChunkName: "auth" */ '../views/Login.vue');
+const Register = () => import(/* webpackChunkName: "auth" */ '../views/Register.vue');
+const CartView = () => import(/* webpackChunkName: "cart" */ '../views/CartView.vue');
+const Profile = () => import(/* webpackChunkName: "profile" */ '../views/Profile.vue');
+const ProductCompare = () => import(/* webpackChunkName: "product-compare" */ '../views/ProductCompare.vue');
+const SharedWishlist = () => import(/* webpackChunkName: "shared-wishlist" */ '../views/SharedWishlist.vue');
+const FaceShapeQuiz = () => import(/* webpackChunkName: "face-shape-quiz" */ '../views/FaceShapeQuiz.vue');
+const VirtualTryOn = () => import(/* webpackChunkName: "virtual-try-on" */ '../views/VirtualTryOn.vue');
+const CheckoutView = () => import(/* webpackChunkName: "checkout" */ '../views/checkout/CheckoutView.vue');
+const OrderDetail = () => import(/* webpackChunkName: "order-detail" */ '../views/OrderDetail.vue');
+const WaitingPayment = () => import(/* webpackChunkName: "checkout" */ '../views/checkout/WaitingPayment.vue');
+const Tracking = () => import(/* webpackChunkName: "tracking" */ '../views/Tracking.vue');
+const Complaint = () => import(/* webpackChunkName: "complaint" */ '../views/Complaint.vue');
 
 const routes = [
   {

@@ -4,6 +4,10 @@ namespace App\Http\Controllers\API;
 
 use App\Enums\UserAffiliatorStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\ResendOtpRequest;
+use App\Http\Requests\Auth\VerifyOtpRequest;
 use App\Mail\OtpMail;
 use App\Models\OtpCode;
 use App\Models\User;
@@ -24,17 +28,8 @@ class AuthController extends Controller
     /**
      * Register — buat user + kirim OTP ke email
      */
-    public function register(Request $request): JsonResponse
+    public function register(RegisterRequest $request): JsonResponse
     {
-        $request->validate([
-            'name'                   => 'required|string|max:255',
-            'email'                  => 'required|string|email|max:255|unique:users',
-            'phone'                  => 'nullable|string|max:20',
-            'password'               => 'required|string|min:8|confirmed',
-            'register_as_affiliator' => 'nullable|boolean',
-            'referral_code'          => 'nullable|string|max:50',
-        ]);
-
         $referringAffiliator = null;
         if ($request->filled('referral_code')) {
             $referralCode = Str::upper($request->string('referral_code')->trim()->toString());
@@ -83,13 +78,8 @@ class AuthController extends Controller
     /**
      * Verifikasi OTP
      */
-    public function verifyOtp(Request $request): JsonResponse
+    public function verifyOtp(VerifyOtpRequest $request): JsonResponse
     {
-        $request->validate([
-            'email' => 'required|email',
-            'code'  => 'required|string|size:6',
-        ]);
-
         $limiterKey = $this->otpAttemptLimiterKey($request);
 
         if (RateLimiter::tooManyAttempts($limiterKey, 5)) {
@@ -150,12 +140,8 @@ class AuthController extends Controller
     /**
      * Kirim ulang OTP
      */
-    public function resendOtp(Request $request): JsonResponse
+    public function resendOtp(ResendOtpRequest $request): JsonResponse
     {
-        $request->validate([
-            'email' => 'required|email',
-        ]);
-
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
@@ -184,13 +170,8 @@ class AuthController extends Controller
     /**
      * Login
      */
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required',
-        ]);
-
         $credentials = $request->only('email', 'password');
 
         if (!Auth::validate($credentials)) {
@@ -271,7 +252,11 @@ class AuthController extends Controller
             try {
                 Mail::to($user->email)->send(new OtpMail($code, $user->name));
             } catch (\Exception $e) {
-                Log::error('Failed to send OTP email: ' . $e->getMessage());
+                Log::error('Failed to send OTP email', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'exception' => $e->getMessage(),
+                ]);
                 if (app()->isLocal()) {
                     Log::warning('OTP email delivery failed in local environment.', [
                         'email' => $user->email,

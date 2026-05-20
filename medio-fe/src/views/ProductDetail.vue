@@ -1,4 +1,10 @@
 <script setup lang="ts">
+// ─────────────────────────────────────────────────────────────────────────
+// FIXME P1-11 (Phase 3): God component (1.330 LOC) — refactor ke sub-tree.
+// Lihat: medio-fe/src/views/REFACTOR_PLAN.md untuk migration plan lengkap.
+// Composables baru tersedia: useFormatMoney.
+// ─────────────────────────────────────────────────────────────────────────
+import { logger } from '../core/utils/logger';
 import { computed, ref, reactive, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCartStore } from '../stores/cartStore';
@@ -77,7 +83,7 @@ const loadCoatings = async () => {
   try {
     allCoatings.value = await opticalRepository.getLensCoatings();
   } catch (e) {
-    console.error('Failed to load coatings', e);
+    logger.error('Failed to load coatings', e);
   } finally {
     isCoatingsLoading.value = false;
   }
@@ -210,7 +216,7 @@ onMounted(async () => {
         total_reviews: reviews.total_reviews,
       };
     } catch (reviewError) {
-      console.warn('Failed to fetch reviews', reviewError);
+      logger.warn('Failed to fetch reviews', reviewError);
     }
 
     if (data.variants) {
@@ -227,7 +233,7 @@ onMounted(async () => {
     }
     fetchRecommendations(slug);
   } catch (error) {
-    console.error('Failed to fetch product', error);
+    logger.error('Failed to fetch product', error);
     router.push('/products');
   } finally {
     isLoading.value = false;
@@ -240,7 +246,7 @@ const fetchLenses = async () => {
     const response = await productRepository.getProducts({ category: 'lensa-kacamata' });
     lenses.value = response.data || response;
   } catch (error) {
-    console.error('Failed to fetch lenses', error);
+    logger.error('Failed to fetch lenses', error);
   } finally {
     isLensesLoading.value = false;
   }
@@ -257,7 +263,7 @@ const fetchRecommendations = async (slug: string) => {
       (product.value as any).compatible_lens_options = recommendations.compatible_lens_options;
     }
   } catch (error) {
-    console.warn('Failed to fetch product recommendations', error);
+    logger.warn('Failed to fetch product recommendations', error);
   }
 };
 
@@ -618,8 +624,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
             <img
               :src="resolveImageUrl(product.images?.[activeImage])"
               class="h-full w-full object-contain p-3 mix-blend-multiply sm:p-4 md:p-5"
-              alt="Product"
-            />
+              alt="Product" loading="lazy" decoding="async" />
             <!-- Image Nav Arrows (if multiple) -->
             <button
               v-if="product.images?.length > 1 && activeImage > 0"
@@ -651,7 +656,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
                 : 'border-color: transparent; opacity: 0.6; background: linear-gradient(145deg, var(--ivory), var(--mist));'"
               :class="{ 'hover:opacity-100': activeImage !== index }"
             >
-              <img :src="resolveImageUrl(img)" class="w-full h-full object-contain mix-blend-multiply" />
+              <img alt="" :src="resolveImageUrl(img)" class="w-full h-full object-contain mix-blend-multiply" loading="lazy" decoding="async" />
             </button>
           </div>
         </div>
@@ -1068,7 +1073,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
             style="border-color: rgba(184,138,68,0.14);"
           >
             <div class="flex aspect-square items-center justify-center p-3" style="background: linear-gradient(145deg, var(--ivory), var(--mist));">
-              <img :src="resolveImageUrl(item)" :alt="item.name" class="w-full h-full object-contain mix-blend-multiply" />
+              <img :src="resolveImageUrl(item)" :alt="item.name" class="w-full h-full object-contain mix-blend-multiply" loading="lazy" decoding="async" />
             </div>
             <div class="p-3">
               <p class="text-[10px] font-black uppercase tracking-widest mb-1" style="color: var(--graphite);">{{ item.name }}</p>
@@ -1090,7 +1095,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
             style="border-color: rgba(184,138,68,0.14);"
           >
             <div class="flex aspect-square items-center justify-center p-3" style="background: linear-gradient(145deg, var(--ivory), var(--mist));">
-              <img :src="resolveImageUrl(item)" :alt="item.name" class="w-full h-full object-contain mix-blend-multiply" />
+              <img :src="resolveImageUrl(item)" :alt="item.name" class="w-full h-full object-contain mix-blend-multiply" loading="lazy" decoding="async" />
             </div>
             <div class="p-3">
               <p class="text-[10px] font-black uppercase tracking-widest mb-1" style="color: var(--graphite);">{{ item.brand || 'Lensa' }}</p>
@@ -1152,12 +1157,12 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
     <!-- ║          LENS SELECTOR MODAL         ║ -->
     <!-- ╚══════════════════════════════════════╝ -->
     <Teleport to="body">
-      <div v-if="isLensChoiceModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(10,8,5,0.75); backdrop-filter: blur(20px);">
+      <div v-if="isLensChoiceModalOpen" role="dialog" aria-modal="true" aria-labelledby="lens-choice-modal-title" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(10,8,5,0.75); backdrop-filter: blur(20px);">
         <div class="w-full max-w-md rounded-lg border p-5 md:p-6" style="background: #faf8f5; border-color: rgba(184,138,68,0.2); box-shadow: 0 30px 80px rgba(0,0,0,0.3);">
           <div class="mb-4 flex items-center justify-between">
-            <h2 class="text-xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Lanjutkan Pembelian Lensa</h2>
-            <button @click="isLensChoiceModalOpen = false" class="flex h-9 w-9 items-center justify-center rounded-lg transition-all" style="background: rgba(184,138,68,0.1); color: #6F4E1D;">
-              <span class="material-symbols-outlined">close</span>
+            <h2 id="lens-choice-modal-title" class="text-xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Lanjutkan Pembelian Lensa</h2>
+            <button @click="isLensChoiceModalOpen = false" aria-label="Tutup dialog" class="flex h-9 w-9 items-center justify-center rounded-lg transition-all" style="background: rgba(184,138,68,0.1); color: #6F4E1D;">
+              <span class="material-symbols-outlined" aria-hidden="true">close</span>
             </button>
           </div>
 
@@ -1194,7 +1199,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
       <!-- ╔══════════════════════════════════════════════════╗ -->
       <!-- ║     LENS OPTION + COATING CONFIGURATOR MODAL    ║ -->
       <!-- ╚══════════════════════════════════════════════════╝ -->
-      <div v-if="isLensModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(10,8,5,0.75); backdrop-filter: blur(20px);">
+      <div v-if="isLensModalOpen" role="dialog" aria-modal="true" aria-labelledby="lens-modal-title" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(10,8,5,0.75); backdrop-filter: blur(20px);">
         <div class="w-full max-w-xl rounded-lg border" style="background: #faf8f5; border-color: rgba(184,138,68,0.2); box-shadow: 0 30px 80px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
 
           <!-- Header -->
@@ -1203,7 +1208,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
               <p class="text-[10px] font-black uppercase tracking-[0.24em] mb-1" style="color: #6F4E1D;">
                 {{ configuratorStep === 'lens' ? 'Langkah 1 dari 2' : 'Langkah 2 dari 2' }}
               </p>
-              <h2 class="text-xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">
+              <h2 id="lens-modal-title" class="text-xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">
                 {{ configuratorStep === 'lens' ? 'Pilih Jenis Lensa' : 'Pilih Coating Lensa' }}
               </h2>
               <p class="text-xs mt-1" style="color: var(--graphite);">

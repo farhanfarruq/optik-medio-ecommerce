@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { logger } from '../core/utils/logger';
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { apiClient } from '../core/api/axiosclient';
@@ -31,7 +32,7 @@ const loadData = async () => {
     ]);
     levelMembers.value = levelsRes.data;
   } catch (e) {
-    console.error('Failed to load loyalty data', e);
+    logger.error('Failed to load loyalty data', e);
   } finally {
     isLoading.value = false;
   }

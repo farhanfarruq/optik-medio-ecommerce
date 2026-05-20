@@ -60,5 +60,18 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue';
 import PageHero from '../../components/layout/PageHero.vue';
+import { useSeoMeta } from '../../composables/useSeoMeta';
+
+onMounted(() => {
+  // SEO-2 (Phase 6)
+  const { setSeo } = useSeoMeta();
+  setSeo({
+    title: 'Kebijakan Privasi',
+    description:
+      'Kebijakan privasi Optik Medio — bagaimana kami mengumpulkan, menggunakan, dan melindungi data pelanggan.',
+    ogType: 'article',
+  });
+});
 </script>

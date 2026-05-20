@@ -11,6 +11,7 @@
  */
 
 import { apiClient } from '../core/api/axiosclient';
+import { logger } from '../core/utils/logger';
 
 interface VitalEntry {
   name: string;
@@ -47,7 +48,7 @@ function sendVital(entry: VitalEntry): void {
 
   if (import.meta.env.DEV) {
     const status = entry.rating.toUpperCase();
-    console.log(`[WebVital:${status}] ${entry.name}: ${Math.round(entry.value)}${entry.name === 'CLS' ? '' : 'ms'} (${entry.rating})`);
+    logger.debug(`[WebVital:${status}] ${entry.name}: ${Math.round(entry.value)}${entry.name === 'CLS' ? '' : 'ms'} (${entry.rating})`);
   }
 }
 

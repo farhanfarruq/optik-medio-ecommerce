@@ -16,10 +16,23 @@ class WebhookController extends Controller
 {
     public function xendit(Request $request): JsonResponse
     {
-        $callbackToken = $request->header('x-callback-token');
-        $expectedToken = config('services.xendit.webhook_token');
+        // ── P1-2: IP whitelist (defense-in-depth) ──
+        // Jika XENDIT_WEBHOOK_ALLOWED_IPS di-set (production), reject request
+        // dari IP di luar daftar. Kosong = disabled (env dev/test).
+        $allowedIps = (array) config('services.xendit.webhook_allowed_ips', []);
+        if (!empty($allowedIps) && !in_array($request->ip(), $allowedIps, true)) {
+            Log::warning('Xendit Webhook IP rejected', [
+                'ip' => $request->ip(),
+                'allowed_count' => count($allowedIps),
+            ]);
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
 
-        if (!$expectedToken || $callbackToken !== $expectedToken) {
+        // ── P1-1: timing-safe token compare (hash_equals) ──
+        $callbackToken = (string) $request->header('x-callback-token', '');
+        $expectedToken = (string) config('services.xendit.webhook_token', '');
+
+        if ($expectedToken === '' || !hash_equals($expectedToken, $callbackToken)) {
             Log::warning('Invalid Xendit Webhook Token', ['ip' => $request->ip()]);
             return response()->json(['message' => 'Invalid token'], 401);
         }

@@ -129,6 +129,11 @@ class DeliveredOrderAutoCompletionTest extends TestCase
             'status'        => 'open',
         ]);
 
+        // Reset rekaman mail SETELAH setup, agar assertNothingSent hanya
+        // memvalidasi SUT (SendReviewRequest->handle()) — bukan mail yang
+        // dikirim oleh observer admin-notification saat setup.
+        Mail::fake();
+
         (new SendReviewRequest())->handle();
 
         $this->assertSame('delivered', $returnOrder->refresh()->status);

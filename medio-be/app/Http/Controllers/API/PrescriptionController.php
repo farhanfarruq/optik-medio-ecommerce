@@ -103,13 +103,7 @@ class PrescriptionController extends Controller
     private function validatedPayload(Request $request, bool $partial = false): array
     {
         $required = $partial ? 'sometimes' : 'required';
-        $lensType = $request->input('lens_type');
-        $allowsAdd = in_array($lensType, ['progressive', 'reading'], true);
         $payload = array_merge($request->except('attachment'), $request->allFiles());
-
-        if (!$allowsAdd) {
-            unset($payload['right_add'], $payload['left_add']);
-        }
 
         $validated = Validator::make(
             $payload,

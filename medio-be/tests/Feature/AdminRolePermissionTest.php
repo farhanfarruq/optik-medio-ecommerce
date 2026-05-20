@@ -70,8 +70,19 @@ class AdminRolePermissionTest extends TestCase
         $user = User::factory()->create(['role' => 'user']);
 
         $response = $this->actingAs($user)->get('/admin');
-        // User biasa harus dapat 403 (Filament canAccessPanel returns false)
-        $this->assertSame(403, $response->getStatusCode());
+        // Filament v3+ redirect (302) user yang `canAccessPanel() === false` ke
+        // login panel, bukan return 403. Yang penting: user TIDAK bisa render
+        // halaman admin (bukan 200). Validasi tegas via canAccessPanel di
+        // assertion kedua.
+        $this->assertContains(
+            $response->getStatusCode(),
+            [302, 403],
+            'User biasa harus diblok dari /admin (302 redirect atau 403 forbidden).'
+        );
+        $this->assertNotSame(200, $response->getStatusCode());
+
+        $panel = \Filament\Facades\Filament::getPanel('admin');
+        $this->assertFalse($user->canAccessPanel($panel));
     }
 
     public function test_admin_user_can_access_admin_panel(): void

@@ -7,8 +7,8 @@ use App\Models\Cart;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class CartController extends Controller
 {
@@ -59,9 +59,9 @@ class CartController extends Controller
                 ->firstOrFail();
 
             if ($product->stock < $request->quantity) {
-                throw ValidationException::withMessages([
-                    'quantity' => ['Stok produk tidak mencukupi.'],
-                ]);
+                throw new HttpResponseException(response()->json([
+                    'message' => 'Stok produk tidak mencukupi.',
+                ], 422));
             }
 
             $cart = Cart::activeForUser($request->user()->id);
@@ -77,9 +77,9 @@ class CartController extends Controller
             if ($existing && ! $request->has('prescription') && ! $request->has('prescription_profile_id')) {
                 $newQty = $existing->quantity + $request->quantity;
                 if ($newQty > $product->stock) {
-                    throw ValidationException::withMessages([
-                        'quantity' => ['Total kuantitas melebihi stok yang tersedia.'],
-                    ]);
+                    throw new HttpResponseException(response()->json([
+                        'message' => 'Total kuantitas melebihi stok yang tersedia.',
+                    ], 422));
                 }
                 $existing->update(['quantity' => $newQty]);
             } else {
@@ -129,9 +129,9 @@ class CartController extends Controller
                 ->firstOrFail();
 
             if ($product->stock < $request->quantity) {
-                throw ValidationException::withMessages([
-                    'quantity' => ['Stok produk tidak mencukupi.'],
-                ]);
+                throw new HttpResponseException(response()->json([
+                    'message' => 'Stok produk tidak mencukupi.',
+                ], 422));
             }
 
             $item->update(['quantity' => $request->quantity]);

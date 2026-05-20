@@ -33,7 +33,7 @@
         </div>
 
         <div class="max-w-3xl">
-          <h1 :class="titleClass">{{ title }}</h1>
+          <h1 :class="titleClass" style="font-family: 'Cormorant Garamond', serif;">{{ title }}</h1>
           <p v-if="subtitle" class="mt-2 max-w-2xl text-sm font-medium leading-6 text-white/72 md:text-base">{{ subtitle }}</p>
         </div>
       </div>

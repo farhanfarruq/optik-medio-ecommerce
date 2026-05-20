@@ -24,7 +24,7 @@ const headerHeight = computed(() => cartStore.isPromoBannerVisible ? '108px' : '
     <TopNavBar />
     <ToastContainer />
 
-    <main class="relative z-10 flex flex-1 flex-col">
+    <main class="relative z-10 flex flex-1 flex-col" :class="isAuthPage ? '' : 'pb-24 md:pb-0'">
       <router-view :key="route.fullPath" />
     </main>
 

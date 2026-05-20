@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router';
 import { resolveImageUrl } from '../core/utils/image';
 import { useToast } from '../composables/useToast';
 import { masterDataRepository } from '../repositories/MasterDataRepository';
+import PageHero from '../components/layout/PageHero.vue';
 
 const { showToast } = useToast();
 
@@ -134,34 +135,15 @@ const getItemDiscount = (item: any) => {
 </script>
 
 <template>
-  <!-- Mini Hero with gradient bleed -->
-  <div class="relative w-full" style="margin-bottom: -60px;">
-    <div class="relative overflow-hidden" style="height: 280px;">
-      <img src="/gambar/hero-bg.jpeg" alt="" class="absolute inset-0 w-full h-full object-cover object-center" style="transform: scale(1.08); object-position: center 40%;" />
-      <div class="absolute inset-0" style="background: linear-gradient(135deg, rgba(10,8,5,0.65) 0%, rgba(30,20,10,0.45) 100%);"></div>
-      <!-- Gradient bleed into page bg -->
-      <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, var(--ivory) 100%);"></div>
-      <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,138,68,0.6), transparent);"></div>
-      <div class="container-commerce relative z-10 flex h-full flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 16px)', paddingBottom: '56px' }">
-        <!-- Breadcrumb + Back -->
-        <div>
-          <nav class="flex items-center gap-2 text-xs font-medium mb-2" style="color: rgba(255,255,255,0.55);">
-            <router-link to="/" class="hover:text-white transition-colors">Beranda</router-link>
-            <span class="material-symbols-outlined text-sm">chevron_right</span>
-            <span class="text-white">Keranjang Belanja</span>
-          </nav>
-          <button @click="router.back()" class="flex items-center gap-2 text-sm font-bold group w-fit transition-all" style="color: rgba(184,138,68,0.9);">
-            <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
-            Kembali
-          </button>
-        </div>
-        <!-- Page Title -->
-        <h1 class="text-4xl font-black tracking-normal text-white" style="font-family: 'Cormorant Garamond', serif;">Keranjang Belanja</h1>
-      </div>
-    </div>
-  </div>
+  <PageHero
+    title="Keranjang Belanja"
+    subtitle="Tinjau item, promo, dan kesiapan checkout sebelum melanjutkan pembayaran."
+    :breadcrumbs="[{ label: 'Keranjang Belanja' }]"
+    back-to="/products"
+    back-label="Kembali Belanja"
+  />
 
-  <main class="container-commerce pb-20 flex-grow" style="padding-top: calc(var(--header-height, 96px) + 40px);">
+  <main class="container-commerce pt-40 pb-20 flex-grow">
 
     <!-- Store Close Alert Banner -->
     <div v-if="storeStatus?.is_closed" class="mb-6 p-4 border flex items-start gap-3" style="background: rgba(220,38,38,0.06); border-color: rgba(220,38,38,0.25);">
@@ -178,7 +160,7 @@ const getItemDiscount = (item: any) => {
     <div v-if="cartStore.items.length === 0" class="text-center py-24 rounded-lg border border-dashed" style="border-color: rgba(184,138,68,0.25); background: rgba(184,138,68,0.04);">
       <span class="material-symbols-outlined text-6xl block mb-4" style="color: rgba(184,138,68,0.4);">shopping_bag</span>
       <h2 class="text-2xl font-black mb-3" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Keranjang kosong</h2>
-      <p class="text-sm mb-8" style="color: var(--taupe);">Temukan koleksi kacamata premium kami.</p>
+      <p class="text-sm mb-8" style="color: #5c4a3a;">Temukan koleksi kacamata premium kami.</p>
       <router-link
         to="/products"
         class="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-black text-sm text-white transition-all hover:shadow-soft active:scale-95"
@@ -209,7 +191,7 @@ const getItemDiscount = (item: any) => {
             <div class="flex flex-col flex-grow min-w-0">
               <p class="text-[9px] font-black uppercase tracking-[0.2em] mb-1" style="color: var(--gold);">{{ item.name }}</p>
               <h3 class="font-black text-base leading-snug mb-1 line-clamp-2" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">{{ item.brand || 'Optik Medio' }}</h3>
-              <p class="text-xs mb-3" style="color: var(--taupe);">{{ item.variant?.color }} {{ item.variant?.size ? `· ${item.variant.size}` : '' }}</p>
+              <p class="text-xs mb-3" style="color: #5c4a3a;">{{ item.variant?.color }} {{ item.variant?.size ? `· ${item.variant.size}` : '' }}</p>
               <div class="flex items-center gap-2">
                 <p v-if="getItemDiscount(item).isDiscounted" class="font-normal text-sm line-through text-graphite/45">Rp {{ item.price.toLocaleString('id-ID') }}</p>
                 <p class="font-black text-lg" style="color: #6F4E1D;">Rp {{ getItemDiscount(item).discountedPrice.toLocaleString('id-ID') }}</p>
@@ -218,8 +200,8 @@ const getItemDiscount = (item: any) => {
               <!-- Prescription -->
               <div v-if="item.prescription" class="mt-3 p-3 rounded-lg text-xs flex flex-col gap-1" style="background: rgba(184,138,68,0.06); border: 1px solid rgba(184,138,68,0.12);">
                 <span class="font-black" style="color: #6F4E1D;">Resep Optik Tercantum</span>
-                <span style="color: var(--taupe);">OD: SPH {{ item.prescription.od.sph }}, CYL {{ item.prescription.od.cyl }}, Axis {{ item.prescription.od.axis }}</span>
-                <span style="color: var(--taupe);">OS: SPH {{ item.prescription.os.sph }}, CYL {{ item.prescription.os.cyl }}, Axis {{ item.prescription.os.axis }}</span>
+                <span style="color: #5c4a3a;">OD: SPH {{ item.prescription.od.sph }}, CYL {{ item.prescription.od.cyl }}, Axis {{ item.prescription.od.axis }}</span>
+                <span style="color: #5c4a3a;">OS: SPH {{ item.prescription.os.sph }}, CYL {{ item.prescription.os.cyl }}, Axis {{ item.prescription.os.axis }}</span>
               </div>
 
               <!-- Attached Lens -->
@@ -263,10 +245,10 @@ const getItemDiscount = (item: any) => {
               <div class="flex-grow min-w-0">
                 <p class="text-[9px] font-black uppercase tracking-[0.18em] mb-1" style="color: var(--gold);">Item Gratis</p>
                 <p class="font-black text-sm leading-snug text-ink">{{ freeItem.name || freeItem.product_name }}</p>
-                <p class="text-xs mt-1" style="color: var(--taupe);">Qty: {{ freeItem.quantity }}</p>
+                <p class="text-xs mt-1" style="color: #5c4a3a;">Qty: {{ freeItem.quantity }}</p>
               </div>
               <div class="shrink-0 text-right">
-                <p class="text-xs line-through" style="color: var(--taupe);">Rp {{ Number(freeItem.original_price || 0).toLocaleString('id-ID') }}</p>
+                <p class="text-xs line-through" style="color: #5c4a3a;">Rp {{ Number(freeItem.original_price || 0).toLocaleString('id-ID') }}</p>
                 <p class="font-black text-sm" style="color: #16a34a;">Rp 0</p>
               </div>
             </div>
@@ -308,7 +290,7 @@ const getItemDiscount = (item: any) => {
                   <p v-if="promo.description" class="text-[9px] text-graphite/65">{{ formatPromoDescription(promo.description) }}</p>
                   <!-- Requirement / not-eligible reason -->
                   <p v-if="(promo as any).reason" class="text-[9px] font-bold" style="color: #d97706;">⚠ {{ (promo as any).reason }}</p>
-                  <p v-else-if="promoRequirementText(promo)" class="text-[9px]" style="color: var(--taupe);">{{ promoRequirementText(promo) }}</p>
+                  <p v-else-if="promoRequirementText(promo)" class="text-[9px]" style="color: #5c4a3a;">{{ promoRequirementText(promo) }}</p>
                 </div>
                 <span v-if="cartStore.appliedPromoId === promo.id" class="material-symbols-outlined text-sm shrink-0" style="color: var(--gold);">check_circle</span>
                 <span v-else-if="(promo as any).eligible" class="material-symbols-outlined text-sm shrink-0 opacity-25 group-hover:opacity-50 transition-opacity">add_circle</span>
@@ -332,7 +314,7 @@ const getItemDiscount = (item: any) => {
                 </p>
                 <!-- Free items preview -->
                 <div v-if="cartFreeItems.length > 0" class="mt-2 flex flex-col gap-1">
-                  <p class="text-[9px] font-bold" style="color: var(--taupe);">Produk bonus:</p>
+                  <p class="text-[9px] font-bold" style="color: #5c4a3a;">Produk bonus:</p>
                   <p v-for="fi in cartFreeItems" :key="fi.product_id" class="text-[10px] font-bold text-ink">
                     {{ fi.quantity }}× {{ fi.name || fi.product_name }}
                   </p>
@@ -352,7 +334,7 @@ const getItemDiscount = (item: any) => {
 
           <div class="flex flex-col gap-3 text-sm mb-6">
             <div class="flex justify-between">
-              <span style="color: var(--taupe);">Subtotal</span>
+              <span style="color: #5c4a3a;">Subtotal</span>
               <span class="font-bold" style="color: var(--ink);">Rp {{ (cartStore.calculatedData ? cartStore.calculatedData.subtotal : cartStore.cartTotal).toLocaleString('id-ID') }}</span>
             </div>
             <div v-if="cartStore.calculatedData?.discount_amount > 0" class="flex justify-between text-olive">
@@ -364,8 +346,8 @@ const getItemDiscount = (item: any) => {
               <span class="font-bold">- Rp {{ cartStore.calculatedData.promo_discount_amount.toLocaleString('id-ID') }}</span>
             </div>
             <div class="flex justify-between">
-              <span style="color: var(--taupe);">Ongkos Kirim</span>
-              <span style="color: var(--taupe);">Dihitung saat checkout</span>
+              <span style="color: #5c4a3a;">Ongkos Kirim</span>
+              <span style="color: #5c4a3a;">Dihitung saat checkout</span>
             </div>
           </div>
 
@@ -387,11 +369,11 @@ const getItemDiscount = (item: any) => {
 
           <!-- Trust -->
           <div class="flex justify-center gap-4 mt-5">
-            <div class="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide" style="color: var(--taupe);">
+            <div class="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide" style="color: #5c4a3a;">
               <span class="material-symbols-outlined text-sm" style="color: var(--gold);">lock</span>
               Aman
             </div>
-            <div class="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide" style="color: var(--taupe);">
+            <div class="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide" style="color: #5c4a3a;">
               <span class="material-symbols-outlined text-sm" style="color: var(--gold);">verified</span>
               Terpercaya
             </div>

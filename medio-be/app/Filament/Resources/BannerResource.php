@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\BannerResource\Pages\CreateBanner;
 use App\Filament\Resources\BannerResource\Pages\EditBanner;
 use App\Filament\Resources\BannerResource\Pages\ListBanners;
+use App\Filament\Support\PublicUpload;
 use App\Models\Banner;
 use Filament\Forms;
 use Filament\Resources\Resource;
@@ -48,7 +49,7 @@ class BannerResource extends Resource
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('title')->live(onBlur: true),
                     Forms\Components\TextInput::make('subtitle')->live(onBlur: true),
-                    Forms\Components\FileUpload::make('image_path')->image()->disk('public')->directory('banners')->required(),
+                    PublicUpload::image(Forms\Components\FileUpload::make('image_path'), 'banners', '180px')->required(),
                     Forms\Components\TextInput::make('cta_label')->live(onBlur: true),
                     Forms\Components\Select::make('link_type')
                         ->options([

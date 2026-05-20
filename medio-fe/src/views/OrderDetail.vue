@@ -8,6 +8,7 @@ import { complaintRepository } from '../repositories/ComplaintRepository';
 import { useToast } from '../composables/useToast';
 import { apiClient } from '../core/api/axiosclient';
 import { resolveImageUrl } from '../core/utils/image';
+import PageHero from '../components/layout/PageHero.vue';
 
 type ReviewDraft = {
   isOpen: boolean;
@@ -346,34 +347,15 @@ const submitReview = async (item: any) => {
 </script>
 
 <template>
-  <div class="relative w-full" style="margin-bottom: -60px;">
-    <div class="relative overflow-hidden" style="height: 280px;">
-      <img src="/gambar/hero-bg.jpeg" alt="" class="absolute inset-0 w-full h-full object-cover object-center" style="transform: scale(1.08); object-position: center 40%;" />
-      <div class="absolute inset-0" style="background: linear-gradient(135deg, rgba(10,8,5,0.65) 0%, rgba(30,20,10,0.45) 100%);"></div>
-      <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, var(--ivory) 100%);"></div>
-      <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,138,68,0.6), transparent);"></div>
-      <div class="container-commerce relative z-10 flex h-full flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 16px)', paddingBottom: '56px' }">
-        <!-- Breadcrumb + Back -->
-        <div>
-          <nav class="flex items-center gap-2 text-xs font-medium mb-2" style="color: rgba(255,255,255,0.55);">
-            <router-link to="/" class="hover:text-white transition-colors">Beranda</router-link>
-            <span class="material-symbols-outlined text-sm">chevron_right</span>
-            <router-link to="/profile" class="hover:text-white transition-colors">Pesanan Saya</router-link>
-            <span class="material-symbols-outlined text-sm">chevron_right</span>
-            <span class="text-white">Detail Pesanan</span>
-          </nav>
-          <button @click="router.back()" class="flex items-center gap-2 text-sm font-bold group w-fit transition-all" style="color: rgba(184,138,68,0.9);">
-            <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
-            Kembali
-          </button>
-        </div>
-        <!-- Page Title -->
-        <h1 class="text-4xl font-black tracking-normal text-white" style="font-family: 'Cormorant Garamond', serif;">Detail Pesanan</h1>
-      </div>
-    </div>
-  </div>
+  <PageHero
+    title="Detail Pesanan"
+    subtitle="Pantau rincian item, pembayaran, pengiriman, dan tindakan purna jual."
+    :breadcrumbs="[{ label: 'Pesanan Saya', to: '/orders' }, { label: 'Detail Pesanan' }]"
+    back-to="/orders"
+    back-label="Kembali ke Pesanan"
+  />
 
-  <main class="container-commerce pb-20 flex-grow" style="padding-top: calc(var(--header-height, 96px) + 40px);">
+  <main class="container-commerce pt-40 pb-20 flex-grow">
     <div v-if="isLoading" class="animate-pulse space-y-6">
       <div class="h-12 rounded-lg w-1/3" style="background: rgba(184,138,68,0.1);"></div>
       <div class="h-64 rounded-lg" style="background: rgba(184,138,68,0.07);"></div>
@@ -390,7 +372,7 @@ const submitReview = async (item: any) => {
         <div>
           <p class="text-xs font-black uppercase tracking-[0.25em] mb-2" style="color: var(--gold);">Nomor Pesanan</p>
           <h2 class="text-2xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">#{{ order.order_number }}</h2>
-          <p class="text-xs mt-1 flex items-center gap-1.5" style="color: var(--taupe);">
+          <p class="text-xs mt-1 flex items-center gap-1.5" style="color: #5c4a3a;">
             <span class="material-symbols-outlined text-sm">calendar_today</span>
             {{ new Date(order.created_at).toLocaleString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}
           </p>
@@ -498,12 +480,12 @@ const submitReview = async (item: any) => {
                 >
                   {{ step.icon }}
                 </span>
-                <span class="text-[10px] font-black uppercase tracking-[0.18em]" style="color: var(--taupe);">
+                <span class="text-[10px] font-black uppercase tracking-[0.18em]" style="color: #5c4a3a;">
                   {{ index + 1 }}
                 </span>
               </div>
               <p class="text-sm font-black mb-1" style="color: var(--ink);">{{ step.label }}</p>
-              <p class="text-xs" style="color: var(--taupe);">
+              <p class="text-xs" style="color: #5c4a3a;">
                 {{ getTimelineDate(step.key) || (getTimelineState(index) === 'upcoming' ? 'Menunggu tahap ini' : 'Belum ada waktu') }}
               </p>
             </div>
@@ -555,7 +537,7 @@ const submitReview = async (item: any) => {
                           {{ item.product?.name || item.product_name }}
                         </router-link>
                         <h4 v-else class="font-black text-sm mb-1" style="color: var(--ink);">{{ item.product?.name || item.product_name }}</h4>
-                        <p v-if="formatVariant(item.variant)" class="text-[10px] font-bold uppercase tracking-widest" style="color: var(--taupe);">
+                        <p v-if="formatVariant(item.variant)" class="text-[10px] font-bold uppercase tracking-widest" style="color: #5c4a3a;">
                           {{ formatVariant(item.variant) }}
                         </p>
                       </div>
@@ -585,7 +567,7 @@ const submitReview = async (item: any) => {
                         style="background: rgba(245,242,238,0.8); border-color: rgba(184,138,68,0.15);"
                       >
                         <div>
-                          <p class="text-xs font-black uppercase tracking-[0.16em] mb-3" style="color: var(--taupe);">Rating Produk</p>
+                          <p class="text-xs font-black uppercase tracking-[0.16em] mb-3" style="color: #5c4a3a;">Rating Produk</p>
                           <div class="flex items-center gap-2">
                             <button
                               v-for="star in 5"
@@ -601,7 +583,7 @@ const submitReview = async (item: any) => {
                         </div>
 
                         <div>
-                          <label class="block text-xs font-black uppercase tracking-[0.16em] mb-2" style="color: var(--taupe);">Ulasan</label>
+                          <label class="block text-xs font-black uppercase tracking-[0.16em] mb-2" style="color: #5c4a3a;">Ulasan</label>
                           <textarea
                             v-model="getReviewDraft(item.id).comment"
                             rows="3"
@@ -674,7 +656,7 @@ const submitReview = async (item: any) => {
                         {{ new Date(log.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) }}
                       </span>
                     </div>
-                    <p class="text-xs leading-relaxed" style="color: var(--taupe);">{{ log.description }}</p>
+                    <p class="text-xs leading-relaxed" style="color: #5c4a3a;">{{ log.description }}</p>
                     
                     <!-- Metadata Info (Optional) -->
                     <div v-if="log.metadata?.tracking_number" class="mt-2 p-2 bg-ivory border border-mist flex items-center gap-2">
@@ -705,19 +687,19 @@ const submitReview = async (item: any) => {
 
             <div class="flex flex-col gap-3 text-sm">
               <div class="flex justify-between">
-                <span style="color: var(--taupe);">Subtotal</span>
+                <span style="color: #5c4a3a;">Subtotal</span>
                 <span class="font-bold" style="color: var(--ink);">{{ formatCurrency(order.subtotal || order.total_amount || 0) }}</span>
               </div>
               <div class="flex justify-between">
-                <span style="color: var(--taupe);">Ongkir ({{ order.courier?.toUpperCase() }} {{ order.courier_service }})</span>
+                <span style="color: #5c4a3a;">Ongkir ({{ order.courier?.toUpperCase() }} {{ order.courier_service }})</span>
                 <span class="font-bold" style="color: var(--ink);">{{ formatCurrency(order.shipping_cost || 0) }}</span>
               </div>
               <div v-if="Number(order.shipping_protection_fee || 0) > 0" class="flex justify-between">
-                <span style="color: var(--taupe);">Proteksi Pengiriman</span>
+                <span style="color: #5c4a3a;">Proteksi Pengiriman</span>
                 <span class="font-bold" style="color: var(--ink);">{{ formatCurrency(order.shipping_protection_fee || 0) }}</span>
               </div>
               <div v-if="Number(order.discount_amount || 0) > 0" class="flex justify-between">
-                <span style="color: var(--taupe);">Diskon</span>
+                <span style="color: #5c4a3a;">Diskon</span>
                 <span class="font-bold" style="color: #15803d;">-{{ formatCurrency(order.discount_amount || 0) }}</span>
               </div>
             </div>
@@ -799,7 +781,7 @@ const submitReview = async (item: any) => {
               Pengajuan return sudah tercatat. Status terbaru ditampilkan di kartu di atas.
             </div>
 
-            <div v-else class="p-3 rounded-lg text-sm" style="background: rgba(245,242,238,0.85); color: var(--taupe); border: 1px solid rgba(184,138,68,0.12);">
+            <div v-else class="p-3 rounded-lg text-sm" style="background: rgba(245,242,238,0.85); color: #5c4a3a; border: 1px solid rgba(184,138,68,0.12);">
               Return baru tersedia setelah pesanan berstatus diterima.
             </div>
 
@@ -809,7 +791,7 @@ const submitReview = async (item: any) => {
               style="background: rgba(245,242,238,0.8); border-color: rgba(184,138,68,0.15);"
             >
               <div>
-                <label class="block text-xs font-black uppercase tracking-[0.16em] mb-2" style="color: var(--taupe);">Alasan Pengembalian</label>
+                <label class="block text-xs font-black uppercase tracking-[0.16em] mb-2" style="color: #5c4a3a;">Alasan Pengembalian</label>
                 <select
                   v-model="returnForm.reason"
                   class="w-full rounded-lg border px-4 py-3 text-sm outline-none"
@@ -822,7 +804,7 @@ const submitReview = async (item: any) => {
               </div>
 
               <div>
-                <label class="block text-xs font-black uppercase tracking-[0.16em] mb-2" style="color: var(--taupe);">Detail Tambahan</label>
+                <label class="block text-xs font-black uppercase tracking-[0.16em] mb-2" style="color: #5c4a3a;">Detail Tambahan</label>
                 <textarea
                   v-model="returnForm.description"
                   rows="4"
@@ -901,7 +883,7 @@ const submitReview = async (item: any) => {
               Ajukan Klaim Proteksi
             </button>
 
-            <div v-else class="p-3 rounded-lg text-sm" style="background: rgba(245,242,238,0.85); color: var(--taupe); border: 1px solid rgba(184,138,68,0.12);">
+            <div v-else class="p-3 rounded-lg text-sm" style="background: rgba(245,242,238,0.85); color: #5c4a3a; border: 1px solid rgba(184,138,68,0.12);">
               Klaim proteksi belum tersedia untuk status pesanan ini.
             </div>
           </div>
@@ -917,7 +899,7 @@ const submitReview = async (item: any) => {
               <div class="mb-4 p-4 border" :style="`background: ${existingComplain.status === 'resolved' ? 'rgba(22,163,74,0.05)' : existingComplain.status === 'rejected' ? 'rgba(220,38,38,0.05)' : 'rgba(184,138,68,0.05)'}; border-color: rgba(184,138,68,0.2);`">
                 <div class="flex items-start justify-between gap-3 flex-wrap mb-3">
                   <div>
-                    <p class="text-[10px] font-black uppercase tracking-[0.18em] mb-1" style="color: var(--taupe);">Komplain #{{ existingComplain.id }}</p>
+                    <p class="text-[10px] font-black uppercase tracking-[0.18em] mb-1" style="color: #5c4a3a;">Komplain #{{ existingComplain.id }}</p>
                     <p class="text-sm font-bold" style="color: var(--ink);">{{ existingComplain.subject }}</p>
                   </div>
                   <span class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1"
@@ -928,12 +910,12 @@ const submitReview = async (item: any) => {
 
                 <!-- Respons admin jika ada -->
                 <div v-if="existingComplain.admin_notes" class="border-t pt-3 mt-3" style="border-color: rgba(184,138,68,0.2);">
-                  <p class="text-[10px] font-black uppercase tracking-[0.18em] mb-2" style="color: var(--taupe);">Respons Tim Kami</p>
+                  <p class="text-[10px] font-black uppercase tracking-[0.18em] mb-2" style="color: #5c4a3a;">Respons Tim Kami</p>
                   <p class="text-sm leading-relaxed" style="color: var(--ink);">{{ existingComplain.admin_notes }}</p>
                 </div>
                 <div v-else class="flex items-center gap-1.5 mt-2">
                   <span class="material-symbols-outlined text-sm" style="color: var(--gold);">schedule</span>
-                  <p class="text-xs" style="color: var(--taupe);">Menunggu respons dari tim kami. Anda akan dikirim email saat ada pembaruan.</p>
+                  <p class="text-xs" style="color: #5c4a3a;">Menunggu respons dari tim kami. Anda akan dikirim email saat ada pembaruan.</p>
                 </div>
               </div>
 
@@ -978,7 +960,7 @@ const submitReview = async (item: any) => {
 
             <div class="text-sm leading-relaxed" style="color: var(--graphite);">
               <p class="font-black text-base mb-1" style="color: var(--ink);">{{ order.shipping_address.recipient_name }}</p>
-              <p class="font-bold mb-3" style="color: var(--taupe);">{{ order.shipping_address.phone }}</p>
+              <p class="font-bold mb-3" style="color: #5c4a3a;">{{ order.shipping_address.phone }}</p>
               <div class="p-3 rounded-lg text-xs leading-relaxed" style="background: rgba(184,138,68,0.06); border: 1px solid rgba(184,138,68,0.1);">
                 {{ order.shipping_address.address }}<br>
                 {{ order.shipping_address.district }}, {{ order.shipping_address.city }}<br>

@@ -50,7 +50,7 @@ class ReviewController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        if (strtolower($orderItem->order->status) !== 'delivered') {
+        if (!in_array(strtolower($orderItem->order->status), ['delivered', 'completed'])) {
             return response()->json([
                 'message' => 'Anda hanya bisa memberikan ulasan setelah pesanan diterima.',
             ], 422);

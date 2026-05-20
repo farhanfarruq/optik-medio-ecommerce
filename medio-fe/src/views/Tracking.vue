@@ -29,7 +29,7 @@ const statusConfig = computed(() => {
     cancelled:  { label: 'Dibatalkan',     color: '#dc2626', bg: 'rgba(220,38,38,0.08)',  icon: 'cancel' },
     refunded:   { label: 'Dikembalikan',   color: '#0369a1', bg: 'rgba(3,105,161,0.08)',  icon: 'undo' },
   };
-  return map[normalizedStatus.value] ?? { label: tracking.value?.status ?? '-', color: 'var(--taupe)', bg: 'rgba(138,122,96,0.08)', icon: 'info' };
+  return map[normalizedStatus.value] ?? { label: tracking.value?.status ?? '-', color: '#5c4a3a', bg: 'rgba(138,122,96,0.08)', icon: 'info' };
 });
 
 // Urutan progress bar
@@ -123,33 +123,33 @@ onMounted(loadTracking);
         :breadcrumbs="breadcrumbs"
         :backTo="`/orders/${tracking.id || tracking.order_id}`"
         backLabel="Kembali ke Detail Pesanan"
-        titleClass="text-3xl font-black tracking-normal text-white"
+        titleClass="text-2xl font-black tracking-normal text-white sm:text-3xl"
       />
 
-      <main class="container-commerce pt-40 pb-10">
+      <main class="container-commerce pt-32 pb-12 sm:pt-40 md:pb-10">
 
         <!-- Progress Bar Status -->
-        <div v-if="!['cancelled','refunded'].includes(normalizedStatus)" class="premium-card mb-6 p-6">
-          <div class="flex items-center justify-between relative">
+        <div v-if="!['cancelled','refunded'].includes(normalizedStatus)" class="premium-card mb-6 overflow-x-auto p-4 sm:p-6">
+          <div class="relative flex min-w-[520px] items-center justify-between sm:min-w-0">
             <!-- Garis penghubung -->
-            <div class="absolute left-0 right-0 top-5 h-0.5 mx-8" style="background: var(--mist); z-index: 0;"></div>
+            <div class="absolute left-0 right-0 top-4 h-0.5 mx-8 sm:top-5" style="background: var(--mist); z-index: 0;"></div>
             <div
-              class="absolute left-0 top-5 h-0.5 mx-8 transition-all duration-700"
+              class="absolute left-0 top-4 h-0.5 mx-8 transition-all duration-700 sm:top-5"
               style="background: linear-gradient(90deg, var(--gold), #3d2c0e); z-index: 1;"
               :style="{ width: currentStepIndex >= 0 ? `${(currentStepIndex / (progressSteps.length - 1)) * 100}%` : '0%' }"
             ></div>
 
-            <div v-for="(step, i) in progressSteps" :key="step" class="flex flex-col items-center gap-2 relative z-10">
+            <div v-for="(step, i) in progressSteps" :key="step" class="relative z-10 flex w-24 flex-col items-center gap-1.5 text-center sm:w-auto sm:gap-2">
               <div
-                class="w-10 h-10 rounded-full flex items-center justify-center transition-all"
+                class="flex h-8 w-8 items-center justify-center rounded-full transition-all sm:h-10 sm:w-10"
                 :style="i <= currentStepIndex
                   ? 'background: linear-gradient(135deg, var(--ink), #3d2c0e); color: var(--gold);'
-                  : 'background: #f0ece4; color: #b0a590;'"
+                  : 'background: #f0ece4; color: #6b5748;'"
               >
-                <span class="material-symbols-outlined text-lg">{{ stepLabels[step].icon }}</span>
+                <span class="material-symbols-outlined text-base sm:text-lg">{{ stepLabels[step].icon }}</span>
               </div>
-              <span class="text-[9px] font-black uppercase tracking-wider text-center w-16"
-                :style="i <= currentStepIndex ? 'color: var(--ink);' : 'color: #b0a590;'">
+              <span class="w-20 text-center text-[9px] font-black uppercase leading-tight tracking-[0.12em] sm:w-16 sm:tracking-wider"
+                :style="i <= currentStepIndex ? 'color: var(--ink);' : 'color: #6b5748;'">
                 {{ stepLabels[step].label }}
               </span>
             </div>
@@ -161,30 +161,30 @@ onMounted(loadTracking);
           <span class="material-symbols-outlined text-2xl" :style="`color: ${statusConfig.color};`">{{ statusConfig.icon }}</span>
           <div>
             <p class="text-sm font-black" :style="`color: ${statusConfig.color};`">Pesanan {{ statusConfig.label }}</p>
-            <p class="text-xs mt-0.5" style="color: var(--taupe);">Pesanan ini tidak dapat dilanjutkan.</p>
+            <p class="text-xs mt-0.5" style="color: #5c4a3a;">Pesanan ini tidak dapat dilanjutkan.</p>
           </div>
         </div>
 
-        <div class="grid gap-6 lg:grid-cols-[1.5fr,0.9fr]">
+        <div class="grid gap-4 sm:gap-6 lg:grid-cols-[1.5fr,0.9fr]">
 
           <!-- Kiri: Timeline -->
-          <div class="premium-card p-6">
-            <h2 class="text-base font-black uppercase tracking-wider mb-6" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Riwayat Pesanan</h2>
+          <div class="premium-card p-4 sm:p-6">
+            <h2 class="mb-4 text-sm font-black uppercase tracking-wider sm:mb-6 sm:text-base" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Riwayat Pesanan</h2>
 
-            <div v-if="timeline.length === 0" class="flex items-center gap-2 py-4" style="color: var(--taupe);">
+            <div v-if="timeline.length === 0" class="flex items-center gap-2 py-4" style="color: #5c4a3a;">
               <span class="material-symbols-outlined text-sm">info</span>
               <p class="text-sm">Belum ada riwayat untuk pesanan ini.</p>
             </div>
 
             <div v-else class="space-y-0">
-              <div v-for="(log, index) in timeline" :key="log.id || index" class="flex gap-4">
+              <div v-for="(log, index) in timeline" :key="log.id || index" class="flex gap-3 sm:gap-4">
                 <!-- Dot + line -->
                 <div class="flex flex-col items-center">
                   <div
-                    class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                    class="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full sm:h-9 sm:w-9"
                     :style="index === 0
                       ? 'background: linear-gradient(135deg, var(--ink), #3d2c0e); color: var(--gold);'
-                      : 'background: #f0ece4; color: var(--taupe);'"
+                      : 'background: #f0ece4; color: #5c4a3a;'"
                   >
                     <span class="material-symbols-outlined text-base">{{ eventIcon(log.event_type) }}</span>
                   </div>
@@ -194,8 +194,8 @@ onMounted(loadTracking);
                 <!-- Konten -->
                 <div class="pb-6 flex-1 min-w-0">
                   <p class="text-sm font-black" style="color: var(--ink);">{{ log.title || log.action || 'Update' }}</p>
-                  <p class="text-xs mt-0.5 leading-relaxed" style="color: var(--taupe);">{{ log.description || 'Status pesanan diperbarui.' }}</p>
-                  <div class="flex flex-wrap gap-3 mt-1.5 text-[10px]" style="color: #b0a590;">
+                  <p class="text-xs mt-0.5 leading-relaxed" style="color: #5c4a3a;">{{ log.description || 'Status pesanan diperbarui.' }}</p>
+                  <div class="flex flex-wrap gap-3 mt-1.5 text-[10px]" style="color: #6b5748;">
                     <span>{{ formatDate(log.created_at) }}</span>
                     <span v-if="log.acted_by?.name">· {{ log.acted_by.name }}</span>
                   </div>
@@ -208,26 +208,26 @@ onMounted(loadTracking);
           <div class="space-y-4">
 
             <!-- Info pesanan -->
-            <div class="premium-card p-5">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: var(--taupe);">Info Pengiriman</p>
+            <div class="premium-card p-4 sm:p-5">
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: #5c4a3a;">Info Pengiriman</p>
               <div class="space-y-3 text-sm">
                 <div class="flex justify-between">
-                  <span style="color: var(--taupe);">Status</span>
+                  <span style="color: #5c4a3a;">Status</span>
                   <span class="font-black px-2 py-0.5 text-xs"
                     :style="`background: ${statusConfig.bg}; color: ${statusConfig.color};`">
                     {{ statusConfig.label }}
                   </span>
                 </div>
                 <div class="flex justify-between">
-                  <span style="color: var(--taupe);">Kurir</span>
+                  <span style="color: #5c4a3a;">Kurir</span>
                   <span class="font-bold uppercase" style="color: var(--ink);">{{ tracking.courier || '-' }}</span>
                 </div>
                 <div v-if="tracking.tracking_number" class="flex justify-between items-center">
-                  <span style="color: var(--taupe);">No. Resi</span>
+                  <span style="color: #5c4a3a;">No. Resi</span>
                   <span class="font-bold font-mono text-xs" style="color: var(--ink);">{{ tracking.tracking_number }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span style="color: var(--taupe);">Pembayaran</span>
+                  <span style="color: #5c4a3a;">Pembayaran</span>
                   <span class="font-bold text-xs" :style="tracking.is_payment_verified ? 'color: #16a34a;' : 'color: #d97706;'">
                     {{ tracking.is_payment_verified ? 'Terverifikasi' : 'Menunggu' }}
                   </span>
@@ -239,7 +239,7 @@ onMounted(loadTracking);
             <div v-if="canConfirmDelivery" class="premium-card p-5">
               <div class="flex items-center gap-2 mb-2">
                 <span class="material-symbols-outlined text-base" style="color: var(--gold);">inventory</span>
-                <p class="text-xs font-black uppercase tracking-wider" style="color: var(--taupe);">Barang Sudah Tiba?</p>
+                <p class="text-xs font-black uppercase tracking-wider" style="color: #5c4a3a;">Barang Sudah Tiba?</p>
               </div>
               <p class="text-xs leading-relaxed mb-3" style="color: var(--graphite);">
                 Konfirmasi penerimaan barang untuk menyelesaikan pesanan dan mendapatkan loyalty points.
@@ -247,7 +247,7 @@ onMounted(loadTracking);
               <button
                 @click="confirmDelivery"
                 :disabled="isConfirming"
-                class="w-full py-3 text-xs font-black uppercase tracking-[0.16em] text-white disabled:opacity-50 transition-all"
+                class="w-full py-3 text-[11px] font-black uppercase tracking-[0.14em] text-white transition-all disabled:opacity-50 sm:text-xs sm:tracking-[0.16em]"
                 style="background: linear-gradient(135deg, #16a34a, #15803d);"
               >
                 <span v-if="isConfirming" class="material-symbols-outlined animate-spin text-sm align-middle mr-1">sync</span>
@@ -277,7 +277,7 @@ onMounted(loadTracking);
                 v-if="['delivered','shipped'].includes(normalizedStatus)"
                 @click="router.push({ name: 'Complaint', query: { order_id: tracking.id || tracking.order_id } })"
                 class="w-full py-3 border text-xs font-black uppercase tracking-[0.16em] transition-all hover:bg-ivory"
-                style="border-color: var(--mist); color: var(--taupe);"
+                style="border-color: var(--mist); color: #5c4a3a;"
               >
                 Ajukan Komplain
               </button>
@@ -287,7 +287,7 @@ onMounted(loadTracking);
             <div v-if="isCod" class="premium-card p-4">
               <div class="flex items-center gap-1.5 mb-1">
                 <span class="material-symbols-outlined text-sm" style="color: var(--gold);">payments</span>
-                <p class="text-[10px] font-black uppercase tracking-wider" style="color: var(--taupe);">Cash On Delivery</p>
+                <p class="text-[10px] font-black uppercase tracking-wider" style="color: #5c4a3a;">Cash On Delivery</p>
               </div>
               <p class="text-xs" style="color: var(--graphite);">Bayar tunai kepada kurir saat barang tiba. Pembayaran akan otomatis terverifikasi setelah Anda mengkonfirmasi penerimaan.</p>
             </div>

@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import { productRepository } from '../repositories/ProductRepository';
 import { useSeoMeta } from '../composables/useSeoMeta';
 import { resolveImageUrl } from '../core/utils/image';
+import PageHero from '../components/layout/PageHero.vue';
 
 const route  = useRoute();
 const { setSeo } = useSeoMeta();
@@ -40,23 +41,15 @@ onMounted(loadBrand);
 
 <template>
   <div>
-    <!-- Hero -->
-    <div class="relative overflow-hidden" style="height: 240px; background: linear-gradient(135deg, var(--ink) 0%, var(--graphite) 100%);">
-      <div class="absolute inset-0" style="background: url('/gambar/hero-bg.jpeg') center/cover; opacity: 0.15;"></div>
-      <div class="relative z-10 h-full container-commerce flex flex-col justify-end pb-10 pt-20">
-        <nav class="flex items-center gap-2 text-xs mb-3" style="color: rgba(255,255,255,0.5);">
-          <router-link to="/" class="hover:text-white">Beranda</router-link>
-          <span>›</span>
-          <router-link to="/products" class="hover:text-white">Produk</router-link>
-          <span>›</span>
-          <span class="text-white">{{ brand }}</span>
-        </nav>
-        <h1 class="text-4xl font-black text-white" style="font-family: 'Cormorant Garamond', serif;">{{ brand }}</h1>
-        <p class="text-xs mt-2" style="color: rgba(184,138,68,0.8);">{{ totalProducts }} produk</p>
-      </div>
-    </div>
+    <PageHero
+      :title="brand"
+      :subtitle="String(totalProducts) + ' produk tersedia untuk merek ini.'"
+      :breadcrumbs="[{ label: 'Katalog Produk', to: '/products' }, { label: brand }]"
+      back-to="/products"
+      back-label="Kembali ke Katalog"
+    />
 
-    <main class="container-commerce py-12">
+    <main class="container-commerce pt-40 pb-12">
       <div v-if="isLoading" class="flex justify-center py-20">
         <span class="material-symbols-outlined animate-spin text-4xl" style="color: var(--gold);">sync</span>
       </div>

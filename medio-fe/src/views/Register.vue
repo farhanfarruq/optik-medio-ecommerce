@@ -3,6 +3,7 @@ import { ref, onUnmounted } from 'vue';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from 'vue-router';
 import { useToast } from '../composables/useToast';
+import PageHero from '../components/layout/PageHero.vue';
 
 const { showToast } = useToast();
 const authStore = useAuthStore();
@@ -158,24 +159,15 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main class="min-h-screen bg-ivory text-ink">
-    <section class="grid min-h-screen grid-cols-1 lg:grid-cols-[0.95fr_1.05fr]">
-      <div class="relative hidden overflow-hidden bg-graphite lg:block">
-        <img src="/gambar/hero-bg.jpeg" alt="" class="absolute inset-0 h-full w-full object-cover opacity-45" />
-        <div class="absolute inset-0 bg-graphite/72"></div>
-        <div class="relative z-10 flex h-full flex-col justify-between p-12 text-ivory">
-          <router-link to="/" class="inline-flex items-center gap-3 text-sm font-semibold text-ivory/80 hover:text-ivory">
-            <span class="material-symbols-outlined text-lg text-gold">arrow_back</span>
-            Kembali ke Optik Medio
-          </router-link>
-          <div class="max-w-xl pb-10">
-            <p class="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-gold">Akun Baru</p>
-            <h1 class="font-headline text-5xl font-semibold leading-tight text-ivory">Simpan resep, alamat, warranty, dan benefit pelanggan dengan rapi.</h1>
-            <p class="mt-5 text-sm leading-7 text-ivory/68">Verifikasi email menjaga pesanan, klaim garansi, dan riwayat transaksi tetap aman.</p>
-          </div>
-        </div>
-      </div>
-      <div class="flex min-h-screen items-start justify-center px-5 py-8 sm:px-8 lg:pt-36">
+  <PageHero
+    :title="step === 'otp' ? 'Verifikasi Akun' : 'Daftar Akun'"
+    :subtitle="step === 'otp' ? 'Masukkan kode OTP untuk mengaktifkan akun Optik Medio.' : 'Buat akun untuk menyimpan resep, alamat, warranty, dan benefit pelanggan.'"
+    :breadcrumbs="[{ label: step === 'otp' ? 'Verifikasi Akun' : 'Daftar Akun' }]"
+  />
+
+  <main class="bg-ivory text-ink">
+    <section class="container-commerce flex justify-center pt-40 pb-20">
+      <div class="w-full">
         <div class="w-full max-w-[520px]">
           <div class="mb-6 text-center lg:text-left">
             <img src="/gambar/medio.jpeg" alt="Optik Medio" class="mx-auto mb-4 h-12 w-auto lg:mx-0" />

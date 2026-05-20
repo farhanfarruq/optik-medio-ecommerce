@@ -28,7 +28,7 @@ const statusColor = computed(() => {
     resolved: '#16a34a',
     rejected: '#dc2626',
   };
-  return map[complain.value?.status] ?? 'var(--taupe)';
+  return map[complain.value?.status] ?? '#5c4a3a';
 });
 
 const statusTimeline = computed(() => {
@@ -87,7 +87,7 @@ onMounted(async () => {
     <!-- Error -->
     <div v-else-if="error" class="text-center py-24">
       <p class="text-sm font-medium" style="color: #dc2626;">{{ error }}</p>
-      <button @click="router.back()" class="mt-4 text-xs font-black uppercase tracking-widest underline" style="color: var(--taupe);">Kembali</button>
+      <button @click="router.back()" class="mt-4 text-xs font-black uppercase tracking-widest underline" style="color: #5c4a3a;">Kembali</button>
     </div>
 
     <template v-else-if="complain">
@@ -102,13 +102,13 @@ onMounted(async () => {
         <!-- Header -->
         <div class="premium-card mb-6 p-6">
           <div class="mb-3">
-            <span class="inline-flex px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em]" :style="`background: ${complain.complaint_type === 'shipping_protection' ? 'rgba(37,99,235,0.1)' : 'rgba(184,138,68,0.1)'}; color: ${complain.complaint_type === 'shipping_protection' ? '#1d4ed8' : 'var(--taupe)'};`">
+            <span class="inline-flex px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em]" :style="`background: ${complain.complaint_type === 'shipping_protection' ? 'rgba(37,99,235,0.1)' : 'rgba(184,138,68,0.1)'}; color: ${complain.complaint_type === 'shipping_protection' ? '#1d4ed8' : '#5c4a3a'};`">
               {{ complaintTypeLabel }}
             </span>
           </div>
           <div class="flex items-start justify-between gap-4 flex-wrap">
             <div>
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-1" style="color: var(--taupe);">Komplain #{{ complain.id }}</p>
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-1" style="color: #5c4a3a;">Komplain #{{ complain.id }}</p>
               <h1 class="text-xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">{{ complain.subject }}</h1>
             </div>
             <span class="text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-lg"
@@ -117,7 +117,7 @@ onMounted(async () => {
             </span>
           </div>
 
-          <div class="mt-4 grid grid-cols-2 gap-3 text-xs" style="color: var(--taupe);">
+          <div class="mt-4 grid grid-cols-2 gap-3 text-xs" style="color: #5c4a3a;">
             <div>
               <span class="font-black uppercase tracking-wider">Dikirim</span>
               <p class="mt-0.5" style="color: var(--ink);">{{ formatDate(complain.created_at) }}</p>
@@ -138,26 +138,26 @@ onMounted(async () => {
         </div>
 
         <div class="premium-card mb-6 p-6">
-          <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: var(--taupe);">Timeline Penanganan</p>
+          <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: #5c4a3a;">Timeline Penanganan</p>
           <div class="grid gap-3 sm:grid-cols-3">
             <div v-for="item in statusTimeline" :key="item.label" class="rounded-lg border p-4" :style="item.done ? 'background: rgba(184,138,68,0.08); border-color: rgba(184,138,68,0.28);' : 'background: white; border-color: var(--mist);'">
               <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-base" :style="item.done ? 'color: var(--gold);' : 'color: var(--taupe);'">{{ item.done ? 'check_circle' : 'radio_button_unchecked' }}</span>
+                <span class="material-symbols-outlined text-base" :style="item.done ? 'color: var(--gold);' : 'color: #5c4a3a;'">{{ item.done ? 'check_circle' : 'radio_button_unchecked' }}</span>
                 <p class="text-xs font-black uppercase tracking-[0.14em]" style="color: var(--ink);">{{ item.label }}</p>
               </div>
-              <p class="mt-2 text-xs leading-relaxed" style="color: var(--taupe);">{{ item.note }}</p>
+              <p class="mt-2 text-xs leading-relaxed" style="color: #5c4a3a;">{{ item.note }}</p>
             </div>
           </div>
         </div>
 
         <!-- Pesan Komplain -->
         <div class="premium-card mb-6 p-6">
-          <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-3" style="color: var(--taupe);">Pesan Komplain Anda</p>
+          <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-3" style="color: #5c4a3a;">Pesan Komplain Anda</p>
           <p class="text-sm leading-relaxed whitespace-pre-line" style="color: var(--ink);">{{ complain.message }}</p>
 
           <!-- Lampiran -->
           <div v-if="complain.attachment_path" class="mt-4 pt-4 border-t" style="border-color: #f0ece4;">
-            <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-2" style="color: var(--taupe);">Evidence / Lampiran</p>
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-2" style="color: #5c4a3a;">Evidence / Lampiran</p>
             <a :href="`${apiOrigin}/storage/${complain.attachment_path}`"
                target="_blank"
                class="inline-flex items-center gap-1.5 text-xs font-bold underline"
@@ -172,18 +172,18 @@ onMounted(async () => {
         <div class="border p-6 mb-6" :style="`background: ${complain.admin_notes ? 'var(--porcelain)' : 'white'}; border-color: ${complain.admin_notes ? 'rgba(184,138,68,0.4)' : 'rgba(184,138,68,0.15)'};`">
           <div class="flex items-center gap-2 mb-3">
             <span class="material-symbols-outlined text-base" style="color: var(--gold);">support_agent</span>
-            <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: var(--taupe);">Resolusi Tim Optik Medio</p>
+            <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: #5c4a3a;">Resolusi Tim Optik Medio</p>
           </div>
 
           <div v-if="complain.admin_notes">
             <p class="text-sm leading-relaxed whitespace-pre-line" style="color: var(--ink);">{{ complain.admin_notes }}</p>
-            <p v-if="complain.handledBy" class="mt-3 text-xs" style="color: var(--taupe);">
+            <p v-if="complain.handledBy" class="mt-3 text-xs" style="color: #5c4a3a;">
               — {{ complain.handledBy.name }}
             </p>
           </div>
           <div v-else class="flex items-center gap-2 py-2">
             <span class="material-symbols-outlined text-sm" style="color: var(--gold);">schedule</span>
-            <p class="text-sm" style="color: var(--taupe);">
+            <p class="text-sm" style="color: #5c4a3a;">
               Tim kami sedang meninjau komplain Anda. Anda akan mendapat notifikasi email saat ada pembaruan.
             </p>
           </div>

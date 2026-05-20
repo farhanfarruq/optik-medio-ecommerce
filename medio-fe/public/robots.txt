@@ -1,0 +1,44 @@
+# Optik Medio — robots.txt
+# Updated: 19 Mei 2026
+
+User-agent: *
+Allow: /
+
+# Halaman privat / authenticated — JANGAN di-index
+Disallow: /profile
+Disallow: /profile/
+Disallow: /cart
+Disallow: /checkout
+Disallow: /checkout/
+Disallow: /orders
+Disallow: /order/
+Disallow: /tracking
+Disallow: /complaint
+Disallow: /complaint/
+Disallow: /waiting-payment
+Disallow: /affiliate-dashboard
+Disallow: /addresses
+Disallow: /prescriptions
+Disallow: /wishlist
+
+# Halaman teknis / API
+Disallow: /api/
+
+# Halaman utility yang tidak perlu di-crawl
+Disallow: /shared-wishlist/
+
+# AI / scraping bots — block (opsional, hapus jika ingin diizinkan)
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+# Sitemap (dilayani oleh backend di domain frontend via reverse-proxy / direct route)
+Sitemap: https://optikmedio.com/sitemap.xml

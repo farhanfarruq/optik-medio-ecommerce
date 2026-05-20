@@ -11,6 +11,7 @@ import { opticalRepository, type LensCoating } from '../repositories/OpticalRepo
 import { prescriptionRepository, type PrescriptionProfile } from '../repositories/PrescriptionRepository';
 import type { LensOption } from '../repositories/ProductRepository';
 import type { Product } from '../types';
+import PageHero from '../components/layout/PageHero.vue';
 
 import { resolveImageUrl } from '../core/utils/image';
 import { useToast } from '../composables/useToast';
@@ -596,53 +597,27 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
   </main>
 
   <main v-else-if="product" class="flex-grow w-full bg-ivory">
-    <!-- ╔══════════════════════════╗ -->
-    <!-- ║   MINI HERO BREADCRUMB   ║ -->
-    <!-- ╚══════════════════════════╝ -->
-    <div class="relative w-full" style="margin-bottom: -60px;">
-      <div class="relative overflow-hidden" style="height: 300px;">
-        <img
-          src="/gambar/hero-bg.jpeg"
-          alt=""
-          class="absolute inset-0 w-full h-full object-cover object-center"
-          style="transform: scale(1.08); object-position: center 40%;"
-        />
-        <div class="absolute inset-0" style="background: linear-gradient(135deg, rgba(10,8,5,0.82) 0%, rgba(30,20,10,0.65) 100%);"></div>
-        <!-- Gradient bleed -->
-        <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, var(--ivory) 100%);"></div>
-        <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,138,68,0.6), transparent);"></div>
+    <PageHero
+      :title="product.name"
+      :subtitle="product.brand ? (product.brand + ' - Detail produk dan pilihan lensa.') : 'Detail produk dan pilihan lensa.'"
+      :breadcrumbs="[{ label: 'Katalog Produk', to: '/products' }, { label: product.brand || 'Produk' }]"
+      back-to="/products"
+      back-label="Kembali ke Koleksi"
+    />
 
-        <div class="container-commerce relative z-10 flex h-full flex-col justify-end pb-24 pt-24">
-          <!-- Breadcrumb -->
-          <nav class="flex items-center gap-2 text-xs font-medium mb-3" style="color: rgba(255,255,255,0.55);">
-            <router-link to="/" class="hover:text-white transition-colors">Beranda</router-link>
-            <span class="material-symbols-outlined text-sm">chevron_right</span>
-            <router-link to="/products" class="hover:text-white transition-colors">Koleksi</router-link>
-            <span class="material-symbols-outlined text-sm">chevron_right</span>
-            <span class="text-white">{{ product.brand || 'Optik Medio' }}</span>
-          </nav>
-          <button @click="router.back()" class="flex items-center gap-2 text-sm font-bold transition-all group w-fit" style="color: rgba(184,138,68,0.9);">
-            <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
-            Kembali ke Koleksi
-          </button>
-        </div>
-      </div>
-    </div>
-
-
-    <div class="container-premium py-10 md:py-14" style="padding-top: 140px;">
-      <div class="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12">
+    <div class="container-premium pt-32 pb-8 md:pt-36 md:pb-10">
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
 
         <!-- ── Left: Image Gallery ── -->
-        <div class="lg:col-span-7 flex flex-col gap-5 lg:sticky lg:top-28 lg:self-start">
+        <div class="flex flex-col gap-3 lg:col-span-6 lg:self-start">
           <!-- Main Image -->
           <div
-            class="relative aspect-[4/3] rounded-lg overflow-hidden flex items-center justify-center group border border-mist bg-porcelain shadow-card"
+            class="relative mx-auto flex aspect-square w-full max-w-[560px] items-center justify-center overflow-hidden rounded-lg border border-mist bg-porcelain shadow-card"
             style="background: linear-gradient(145deg, var(--ivory), var(--mist)); border-color: rgba(184,138,68,0.15);"
           >
             <img
               :src="resolveImageUrl(product.images?.[activeImage])"
-              class="w-full h-full object-contain p-8 transition-transform duration-500 ease-in-out group-hover:scale-[1.03] mix-blend-multiply"
+              class="h-full w-full object-contain p-3 mix-blend-multiply sm:p-4 md:p-5"
               alt="Product"
             />
             <!-- Image Nav Arrows (if multiple) -->
@@ -665,12 +640,12 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
           </div>
 
           <!-- Thumbnails -->
-          <div v-if="product.images?.length > 1" class="grid grid-cols-5 gap-3">
+          <div v-if="product.images?.length > 1" class="mx-auto grid w-full max-w-[560px] grid-cols-5 gap-2 sm:gap-3">
             <button
               v-for="(img, index) in product.images"
               :key="index"
               @click="activeImage = index"
-              class="aspect-square rounded-lg overflow-hidden border-2 transition-all p-2"
+              class="aspect-square overflow-hidden rounded-lg border-2 p-1.5 transition-all sm:p-2"
               :style="activeImage === index
                 ? 'border-color: var(--gold); opacity: 1; background: linear-gradient(145deg, var(--ivory), var(--mist));'
                 : 'border-color: transparent; opacity: 0.6; background: linear-gradient(145deg, var(--ivory), var(--mist));'"
@@ -682,12 +657,12 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
         </div>
 
         <!-- ── Right: Product Info ── -->
-        <div class="lg:col-span-5 flex flex-col gap-6 lg:sticky lg:top-28 lg:self-start">
+        <div class="flex flex-col gap-3 lg:col-span-6 lg:self-start">
 
           <!-- Category + Badges -->
           <div class="flex flex-col gap-2">
             <div class="flex items-center justify-between">
-              <p class="text-[10px] font-black uppercase tracking-[0.3em]" style="color: var(--gold);">
+              <p class="text-[10px] font-black uppercase tracking-[0.3em]" style="color: #6F4E1D;">
                 Koleksi {{ (product as any).category?.name || 'Optik' }}
               </p>
               <div
@@ -700,7 +675,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
               </div>
             </div>
 
-            <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-3">
               <!-- Promo Badge (Buy X Get Y) -->
               <div
                 v-if="getProductPromos(product).buyPromos.length > 0"
@@ -738,14 +713,14 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
           </div>
 
           <!-- Name + Price -->
-          <div class="flex flex-col gap-2">
-            <p class="text-xs font-black uppercase tracking-[0.2em]" style="color: var(--taupe);">
+          <div class="flex flex-col gap-1.5">
+            <p class="text-xs font-black uppercase tracking-[0.2em]" style="color: var(--graphite);">
               {{ product.name }}
             </p>
-            <h1 class="font-bold text-4xl md:text-5xl leading-tight tracking-normal" style="color: var(--ink); font-family: 'Cormorant Garamond', serif; letter-spacing: -0.02em;">
+            <h1 class="text-2xl font-bold leading-tight tracking-normal md:text-3xl" style="color: var(--ink); font-family: 'Cormorant Garamond', serif; letter-spacing: -0.02em;">
               {{ product.brand || 'Optik Medio' }}
             </h1>
-            <div class="flex flex-wrap items-center gap-4 text-sm" style="color: var(--taupe);">
+            <div class="flex flex-wrap items-center gap-2 text-xs" style="color: var(--graphite);">
               <span class="flex items-center gap-1.5">
                 <span class="material-symbols-outlined text-base" style="color: var(--gold);">star</span>
                 {{ Number(reviewSummary.avg_rating || product.avg_rating || 0).toFixed(1) }} dari {{ reviewSummary.total_reviews || product.review_count || 0 }} ulasan
@@ -756,10 +731,10 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
               </span>
             </div>
             <div class="flex items-center justify-between">
-              <p v-if="!product.is_not_for_sale" class="text-2xl font-black" style="color: #6F4E1D;">
+              <p v-if="!product.is_not_for_sale" class="text-xl font-black" style="color: #6F4E1D;">
                 Rp {{ product.price.toLocaleString('id-ID') }}
               </p>
-              <p v-else class="text-xl font-bold uppercase tracking-widest" style="color: var(--gold);">
+              <p v-else class="text-base font-bold uppercase tracking-widest" style="color: #6F4E1D;">
                 Katalog Informasi
               </p>
               <div v-if="!product.is_not_for_sale" class="flex items-center gap-2">
@@ -767,7 +742,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
                   class="w-2.5 h-2.5 rounded-lg"
                   :style="product.stock > 0 ? 'background: #16a34a; box-shadow: 0 0 8px rgba(22,163,74,0.5);' : 'background: #dc2626;'"
                 ></span>
-                <p class="text-sm font-bold" :style="product.stock > 0 ? 'color: #15803d;' : 'color: #dc2626;'">
+                <p class="text-xs font-bold" :style="product.stock > 0 ? 'color: #15803d;' : 'color: #dc2626;'">
                   {{ product.stock > 0 ? `Stok: ${product.stock}` : 'Stok Habis' }}
                 </p>
               </div>
@@ -776,7 +751,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
 
           <button
             @click="toggleWishlist"
-            class="btn-outline w-full uppercase tracking-[0.12em]"
+            class="btn-outline w-full py-2 text-xs uppercase tracking-[0.1em]"
             :style="isWishlisted
               ? 'background: rgba(184,138,68,0.12); color: #6F4E1D; border-color: rgba(184,138,68,0.3);'
               : 'background: white; color: var(--graphite); border-color: rgba(184,138,68,0.18);'"
@@ -787,7 +762,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
 
           <button
             @click="toggleCompare"
-            class="w-full py-3 px-5 rounded-lg border flex items-center justify-center gap-3 text-sm font-black uppercase tracking-[0.16em] transition-all"
+            class="w-full rounded-lg border px-4 py-2.5 flex items-center justify-center gap-2 text-sm font-black uppercase tracking-[0.14em] transition-all"
             :style="isCompared
               ? 'background: rgba(63,111,143,0.12); color: var(--optical-blue); border-color: rgba(63,111,143,0.28);'
               : 'background: white; color: var(--graphite); border-color: rgba(184,138,68,0.18);'"
@@ -800,7 +775,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
           <div class="h-px" style="background: linear-gradient(90deg, rgba(184,138,68,0.3), transparent);"></div>
 
           <!-- Description -->
-          <p v-if="product.description" class="text-sm leading-relaxed" style="color: var(--graphite);">
+          <p v-if="product.description" class="text-xs leading-6" style="color: var(--graphite);">
             {{ product.description }}
           </p>
 
@@ -808,25 +783,25 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
           <div
             v-if="hasFrameGuide"
             class="border rounded-lg overflow-hidden"
-            style="background: rgba(245,242,238,0.65); border-color: rgba(184,138,68,0.18);"
+            style="background: rgba(255,255,255,0.78); border-color: rgba(184,138,68,0.22);"
           >
-            <div class="px-4 py-3 border-b flex items-center justify-between gap-3" style="border-color: rgba(184,138,68,0.14);">
+            <div class="px-3 py-2.5 border-b flex items-center justify-between gap-2" style="border-color: rgba(184,138,68,0.14);">
               <div>
-                <p class="text-xs font-black uppercase tracking-[0.18em]" style="color: #6F4E1D;">Panduan Ukuran Frame</p>
-                <p class="text-[11px] mt-1" style="color: var(--taupe);">Gunakan data ini untuk membandingkan kenyamanan fit.</p>
+                <p class="text-xs font-black uppercase tracking-[0.16em]" style="color: #6F4E1D;">Panduan Ukuran Frame</p>
+                <p class="mt-0.5 text-[11px]" style="color: var(--graphite);">Gunakan data ini untuk membandingkan kenyamanan fit.</p>
               </div>
-              <span class="material-symbols-outlined text-xl" style="color: var(--gold);">straighten</span>
+              <span class="material-symbols-outlined text-lg" style="color: var(--gold);">straighten</span>
             </div>
 
             <div v-if="frameSizeRows.length > 0" class="grid grid-cols-2 sm:grid-cols-4 border-b" style="border-color: rgba(184,138,68,0.14);">
               <div
                 v-for="row in frameSizeRows"
                 :key="row.label"
-                class="px-4 py-3 border-r last:border-r-0"
+                class="px-3 py-2 border-r last:border-r-0"
                 style="border-color: rgba(184,138,68,0.14);"
               >
-                <p class="text-[10px] font-black uppercase tracking-widest" style="color: var(--taupe);">{{ row.label }}</p>
-                <p class="text-lg font-black mt-1" style="color: var(--ink);">{{ row.value }} <span class="text-xs font-bold text-graphite/45">mm</span></p>
+                <p class="text-[10px] font-black uppercase tracking-widest" style="color: var(--graphite);">{{ row.label }}</p>
+                <p class="mt-0.5 text-lg font-black" style="color: var(--ink);">{{ row.value }} <span class="text-xs font-bold text-graphite/70">mm</span></p>
               </div>
             </div>
 
@@ -834,11 +809,11 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
               <div
                 v-for="row in frameProfileRows"
                 :key="row.label"
-                class="px-4 py-3"
+                class="px-3 py-2"
                 style="background: white;"
               >
-                <p class="text-[10px] font-black uppercase tracking-widest" style="color: var(--taupe);">{{ row.label }}</p>
-                <p class="text-sm font-bold mt-1" style="color: var(--ink);">{{ formatProductLabel(row.value) }}</p>
+                <p class="text-[10px] font-black uppercase tracking-widest" style="color: var(--graphite);">{{ row.label }}</p>
+                <p class="mt-0.5 text-sm font-bold" style="color: var(--ink);">{{ formatProductLabel(row.value) }}</p>
               </div>
             </div>
           </div>
@@ -846,31 +821,31 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
           <!-- Prescription Notice -->
           <div
             v-if="product.is_prescription_required && !product.is_not_for_sale"
-            class="p-4 rounded-lg flex items-start gap-3 border"
-            style="background: rgba(184,138,68,0.07); border-color: rgba(184,138,68,0.25);"
+            class="flex items-start gap-2 rounded-lg border p-2.5"
+            style="background: rgba(255,255,255,0.72); border-color: rgba(184,138,68,0.28);"
           >
             <span class="material-symbols-outlined mt-0.5" style="color: var(--gold);">info</span>
             <div>
-              <p class="text-sm font-bold" style="color: #6F4E1D;">Membutuhkan Resep Optik</p>
-              <p class="text-xs leading-relaxed mt-1" style="color: var(--taupe);">Produk ini memerlukan resep optik yang valid untuk diproses.</p>
+              <p class="text-xs font-bold" style="color: #6F4E1D;">Membutuhkan Resep Optik</p>
+              <p class="mt-0.5 text-xs leading-5" style="color: var(--graphite);">Produk ini memerlukan resep optik yang valid untuk diproses.</p>
             </div>
           </div>
 
           <!-- Info Only Notice -->
           <div
             v-if="product.is_not_for_sale"
-            class="p-6 rounded-lg flex flex-col gap-4 border"
+            class="flex flex-col gap-3 rounded-lg border p-4"
             style="background: rgba(26,18,9,0.03); border-color: rgba(184,138,68,0.2); border-left: 4px solid var(--gold);"
           >
             <div class="flex items-center gap-2 text-ink">
-              <span class="material-symbols-outlined text-xl" style="color: var(--gold);">menu_book</span>
-              <p class="text-base font-bold">Katalog Brand Lensa</p>
+              <span class="material-symbols-outlined text-lg" style="color: var(--gold);">menu_book</span>
+              <p class="text-sm font-bold">Katalog Brand Lensa</p>
             </div>
-            <p class="text-sm leading-relaxed text-graphite/80">
+            <p class="text-xs leading-6 text-graphite">
               Informasi produk ini merupakan bagian dari katalog brand lensa yang kami gunakan di Optik Medio. 
               Produk ini tidak dijual secara terpisah. Untuk konsultasi lebih lanjut mengenai lensa terbaik untuk kebutuhan mata Anda, silakan hubungi tim ahli kami.
             </p>
-            <button class="w-fit px-6 py-2 bg-[var(--ink)] text-white text-xs font-bold uppercase tracking-widest hover:bg-graphite transition-colors">
+            <button class="w-fit bg-[var(--ink)] px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-white transition-colors hover:bg-graphite">
               Hubungi CS Optik Medio
             </button>
           </div>
@@ -900,7 +875,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
                 v-for="size in product.variants.sizes"
                 :key="size"
                 @click="formState.size = size"
-                class="px-4 py-2.5 rounded-lg border text-sm font-bold transition-all"
+                class="rounded-lg border px-3 py-2 text-xs font-bold transition-all"
                 :style="formState.size === size
                   ? 'background: var(--ink); color: white; border-color: var(--ink); box-shadow: 0 4px 12px rgba(26,18,9,0.2);'
                   : 'background: transparent; color: var(--graphite); border-color: rgba(184,138,68,0.25);'"
@@ -911,27 +886,27 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
           </div>
 
           <!-- Prescription Form -->
-          <div v-if="product.is_prescription_required && !product.is_not_for_sale" class="flex flex-col gap-6 pt-6 border-t" style="border-color: rgba(184,138,68,0.15);">
+          <div v-if="product.is_prescription_required && !product.is_not_for_sale" class="flex flex-col gap-3 border-t pt-3" style="border-color: rgba(184,138,68,0.15);">
             <div class="flex items-center justify-between">
-              <h2 class="font-bold text-lg" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Resep Kacamata Anda</h2>
+              <h2 class="text-base font-bold" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Resep Kacamata Anda</h2>
             </div>
 
             <!-- Gunakan Resep Tersimpan -->
             <div v-if="authStore.user && prescriptions.length > 0" class="flex flex-col gap-2">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: var(--taupe);">Resep Tersimpan</p>
+              <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: var(--graphite);">Resep Tersimpan</p>
               <div class="flex flex-col gap-2">
                 <button
                   v-for="profile in prescriptions"
                   :key="profile.id"
                   @click="applyPrescriptionProfile(profile)"
-                  class="flex items-center justify-between p-3 border text-left transition-all hover:shadow-sm"
+                  class="flex items-center justify-between border p-2.5 text-left transition-all hover:shadow-sm"
                   :style="selectedPrescriptionProfileId === profile.id
                     ? 'border-color: var(--gold); background: rgba(184,138,68,0.06); box-shadow: 0 0 0 2px rgba(184,138,68,0.25);'
                     : 'border-color: rgba(184,138,68,0.2); background: white;'"
                 >
                   <div>
                     <p class="text-xs font-bold" style="color: var(--ink);">{{ profile.label }}</p>
-                    <p class="text-[10px] mt-0.5" style="color: var(--taupe);">
+                    <p class="text-[10px] mt-0.5" style="color: var(--graphite);">
                       OD: {{ profile.right_sphere ?? '—' }} / {{ profile.right_cylinder ?? '—' }} / {{ profile.right_axis ?? '—' }}
                       &nbsp;|&nbsp;
                       OS: {{ profile.left_sphere ?? '—' }} / {{ profile.left_cylinder ?? '—' }} / {{ profile.left_axis ?? '—' }}
@@ -948,34 +923,34 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
               </div>
               <div class="flex items-center gap-3 mt-1">
                 <div class="flex-1 h-px" style="background: rgba(184,138,68,0.15);"></div>
-                <span class="text-[10px] font-black uppercase tracking-wider" style="color: var(--taupe);">atau isi manual</span>
+                <span class="text-[10px] font-black uppercase tracking-wider" style="color: var(--graphite);">atau isi manual</span>
                 <div class="flex-1 h-px" style="background: rgba(184,138,68,0.15);"></div>
               </div>
             </div>
 
-            <div class="p-5 rounded-lg border" style="background: rgba(245,242,238,0.8); border-color: rgba(184,138,68,0.15);">
-              <div class="grid gap-3 mb-4" :class="supportsAddInConfigurator ? 'grid-cols-5' : 'grid-cols-4'">
+            <div class="rounded-lg border p-3" style="background: rgba(255,255,255,0.82); border-color: rgba(184,138,68,0.24);">
+              <div class="mb-3 grid gap-2" :class="supportsAddInConfigurator ? 'grid-cols-5' : 'grid-cols-4'">
                 <div class="col-span-1"></div>
-                <div class="text-center text-[10px] font-black uppercase tracking-widest" style="color: var(--taupe);">SPH</div>
-                <div class="text-center text-[10px] font-black uppercase tracking-widest" style="color: var(--taupe);">CYL</div>
-                <div class="text-center text-[10px] font-black uppercase tracking-widest" style="color: var(--taupe);">Axis</div>
-                <div v-if="supportsAddInConfigurator" class="text-center text-[10px] font-black uppercase tracking-widest" style="color: var(--taupe);">ADD</div>
+                <div class="text-center text-[10px] font-black uppercase tracking-widest" style="color: var(--graphite);">SPH</div>
+                <div class="text-center text-[10px] font-black uppercase tracking-widest" style="color: var(--graphite);">CYL</div>
+                <div class="text-center text-[10px] font-black uppercase tracking-widest" style="color: var(--graphite);">Axis</div>
+                <div v-if="supportsAddInConfigurator" class="text-center text-[10px] font-black uppercase tracking-widest" style="color: var(--graphite);">ADD</div>
 
                 <div class="flex items-center justify-end pr-2 text-xs font-black" style="color: var(--ink);">OD</div>
-                <div><select v-model="formState.prescription.od.sph" class="input-field rounded-lg p-2 text-xs" style="background: white; border: 1px solid rgba(184,138,68,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
-                <div><select v-model="formState.prescription.od.cyl" class="input-field rounded-lg p-2 text-xs" style="background: white; border: 1px solid rgba(184,138,68,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
-                <div><input v-model="formState.prescription.od.axis" :disabled="!usesOdAxis" type="number" min="1" max="180" class="input-field rounded-lg p-2 text-center text-xs disabled:bg-mist disabled:text-graphite/45 disabled:cursor-not-allowed" style="background: white; border: 1px solid rgba(184,138,68,0.2);"/></div>
-                <div v-if="supportsAddInConfigurator"><select v-model="formState.prescription.od.add" class="input-field rounded-lg p-2 text-xs" style="background: white; border: 1px solid rgba(184,138,68,0.2);"><option v-for="opt in sphOptions.filter((opt) => !String(opt).startsWith('-'))" :value="opt">{{opt}}</option></select></div>
+                <div><select v-model="formState.prescription.od.sph" class="input-field rounded-lg p-1.5 text-xs" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
+                <div><select v-model="formState.prescription.od.cyl" class="input-field rounded-lg p-1.5 text-xs" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
+                <div><input v-model="formState.prescription.od.axis" :disabled="!usesOdAxis" type="number" min="1" max="180" class="input-field rounded-lg p-1.5 text-center text-xs disabled:bg-mist disabled:text-graphite/70 disabled:cursor-not-allowed" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"/></div>
+                <div v-if="supportsAddInConfigurator"><select v-model="formState.prescription.od.add" class="input-field rounded-lg p-1.5 text-xs" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"><option v-for="opt in sphOptions.filter((opt) => !String(opt).startsWith('-'))" :value="opt">{{opt}}</option></select></div>
 
                 <div class="flex items-center justify-end pr-2 text-xs font-black mt-2" style="color: var(--ink);">OS</div>
-                <div class="mt-2"><select v-model="formState.prescription.os.sph" class="input-field rounded-lg p-2 text-xs" style="background: white; border: 1px solid rgba(184,138,68,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
-                <div class="mt-2"><select v-model="formState.prescription.os.cyl" class="input-field rounded-lg p-2 text-xs" style="background: white; border: 1px solid rgba(184,138,68,0.2);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
-                <div class="mt-2"><input v-model="formState.prescription.os.axis" :disabled="!usesOsAxis" type="number" min="1" max="180" class="input-field rounded-lg p-2 text-center text-xs disabled:bg-mist disabled:text-graphite/45 disabled:cursor-not-allowed" style="background: white; border: 1px solid rgba(184,138,68,0.2);"/></div>
-                <div v-if="supportsAddInConfigurator" class="mt-2"><select v-model="formState.prescription.os.add" class="input-field rounded-lg p-2 text-xs" style="background: white; border: 1px solid rgba(184,138,68,0.2);"><option v-for="opt in sphOptions.filter((opt) => !String(opt).startsWith('-'))" :value="opt">{{opt}}</option></select></div>
+                <div class="mt-2"><select v-model="formState.prescription.os.sph" class="input-field rounded-lg p-1.5 text-xs" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
+                <div class="mt-2"><select v-model="formState.prescription.os.cyl" class="input-field rounded-lg p-1.5 text-xs" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
+                <div class="mt-2"><input v-model="formState.prescription.os.axis" :disabled="!usesOsAxis" type="number" min="1" max="180" class="input-field rounded-lg p-1.5 text-center text-xs disabled:bg-mist disabled:text-graphite/70 disabled:cursor-not-allowed" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"/></div>
+                <div v-if="supportsAddInConfigurator" class="mt-2"><select v-model="formState.prescription.os.add" class="input-field rounded-lg p-1.5 text-xs" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"><option v-for="opt in sphOptions.filter((opt) => !String(opt).startsWith('-'))" :value="opt">{{opt}}</option></select></div>
               </div>
 
-              <div class="pt-4 border-t" style="border-color: rgba(184,138,68,0.15);">
-                <div class="flex items-center gap-6 mb-4">
+              <div class="border-t pt-3" style="border-color: rgba(184,138,68,0.15);">
+                <div class="mb-3 flex items-center gap-4">
                   <label class="flex items-center gap-2 cursor-pointer text-xs font-bold" style="color: var(--graphite);">
                     <input type="radio" v-model="formState.pdType" value="single" class="accent-gold"/>
                     PD Tunggal
@@ -987,17 +962,17 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
                 </div>
                 <div v-if="formState.pdType === 'dual'" class="grid grid-cols-2 gap-3">
                   <div>
-                    <label class="block text-[10px] font-bold mb-1.5" style="color: var(--taupe);">PD Kanan</label>
-                    <input v-model="formState.prescription.pdRight" type="number" min="25" max="38" class="w-full rounded-lg p-2.5 text-sm" style="background: white; border: 1px solid rgba(184,138,68,0.2);"/>
+                    <label class="block text-[10px] font-bold mb-1.5" style="color: var(--graphite);">PD Kanan</label>
+                    <input v-model="formState.prescription.pdRight" type="number" min="25" max="38" class="w-full rounded-lg p-2 text-sm" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"/>
                   </div>
                   <div>
-                    <label class="block text-[10px] font-bold mb-1.5" style="color: var(--taupe);">PD Kiri</label>
-                    <input v-model="formState.prescription.pdLeft" type="number" min="25" max="38" class="w-full rounded-lg p-2.5 text-sm" style="background: white; border: 1px solid rgba(184,138,68,0.2);"/>
+                    <label class="block text-[10px] font-bold mb-1.5" style="color: var(--graphite);">PD Kiri</label>
+                    <input v-model="formState.prescription.pdLeft" type="number" min="25" max="38" class="w-full rounded-lg p-2 text-sm" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"/>
                   </div>
                 </div>
                 <div v-else>
-                  <label class="block text-[10px] font-bold mb-1.5" style="color: var(--taupe);">PD</label>
-                  <input v-model="formState.prescription.pdSingle" type="number" min="50" max="75" class="w-full rounded-lg p-2.5 text-sm" style="background: white; border: 1px solid rgba(184,138,68,0.2);"/>
+                  <label class="block text-[10px] font-bold mb-1.5" style="color: var(--graphite);">PD</label>
+                  <input v-model="formState.prescription.pdSingle" type="number" min="50" max="75" class="w-full rounded-lg p-2 text-sm" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"/>
                 </div>
               </div>
             </div>
@@ -1006,12 +981,12 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
           <!-- Lens Configuration Summary (muncul setelah user memilih dari modal) -->
           <div
             v-if="isFrameProduct && (product as any).compatible_lens_options?.length > 0 && (selectedLensOption || selectedCoating)"
-            class="p-4 border"
-            style="background: rgba(184,138,68,0.04); border-color: rgba(184,138,68,0.25);"
+            class="border p-3"
+            style="background: rgba(255,255,255,0.78); border-color: rgba(184,138,68,0.28);"
           >
             <div class="flex items-center justify-between mb-2">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: var(--taupe);">Konfigurasi Lensa</p>
-              <button @click="openLensConfigurator" class="text-[10px] font-black uppercase tracking-wider underline" style="color: var(--gold);">Ubah</button>
+              <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: var(--graphite);">Konfigurasi Lensa</p>
+              <button @click="openLensConfigurator" class="text-[10px] font-black uppercase tracking-wider underline" style="color: #6F4E1D;">Ubah</button>
             </div>
             <div class="flex flex-col gap-1">
               <div v-if="selectedLensOption" class="flex items-center justify-between text-xs">
@@ -1029,7 +1004,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
           <div
             v-else-if="isFrameProduct && (product as any).compatible_lens_options?.length > 0 && !selectedLensOption"
             class="p-3 border text-xs"
-            style="background: rgba(184,138,68,0.04); border-color: rgba(184,138,68,0.2); color: var(--taupe);"
+            style="background: rgba(255,255,255,0.78); border-color: rgba(184,138,68,0.24); color: var(--graphite);"
           >
             <span class="material-symbols-outlined text-sm align-middle mr-1" style="color: var(--gold);">info</span>
             Klik tombol di bawah untuk memilih jenis lensa dan coating yang sesuai.
@@ -1040,7 +1015,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
             v-if="!product.is_not_for_sale || isAppointmentProduct"
             @click="handleAddToCartClick"
             :disabled="!isAppointmentProduct && product.stock <= 0"
-            class="w-full py-4 px-6 font-black text-sm uppercase tracking-widest rounded-lg transition-all flex items-center justify-center gap-3 shadow-card"
+            class="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-xs font-black uppercase tracking-[0.14em] shadow-card transition-all"
             :style="(isAppointmentProduct || product.stock > 0)
               ? (addedToCart
                 ? 'background: linear-gradient(135deg, #15803d, #16a34a); color: white; box-shadow: 0 8px 25px rgba(22,163,74,0.3);'
@@ -1052,95 +1027,95 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
           </button>
 
           <!-- Trust Badges -->
-          <div class="grid grid-cols-3 gap-3 pt-2">
+          <div class="grid grid-cols-3 gap-2 pt-1">
             <div class="flex flex-col items-center gap-1.5 text-center">
-              <span class="material-symbols-outlined text-2xl" style="color: var(--gold);">verified</span>
-              <span class="text-[9px] font-bold uppercase tracking-wide" style="color: var(--taupe);">Produk Asli</span>
+              <span class="material-symbols-outlined text-lg" style="color: var(--gold);">verified</span>
+              <span class="text-[9px] font-bold uppercase tracking-wide" style="color: var(--graphite);">Produk Asli</span>
             </div>
             <div class="flex flex-col items-center gap-1.5 text-center">
-              <span class="material-symbols-outlined text-2xl" style="color: var(--gold);">local_shipping</span>
-              <span class="text-[9px] font-bold uppercase tracking-wide" style="color: var(--taupe);">Pengiriman Cepat</span>
+              <span class="material-symbols-outlined text-lg" style="color: var(--gold);">local_shipping</span>
+              <span class="text-[9px] font-bold uppercase tracking-wide" style="color: var(--graphite);">Pengiriman Cepat</span>
             </div>
             <div class="flex flex-col items-center gap-1.5 text-center">
-              <span class="material-symbols-outlined text-2xl" style="color: var(--gold);">support_agent</span>
-              <span class="text-[9px] font-bold uppercase tracking-wide" style="color: var(--taupe);">Garansi Resmi</span>
+              <span class="material-symbols-outlined text-lg" style="color: var(--gold);">support_agent</span>
+              <span class="text-[9px] font-bold uppercase tracking-wide" style="color: var(--graphite);">Garansi Resmi</span>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <section v-if="hasRecommendationSection" class="container-commerce pb-16">
-      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
+    <section v-if="hasRecommendationSection" class="container-commerce pb-10">
+      <div class="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p class="text-xs font-black uppercase tracking-[0.25em] mb-2" style="color: var(--gold);">Rekomendasi Optik</p>
-          <h2 class="text-3xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Pilihan yang Cocok</h2>
+          <p class="text-xs font-black uppercase tracking-[0.25em] mb-2" style="color: #6F4E1D;">Rekomendasi Optik</p>
+          <h2 class="text-xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Pilihan yang Cocok</h2>
         </div>
-        <router-link to="/products" class="text-xs font-black uppercase tracking-widest text-gold hover:text-gold transition-all flex items-center gap-2 group">
+        <router-link to="/products" class="text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 group" style="color: #6F4E1D;">
           Lihat Koleksi
           <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
         </router-link>
       </div>
 
-      <div v-if="primaryRecommendations.length > 0" class="mb-10">
-        <h3 class="text-sm font-black uppercase tracking-[0.18em] mb-4" style="color: #6F4E1D;">{{ primaryRecommendationTitle }}</h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div v-if="primaryRecommendations.length > 0" class="mb-7">
+        <h3 class="mb-3 text-xs font-black uppercase tracking-[0.18em]" style="color: #6F4E1D;">{{ primaryRecommendationTitle }}</h3>
+        <div class="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
           <article
             v-for="item in primaryRecommendations.slice(0, 4)"
             :key="item.id"
             @click="router.push(`/products/${item.slug}`)"
-            class="cursor-pointer border bg-porcelain transition-all hover:-translate-y-1 hover:shadow-card"
+            class="cursor-pointer border bg-porcelain transition-all hover:shadow-card"
             style="border-color: rgba(184,138,68,0.14);"
           >
-            <div class="aspect-[4/5] p-4 flex items-center justify-center" style="background: linear-gradient(145deg, var(--ivory), var(--mist));">
+            <div class="flex aspect-square items-center justify-center p-3" style="background: linear-gradient(145deg, var(--ivory), var(--mist));">
               <img :src="resolveImageUrl(item)" :alt="item.name" class="w-full h-full object-contain mix-blend-multiply" />
             </div>
-            <div class="p-4">
-              <p class="text-[10px] font-black uppercase tracking-widest mb-1" style="color: var(--taupe);">{{ item.name }}</p>
-              <h4 class="font-bold text-sm line-clamp-2" style="color: var(--ink);">{{ item.brand || 'Optik Medio' }}</h4>
-              <p class="text-sm font-black mt-2" style="color: #6F4E1D;">Rp {{ item.price.toLocaleString('id-ID') }}</p>
+            <div class="p-3">
+              <p class="text-[10px] font-black uppercase tracking-widest mb-1" style="color: var(--graphite);">{{ item.name }}</p>
+              <h4 class="line-clamp-2 text-xs font-bold" style="color: var(--ink);">{{ item.brand || 'Optik Medio' }}</h4>
+              <p class="mt-1.5 text-xs font-black" style="color: #6F4E1D;">Rp {{ item.price.toLocaleString('id-ID') }}</p>
             </div>
           </article>
         </div>
       </div>
 
       <div v-if="showCompatibleLenses">
-        <h3 class="text-sm font-black uppercase tracking-[0.18em] mb-4" style="color: #6F4E1D;">Lensa Kompatibel</h3>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <h3 class="mb-3 text-xs font-black uppercase tracking-[0.18em]" style="color: #6F4E1D;">Lensa Kompatibel</h3>
+        <div class="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
           <article
             v-for="item in compatibleLenses.slice(0, 4)"
             :key="item.id"
             @click="router.push(`/products/${item.slug}`)"
-            class="cursor-pointer border bg-porcelain transition-all hover:-translate-y-1 hover:shadow-card"
+            class="cursor-pointer border bg-porcelain transition-all hover:shadow-card"
             style="border-color: rgba(184,138,68,0.14);"
           >
-            <div class="aspect-[4/5] p-4 flex items-center justify-center" style="background: linear-gradient(145deg, var(--ivory), var(--mist));">
+            <div class="flex aspect-square items-center justify-center p-3" style="background: linear-gradient(145deg, var(--ivory), var(--mist));">
               <img :src="resolveImageUrl(item)" :alt="item.name" class="w-full h-full object-contain mix-blend-multiply" />
             </div>
-            <div class="p-4">
-              <p class="text-[10px] font-black uppercase tracking-widest mb-1" style="color: var(--taupe);">{{ item.brand || 'Lensa' }}</p>
-              <h4 class="font-bold text-sm line-clamp-2" style="color: var(--ink);">{{ item.name }}</h4>
-              <p class="text-sm font-black mt-2" style="color: #6F4E1D;">Rp {{ item.price.toLocaleString('id-ID') }}</p>
+            <div class="p-3">
+              <p class="text-[10px] font-black uppercase tracking-widest mb-1" style="color: var(--graphite);">{{ item.brand || 'Lensa' }}</p>
+              <h4 class="line-clamp-2 text-xs font-bold" style="color: var(--ink);">{{ item.name }}</h4>
+              <p class="mt-1.5 text-xs font-black" style="color: #6F4E1D;">Rp {{ item.price.toLocaleString('id-ID') }}</p>
             </div>
           </article>
         </div>
       </div>
     </section>
 
-    <section class="container-commerce pb-16">
-      <div class="border rounded-lg p-8" style="background: white; border-color: rgba(184,138,68,0.15); box-shadow: 0 2px 12px rgba(0,0,0,0.04);">
-        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
+    <section class="container-commerce pb-10">
+      <div class="rounded-lg border p-5 md:p-6" style="background: white; border-color: rgba(184,138,68,0.15); box-shadow: 0 2px 12px rgba(0,0,0,0.04);">
+        <div class="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p class="text-xs font-black uppercase tracking-[0.25em] mb-2" style="color: var(--gold);">Customer Reviews</p>
-            <h2 class="text-3xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Ulasan Produk</h2>
+            <p class="text-xs font-black uppercase tracking-[0.25em] mb-2" style="color: #6F4E1D;">Customer Reviews</p>
+            <h2 class="text-xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Ulasan Produk</h2>
           </div>
-          <div class="text-sm" style="color: var(--taupe);">
+          <div class="text-sm" style="color: var(--graphite);">
             Rating rata-rata <span class="font-black" style="color: var(--ink);">{{ Number(reviewSummary.avg_rating || product.avg_rating || 0).toFixed(1) }}</span>
             dari {{ reviewSummary.total_reviews || product.review_count || 0 }} ulasan
           </div>
         </div>
 
-        <div v-if="productReviews.length === 0" class="text-sm" style="color: var(--taupe);">
+        <div v-if="productReviews.length === 0" class="text-sm" style="color: var(--graphite);">
           Belum ada ulasan untuk produk ini.
         </div>
 
@@ -1148,12 +1123,12 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
           <article
             v-for="review in productReviews"
             :key="review.id"
-            class="border rounded-lg p-5"
-            style="background: rgba(245,242,238,0.75); border-color: rgba(184,138,68,0.12);"
+            class="rounded-lg border p-4"
+            style="background: rgba(255,255,255,0.86); border-color: rgba(184,138,68,0.18);"
           >
             <div class="flex items-center justify-between gap-4 mb-3">
               <p class="font-black" style="color: var(--ink);">{{ review.user_name }}</p>
-              <span class="text-xs" style="color: var(--taupe);">{{ review.created_at }}</span>
+              <span class="text-xs" style="color: var(--graphite);">{{ review.created_at }}</span>
             </div>
             <div class="flex items-center gap-1 mb-3">
               <span
@@ -1165,7 +1140,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
                 star
               </span>
             </div>
-            <p class="text-sm leading-relaxed" style="color: var(--graphite);">
+            <p class="text-xs leading-6" style="color: var(--graphite);">
               {{ review.comment || 'Customer tidak menambahkan komentar tertulis.' }}
             </p>
           </article>
@@ -1178,10 +1153,10 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
     <!-- ╚══════════════════════════════════════╝ -->
     <Teleport to="body">
       <div v-if="isLensChoiceModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(10,8,5,0.75); backdrop-filter: blur(20px);">
-        <div class="w-full max-w-xl rounded-lg p-8 border" style="background: #faf8f5; border-color: rgba(184,138,68,0.2); box-shadow: 0 30px 80px rgba(0,0,0,0.3);">
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Lanjutkan Pembelian Lensa</h2>
-            <button @click="isLensChoiceModalOpen = false" class="w-10 h-10 rounded-lg flex items-center justify-center transition-all" style="background: rgba(184,138,68,0.1); color: #6F4E1D;">
+        <div class="w-full max-w-md rounded-lg border p-5 md:p-6" style="background: #faf8f5; border-color: rgba(184,138,68,0.2); box-shadow: 0 30px 80px rgba(0,0,0,0.3);">
+          <div class="mb-4 flex items-center justify-between">
+            <h2 class="text-xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Lanjutkan Pembelian Lensa</h2>
+            <button @click="isLensChoiceModalOpen = false" class="flex h-9 w-9 items-center justify-center rounded-lg transition-all" style="background: rgba(184,138,68,0.1); color: #6F4E1D;">
               <span class="material-symbols-outlined">close</span>
             </button>
           </div>
@@ -1197,7 +1172,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
               style="border-color: rgba(184,138,68,0.2); background: white;"
             >
               <span class="material-symbols-outlined text-2xl mb-3 block" style="color: var(--gold);">shopping_bag</span>
-              <p class="text-sm font-black uppercase tracking-widest mb-1" style="color: var(--taupe);">Tanpa Frame</p>
+              <p class="text-sm font-black uppercase tracking-widest mb-1" style="color: var(--graphite);">Tanpa Frame</p>
               <h3 class="font-bold text-base" style="color: var(--ink);">Beli Lensa Saja</h3>
               <p class="text-sm mt-2" style="color: var(--graphite);">Tambahkan lensa ini ke keranjang dengan resep yang sudah Anda isi.</p>
             </button>
@@ -1208,7 +1183,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
               style="border-color: rgba(184,138,68,0.2); background: white;"
             >
               <span class="material-symbols-outlined text-2xl mb-3 block" style="color: var(--gold);">visibility</span>
-              <p class="text-sm font-black uppercase tracking-widest mb-1" style="color: var(--taupe);">Dengan Frame</p>
+              <p class="text-sm font-black uppercase tracking-widest mb-1" style="color: var(--graphite);">Dengan Frame</p>
               <h3 class="font-bold text-base" style="color: var(--ink);">Pilih Frame Dulu</h3>
               <p class="text-sm mt-2" style="color: var(--graphite);">Lanjut ke katalog untuk memilih frame sebelum checkout.</p>
             </button>
@@ -1220,18 +1195,18 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
       <!-- ║     LENS OPTION + COATING CONFIGURATOR MODAL    ║ -->
       <!-- ╚══════════════════════════════════════════════════╝ -->
       <div v-if="isLensModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(10,8,5,0.75); backdrop-filter: blur(20px);">
-        <div class="w-full max-w-2xl rounded-lg border" style="background: #faf8f5; border-color: rgba(184,138,68,0.2); box-shadow: 0 30px 80px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
+        <div class="w-full max-w-xl rounded-lg border" style="background: #faf8f5; border-color: rgba(184,138,68,0.2); box-shadow: 0 30px 80px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
 
           <!-- Header -->
-          <div class="flex items-center justify-between p-8 pb-0">
+          <div class="flex items-center justify-between p-5 pb-0 md:p-6 md:pb-0">
             <div>
-              <p class="text-[10px] font-black uppercase tracking-[0.24em] mb-1" style="color: var(--gold);">
+              <p class="text-[10px] font-black uppercase tracking-[0.24em] mb-1" style="color: #6F4E1D;">
                 {{ configuratorStep === 'lens' ? 'Langkah 1 dari 2' : 'Langkah 2 dari 2' }}
               </p>
-              <h2 class="text-2xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">
+              <h2 class="text-xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">
                 {{ configuratorStep === 'lens' ? 'Pilih Jenis Lensa' : 'Pilih Coating Lensa' }}
               </h2>
-              <p class="text-xs mt-1" style="color: var(--taupe);">
+              <p class="text-xs mt-1" style="color: var(--graphite);">
                 {{ configuratorStep === 'lens'
                   ? 'Pilih jenis lensa yang sesuai dengan kebutuhan penglihatan Anda.'
                   : 'Tambahkan lapisan pelindung untuk kenyamanan dan ketahanan lensa.' }}
@@ -1243,7 +1218,7 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
           </div>
 
           <!-- Step indicator -->
-          <div class="flex gap-2 px-8 pt-4">
+          <div class="flex gap-2 px-5 pt-4 md:px-6">
             <div class="h-1 flex-1 rounded-lg transition-all" :style="configuratorStep === 'lens' ? 'background: var(--gold);' : 'background: var(--gold);'"></div>
             <div class="h-1 flex-1 rounded-lg transition-all" :style="configuratorStep === 'coating' ? 'background: var(--gold);' : 'background: rgba(184,138,68,0.2);'"></div>
           </div>
@@ -1251,25 +1226,25 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
           <!-- Harga sementara -->
           <div class="mx-8 mt-4 p-4 border" style="background: rgba(184,138,68,0.05); border-color: rgba(184,138,68,0.2);">
             <div class="flex items-center justify-between text-xs">
-              <span style="color: var(--taupe);">Frame</span>
+              <span style="color: var(--graphite);">Frame</span>
               <span class="font-bold" style="color: var(--ink);">Rp {{ (product?.price || 0).toLocaleString('id-ID') }}</span>
             </div>
             <div v-if="selectedLensOption" class="flex items-center justify-between text-xs mt-1">
-              <span style="color: var(--taupe);">{{ selectedLensOption.name }}</span>
+              <span style="color: var(--graphite);">{{ selectedLensOption.name }}</span>
               <span class="font-bold" style="color: var(--ink);">+Rp {{ (selectedLensOption.base_price || 0).toLocaleString('id-ID') }}</span>
             </div>
             <div v-if="selectedCoating" class="flex items-center justify-between text-xs mt-1">
-              <span style="color: var(--taupe);">{{ selectedCoating.name }}</span>
+              <span style="color: var(--graphite);">{{ selectedCoating.name }}</span>
               <span class="font-bold" style="color: var(--ink);">+Rp {{ (selectedCoating.price || 0).toLocaleString('id-ID') }}</span>
             </div>
             <div class="flex items-center justify-between mt-2 pt-2 border-t" style="border-color: rgba(184,138,68,0.2);">
               <span class="text-xs font-black uppercase tracking-wider" style="color: var(--graphite);">Total</span>
-              <span class="font-black text-base" style="color: var(--gold);">Rp {{ configuratorTotalPrice.toLocaleString('id-ID') }}</span>
+              <span class="font-black text-base" style="color: #6F4E1D;">Rp {{ configuratorTotalPrice.toLocaleString('id-ID') }}</span>
             </div>
           </div>
 
           <!-- ── STEP 1: Pilih Lens Option ── -->
-          <div v-if="configuratorStep === 'lens'" class="p-8 pt-5">
+          <div v-if="configuratorStep === 'lens'" class="p-5 pt-4 md:p-6 md:pt-4">
             <div v-if="isLensesLoading" class="flex justify-center py-12">
               <div class="w-10 h-10 rounded-lg border-4 border-t-transparent animate-spin" style="border-color: rgba(184,138,68,0.25); border-top-color: var(--gold);"></div>
             </div>
@@ -1279,20 +1254,20 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
                 v-for="opt in (product as any)?.compatible_lens_options || []"
                 :key="opt.id"
                 @click="selectLensOption(opt)"
-                class="p-5 rounded-lg border text-left transition-all hover:-translate-y-0.5 hover:shadow-card active:scale-95"
+                class="rounded-lg border p-4 text-left transition-all hover:shadow-card active:scale-95"
                 style="border-color: rgba(184,138,68,0.2); background: white;"
               >
                 <div class="flex items-start justify-between gap-2 mb-2">
                   <h3 class="font-bold text-sm leading-tight" style="color: var(--ink);">{{ opt.name }}</h3>
-                  <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 flex-shrink-0" style="background: rgba(184,138,68,0.1); color: var(--taupe);">{{ opt.type?.replace('_', ' ') }}</span>
+                  <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 flex-shrink-0" style="background: rgba(184,138,68,0.12); color: var(--graphite);">{{ opt.type?.replace('_', ' ') }}</span>
                 </div>
-                <p class="font-black text-base" style="color: var(--gold);">+Rp {{ (opt.base_price || 0).toLocaleString('id-ID') }}</p>
+                <p class="font-black text-base" style="color: #6F4E1D;">+Rp {{ (opt.base_price || 0).toLocaleString('id-ID') }}</p>
               </button>
 
-              <div v-if="!(product as any)?.compatible_lens_options?.length" class="col-span-2 text-center py-8 rounded-lg" style="background: rgba(184,138,68,0.05); border: 1px solid rgba(184,138,68,0.2);">
-                <span class="material-symbols-outlined text-3xl mb-3 block" style="color: var(--gold);">info</span>
+              <div v-if="!(product as any)?.compatible_lens_options?.length" class="col-span-2 rounded-lg py-6 text-center" style="background: rgba(184,138,68,0.05); border: 1px solid rgba(184,138,68,0.2);">
+                <span class="material-symbols-outlined mb-2 block text-2xl" style="color: var(--gold);">info</span>
                 <p class="text-sm font-bold mb-1" style="color: var(--ink);">Lensa belum dikonfigurasi</p>
-                <p class="text-xs mb-4" style="color: var(--taupe);">Admin belum mengatur pilihan lensa untuk frame ini. Anda tetap bisa melanjutkan — tim kami akan menghubungi untuk konfirmasi lensa.</p>
+                <p class="text-xs mb-4" style="color: var(--graphite);">Admin belum mengatur pilihan lensa untuk frame ini. Anda tetap bisa melanjutkan — tim kami akan menghubungi untuk konfirmasi lensa.</p>
                 <button
                   @click="skipCoating"
                   class="px-6 py-2.5 text-sm font-black uppercase tracking-wider"
@@ -1303,13 +1278,13 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
               </div>
             </div>
 
-            <button @click="isLensModalOpen = false" class="mt-6 w-full py-3 text-sm font-bold rounded-lg transition-all" style="color: var(--taupe); border: 1px solid rgba(184,138,68,0.2);">
+            <button @click="isLensModalOpen = false" class="mt-4 w-full rounded-lg py-2.5 text-xs font-bold transition-all" style="color: var(--graphite); border: 1px solid rgba(184,138,68,0.28); background: rgba(255,255,255,0.72);">
               Batal
             </button>
           </div>
 
           <!-- ── STEP 2: Pilih Coating ── -->
-          <div v-if="configuratorStep === 'coating'" class="p-8 pt-5">
+          <div v-if="configuratorStep === 'coating'" class="p-5 pt-4 md:p-6 md:pt-4">
             <div v-if="isCoatingsLoading" class="flex justify-center py-12">
               <div class="w-10 h-10 rounded-lg border-4 border-t-transparent animate-spin" style="border-color: rgba(184,138,68,0.25); border-top-color: var(--gold);"></div>
             </div>
@@ -1319,29 +1294,29 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
                 v-for="coating in allCoatings"
                 :key="coating.id"
                 @click="selectedCoating = coating; confirmLensConfiguration()"
-                class="p-5 rounded-lg border text-left transition-all hover:-translate-y-0.5 hover:shadow-card active:scale-95"
+                class="rounded-lg border p-4 text-left transition-all hover:shadow-card active:scale-95"
                 :style="selectedCoating?.id === coating.id
                   ? 'border-color: var(--gold); background: rgba(184,138,68,0.06); box-shadow: 0 0 0 2px rgba(184,138,68,0.3);'
                   : 'border-color: rgba(184,138,68,0.2); background: white;'"
               >
                 <h3 class="font-bold text-sm mb-1" style="color: var(--ink);">{{ coating.name }}</h3>
-                <p v-if="coating.description" class="text-xs leading-relaxed mb-3" style="color: var(--taupe);">{{ coating.description }}</p>
-                <p class="font-black text-base" style="color: var(--gold);">+Rp {{ (coating.price || 0).toLocaleString('id-ID') }}</p>
+                <p v-if="coating.description" class="text-xs leading-relaxed mb-3" style="color: var(--graphite);">{{ coating.description }}</p>
+                <p class="font-black text-base" style="color: #6F4E1D;">+Rp {{ (coating.price || 0).toLocaleString('id-ID') }}</p>
               </button>
             </div>
 
             <div class="flex flex-col gap-3 mt-6">
               <button
                 @click="skipCoating"
-                class="w-full py-3 text-sm font-bold rounded-lg transition-all"
+                class="w-full rounded-lg py-2.5 text-xs font-bold transition-all"
                 style="background: var(--ink); color: white;"
               >
                 Lanjutkan Tanpa Coating
               </button>
               <button
                 @click="configuratorStep = 'lens'"
-                class="w-full py-3 text-sm font-bold rounded-lg transition-all"
-                style="color: var(--taupe); border: 1px solid rgba(184,138,68,0.2);"
+                class="w-full rounded-lg py-2.5 text-xs font-bold transition-all"
+                style="color: var(--graphite); border: 1px solid rgba(184,138,68,0.28); background: rgba(255,255,255,0.72);"
               >
                 ← Kembali Pilih Lensa
               </button>

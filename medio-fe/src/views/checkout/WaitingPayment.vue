@@ -246,7 +246,7 @@ onUnmounted(stopPolling);
           <span class="material-symbols-outlined animate-spin text-2xl flex-shrink-0" style="color: var(--gold);">sync</span>
           <div class="flex-1">
             <p class="font-bold text-sm" style="color: var(--ink);">{{ paymentStatusMsg }}</p>
-            <p class="text-xs mt-0.5" style="color: var(--taupe);">Halaman ini otomatis memperbarui status setiap 5 detik.</p>
+            <p class="text-xs mt-0.5" style="color: #5c4a3a;">Halaman ini otomatis memperbarui status setiap 5 detik.</p>
           </div>
         </div>
 
@@ -293,7 +293,7 @@ onUnmounted(stopPolling);
 
             <!-- Xendit: tombol lanjutkan pembayaran -->
             <div v-if="isXendit && order?.payment?.checkout_url && order?.status === 'unpaid'" class="premium-card p-6">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-3" style="color: var(--taupe);">Lanjutkan Pembayaran</p>
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-3" style="color: #5c4a3a;">Lanjutkan Pembayaran</p>
               <p class="text-sm mb-4" style="color: var(--graphite);">Klik tombol di bawah untuk membuka halaman pembayaran Xendit. Setelah selesai, halaman ini akan otomatis diperbarui.</p>
               <a
                 :href="order.payment.checkout_url"
@@ -308,7 +308,7 @@ onUnmounted(stopPolling);
               <button
                 @click="syncPaymentManual"
                 class="btn-outline ml-3 px-4 py-3 text-xs uppercase tracking-[0.12em]"
-                style="border-color: #e5e0d8; color: var(--taupe);"
+                style="border-color: #e5e0d8; color: #5c4a3a;"
               >
                 Cek Status Manual
               </button>
@@ -316,17 +316,17 @@ onUnmounted(stopPolling);
 
             <!-- Rekening tujuan — hanya untuk transfer manual -->
             <div v-if="isManualTransfer && bank" class="premium-card p-6">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: var(--taupe);">Rekening Tujuan Transfer</p>
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: #5c4a3a;">Rekening Tujuan Transfer</p>
               <div class="flex items-start justify-between gap-4">
                 <div>
                   <p class="text-lg font-black" style="color: var(--ink);">{{ bank.name }}</p>
-                  <p class="text-sm mb-2" style="color: var(--taupe);">a.n. {{ bank.account_name }}</p>
+                  <p class="text-sm mb-2" style="color: #5c4a3a;">a.n. {{ bank.account_name }}</p>
                   <p class="text-2xl font-black tracking-wider" style="color: var(--ink);">{{ bank.account_number }}</p>
                 </div>
                 <button
                   @click="copyText(bank.account_number, 'Nomor rekening')"
                   class="flex items-center gap-1.5 px-4 py-2 text-xs font-black uppercase tracking-wider border transition-all hover:bg-ivory"
-                  style="border-color: rgba(184,138,68,0.4); color: var(--taupe);"
+                  style="border-color: rgba(184,138,68,0.4); color: #5c4a3a;"
                 >
                   <span class="material-symbols-outlined text-sm">content_copy</span>
                   Salin
@@ -338,7 +338,7 @@ onUnmounted(stopPolling);
             <div v-if="isCod" class="premium-card p-6">
               <div class="flex items-center gap-2 mb-3">
                 <span class="material-symbols-outlined" style="color: var(--gold);">payments</span>
-                <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: var(--taupe);">Instruksi COD</p>
+                <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: #5c4a3a;">Instruksi COD</p>
               </div>
               <p class="text-sm leading-relaxed" style="color: var(--ink);">
                 Siapkan uang tunai sebesar <strong>Rp {{ Number(order.total_price || 0).toLocaleString('id-ID') }}</strong> saat kurir tiba. Tidak perlu melakukan transfer atau upload apapun.
@@ -347,18 +347,18 @@ onUnmounted(stopPolling);
 
             <!-- Ringkasan pesanan -->
             <div class="border p-6" style="background: white; border-color: rgba(184,138,68,0.15);">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: var(--taupe);">Ringkasan Pesanan</p>
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: #5c4a3a;">Ringkasan Pesanan</p>
               <div class="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p class="text-[10px] font-black uppercase tracking-wider mb-1" style="color: var(--taupe);">Metode Pembayaran</p>
+                  <p class="text-[10px] font-black uppercase tracking-wider mb-1" style="color: #5c4a3a;">Metode Pembayaran</p>
                   <p class="font-bold" style="color: var(--ink);">{{ paymentMethodName }}</p>
                 </div>
                 <div>
-                  <p class="text-[10px] font-black uppercase tracking-wider mb-1" style="color: var(--taupe);">Nomor Pesanan</p>
+                  <p class="text-[10px] font-black uppercase tracking-wider mb-1" style="color: #5c4a3a;">Nomor Pesanan</p>
                   <p class="font-bold" style="color: var(--ink);">{{ order.order_number }}</p>
                 </div>
                 <div class="col-span-2 pt-3 border-t" style="border-color: #f0ece4;">
-                  <p class="text-[10px] font-black uppercase tracking-wider mb-1" style="color: var(--taupe);">Total Bayar</p>
+                  <p class="text-[10px] font-black uppercase tracking-wider mb-1" style="color: #5c4a3a;">Total Bayar</p>
                   <p class="text-2xl font-black" style="color: var(--gold);">Rp {{ Number(order.total_price || 0).toLocaleString('id-ID') }}</p>
                 </div>
               </div>
@@ -366,14 +366,14 @@ onUnmounted(stopPolling);
 
             <!-- Upload bukti transfer — HANYA untuk transfer manual, BUKAN COD -->
             <div v-if="isManualTransfer" class="border p-6" style="background: white; border-color: rgba(184,138,68,0.15);">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: var(--taupe);">Upload Bukti Transfer</p>
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: #5c4a3a;">Upload Bukti Transfer</p>
 
               <!-- Sudah upload -->
               <div v-if="order.payment_proof_image" class="flex items-start gap-3 p-4 mb-4" style="background: rgba(22,163,74,0.06); border: 1px solid rgba(22,163,74,0.2);">
                 <span class="material-symbols-outlined text-xl" style="color: #16a34a;">check_circle</span>
                 <div>
                   <p class="text-sm font-bold" style="color: #15803d;">Bukti pembayaran sudah terunggah</p>
-                  <p class="text-xs mt-0.5" style="color: var(--taupe);">Admin akan memverifikasi pembayaran Anda segera.</p>
+                  <p class="text-xs mt-0.5" style="color: #5c4a3a;">Admin akan memverifikasi pembayaran Anda segera.</p>
                 </div>
               </div>
 
@@ -385,7 +385,7 @@ onUnmounted(stopPolling);
                   class="block w-full border px-4 py-3 text-sm"
                   style="border-color: #e5e0d8; background: #faf9f7;"
                 />
-                <p class="text-[10px]" style="color: #b0a590;">Format: JPG, PNG, WEBP, atau PDF. Maks 4 MB.</p>
+                <p class="text-[10px]" style="color: #6b5748;">Format: JPG, PNG, WEBP, atau PDF. Maks 4 MB.</p>
                 <button
                   @click="submitProof"
                   :disabled="!proofFile || isUploading"
@@ -474,7 +474,7 @@ onUnmounted(stopPolling);
               <button
                 @click="router.push(`/orders/${order.id}`)"
                 class="w-full py-3 border text-xs font-black uppercase tracking-[0.16em] transition-all hover:bg-ivory"
-                style="border-color: #e5e0d8; color: var(--taupe);"
+                style="border-color: #e5e0d8; color: #5c4a3a;"
               >
                 Lihat Detail Pesanan
               </button>
@@ -484,7 +484,7 @@ onUnmounted(stopPolling);
             <div class="border p-4" style="background: var(--porcelain); border-color: rgba(184,138,68,0.25);">
               <div class="flex items-center gap-2 mb-1">
                 <span class="material-symbols-outlined text-sm" style="color: var(--gold);">toll</span>
-                <p class="text-[10px] font-black uppercase tracking-wider" style="color: var(--taupe);">Loyalty Points</p>
+                <p class="text-[10px] font-black uppercase tracking-wider" style="color: #5c4a3a;">Loyalty Points</p>
               </div>
               <p class="text-xs leading-relaxed" style="color: var(--graphite);">
                 Anda akan mendapatkan poin setelah mengkonfirmasi penerimaan barang. Poin dapat digunakan untuk diskon pembelian berikutnya.

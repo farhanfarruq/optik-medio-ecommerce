@@ -32,6 +32,13 @@ class Kernel extends ConsoleKernel
             ->dailyAt('10:00')
             ->withoutOverlapping()
             ->onFailure(fn () => \Illuminate\Support\Facades\Log::error('SendReviewRequest job failed.'));
+
+        // Backfill: auto-complete order lama yang delivered_at-nya null tapi sudah 3+ hari
+        // Berjalan setiap hari jam 10:05 (setelah SendReviewRequest)
+        $schedule->command('orders:auto-complete-delivered')
+            ->dailyAt('10:05')
+            ->withoutOverlapping()
+            ->onFailure(fn () => \Illuminate\Support\Facades\Log::error('orders:auto-complete-delivered command failed.'));
     }
 
     /**

@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import { productRepository } from '../repositories/ProductRepository';
 import { useSeoMeta } from '../composables/useSeoMeta';
 import { resolveImageUrl } from '../core/utils/image';
+import PageHero from '../components/layout/PageHero.vue';
 
 const route  = useRoute();
 const { setSeo, setJsonLd } = useSeoMeta();
@@ -60,28 +61,15 @@ onMounted(loadCategory);
 
 <template>
   <div>
-    <!-- Hero -->
-    <div class="relative overflow-hidden" style="height: 280px; background: linear-gradient(135deg, var(--ink) 0%, var(--graphite) 100%);">
-      <div class="absolute inset-0" style="background: url('/gambar/hero-bg.jpeg') center/cover; opacity: 0.2;"></div>
-      <div class="relative z-10 h-full container-commerce flex flex-col justify-end pb-12 pt-24">
-        <nav class="flex items-center gap-2 text-xs mb-3" style="color: rgba(255,255,255,0.5);">
-          <router-link to="/" class="hover:text-white">Beranda</router-link>
-          <span>›</span>
-          <router-link to="/products" class="hover:text-white">Produk</router-link>
-          <span>›</span>
-          <span class="text-white">{{ category?.name || slug }}</span>
-        </nav>
-        <h1 class="text-4xl font-black text-white" style="font-family: 'Cormorant Garamond', serif;">
-          {{ category?.name || slug }}
-        </h1>
-        <p v-if="category?.description" class="text-sm mt-2" style="color: rgba(255,255,255,0.7);">
-          {{ category.description }}
-        </p>
-        <p class="text-xs mt-2" style="color: rgba(184,138,68,0.8);">{{ totalProducts }} produk</p>
-      </div>
-    </div>
+    <PageHero
+      :title="category?.name || slug"
+      :subtitle="category?.description || (String(totalProducts) + ' produk tersedia di kategori ini.')"
+      :breadcrumbs="[{ label: 'Katalog Produk', to: '/products' }, { label: category?.name || slug }]"
+      back-to="/products"
+      back-label="Kembali ke Katalog"
+    />
 
-    <main class="container-commerce py-12">
+    <main class="container-commerce pt-40 pb-12">
       <div v-if="isLoading" class="flex justify-center py-20">
         <span class="material-symbols-outlined animate-spin text-4xl" style="color: var(--gold);">sync</span>
       </div>
@@ -108,7 +96,7 @@ onMounted(loadCategory);
             />
           </div>
           <div class="p-4">
-            <p class="text-xs font-bold uppercase tracking-wider mb-1" style="color: var(--taupe);">{{ product.brand || 'Optik Medio' }}</p>
+            <p class="text-xs font-bold uppercase tracking-wider mb-1" style="color: #5c4a3a;">{{ product.brand || 'Optik Medio' }}</p>
             <p class="text-sm font-bold line-clamp-2" style="color: var(--ink);">{{ product.name }}</p>
             <p class="text-base font-black mt-2" style="color: var(--gold);">Rp {{ product.price?.toLocaleString('id-ID') }}</p>
           </div>

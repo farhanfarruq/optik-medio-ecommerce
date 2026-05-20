@@ -23,3 +23,13 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# ───────────────────────────────────────────────────────────────────────────
+# Data mentah / patch debug — JANGAN di-commit
+# (data sumber katalog tetap di database/seeders/data/)
+# ───────────────────────────────────────────────────────────────────────────
+/data_*.json
+/backup_*.json
+/check_*.php
+/patch_*.php
+/scraping.py

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\PrescriptionProfileResource\Pages;
+use App\Filament\Support\PublicUpload;
 use App\Models\PrescriptionProfile;
 use Filament\Forms;
 use Filament\Resources\Resource;
@@ -115,10 +116,8 @@ class PrescriptionProfileResource extends Resource
                 ->columns(2),
             \Filament\Schemas\Components\Section::make('Lampiran dan Catatan')
                 ->schema([
-                    Forms\Components\FileUpload::make('attachment_path')
+                    PublicUpload::file(Forms\Components\FileUpload::make('attachment_path'), 'prescriptions')
                         ->label('Lampiran Resep')
-                        ->disk('public')
-                        ->directory('prescriptions')
                         ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
                         ->maxSize(4096),
                     Forms\Components\Textarea::make('notes')

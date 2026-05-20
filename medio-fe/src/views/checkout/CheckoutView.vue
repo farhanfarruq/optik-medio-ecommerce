@@ -10,6 +10,7 @@ import { useToast } from '../../composables/useToast';
 import { resolveImageUrl } from '../../core/utils/image';
 import { useAuthStore } from '../../stores/authStore';
 import { useAnalytics } from '../../composables/useAnalytics';
+import PageHero from '../../components/layout/PageHero.vue';
 
 const { showToast } = useToast();
 const cartStore = useCartStore();
@@ -707,37 +708,15 @@ const submitOrder = async () => {
 
 <template>
   <div class="checkout-page">
-    <!-- Mini Hero with gradient bleed -->
-    <div class="relative w-full" style="margin-bottom: -80px;">
-      <div class="relative overflow-hidden" style="height: 280px;">
-        <img src="/gambar/hero-bg.jpeg" alt="" class="absolute inset-0 w-full h-full object-cover object-center" style="transform: scale(1.08); object-position: center 40%;" />
-        <div class="absolute inset-0" style="background: linear-gradient(135deg, rgba(10,8,5,0.65) 0%, rgba(30,20,10,0.45) 100%);"></div>
-        <!-- Gradient bleed -->
-        <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, var(--ivory) 100%);"></div>
-        <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,138,68,0.6), transparent);"></div>
+    <PageHero
+        title="Checkout"
+        subtitle="Lengkapi pemenuhan, pengiriman, dan metode pembayaran dalam satu alur."
+        :breadcrumbs="[{ label: 'Keranjang', to: '/cart' }, { label: 'Checkout' }]"
+        back-to="/cart"
+        back-label="Kembali ke Keranjang"
+      />
 
-        <div class="container-commerce relative z-10 flex h-full flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 16px)', paddingBottom: '56px' }">
-          <!-- Breadcrumb + Back -->
-          <div>
-            <nav class="flex items-center gap-2 text-xs font-medium mb-2" style="color: rgba(255,255,255,0.55);">
-              <router-link to="/" class="hover:text-white transition-colors">Beranda</router-link>
-              <span class="material-symbols-outlined text-sm">chevron_right</span>
-              <router-link to="/cart" class="hover:text-white transition-colors">Keranjang</router-link>
-              <span class="material-symbols-outlined text-sm">chevron_right</span>
-              <span class="text-white">Checkout</span>
-            </nav>
-            <router-link to="/" class="flex items-center gap-2 text-sm font-bold group w-fit transition-all" style="color: rgba(184,138,68,0.9);">
-              <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
-              Kembali ke Beranda
-            </router-link>
-          </div>
-          <!-- Page Title -->
-          <h1 class="text-4xl font-black tracking-normal text-white" style="font-family: 'Cormorant Garamond', serif;">Checkout</h1>
-        </div>
-      </div>
-    </div>
-
-    <main class="container-commerce relative z-10 pb-24" style="padding-top: calc(var(--header-height, 96px) + 40px);">
+    <main class="container-commerce relative z-10 pt-40 pb-24">
 
       <!-- Store Close Alert Banner -->
       <div v-if="storeStatus?.is_closed" class="mb-8 p-5 border flex items-start gap-4" style="background: rgba(220,38,38,0.06); border-color: rgba(220,38,38,0.3);">
@@ -1218,7 +1197,7 @@ const submitOrder = async () => {
               <!-- Loyalty Points Redemption -->
               <div v-if="userLoyaltyPoints > 0" class="border rounded-lg p-3 mt-1" style="background: var(--porcelain); border-color: rgba(184,138,68,0.25);">
                 <div class="flex items-center justify-between mb-2">
-                  <span class="text-xs font-black uppercase tracking-wider" style="color: var(--taupe);">
+                  <span class="text-xs font-black uppercase tracking-wider" style="color: #5c4a3a;">
                     <span class="material-symbols-outlined text-sm align-middle" style="color: var(--gold);">toll</span>
                     Gunakan Loyalty Points
                   </span>
@@ -1234,10 +1213,10 @@ const submitOrder = async () => {
                     style="border-color: rgba(184,138,68,0.4); color: var(--ink);"
                     placeholder="0"
                   />
-                  <span class="text-xs" style="color: var(--taupe);">poin = Rp {{ loyaltyDiscountAmount.toLocaleString('id-ID') }}</span>
+                  <span class="text-xs" style="color: #5c4a3a;">poin = Rp {{ loyaltyDiscountAmount.toLocaleString('id-ID') }}</span>
                   <button v-if="loyaltyPointsToUse > 0" @click="loyaltyPointsToUse = 0" class="ml-auto text-xs font-bold underline" style="color: #dc2626;">Hapus</button>
                 </div>
-                <p class="text-[10px] mt-1.5" style="color: #b0a590;">Maks {{ maxLoyaltyPoints.toLocaleString('id-ID') }} poin (5% dari subtotal). 1 poin = Rp 1.000.</p>
+                <p class="text-[10px] mt-1.5" style="color: #6b5748;">Maks {{ maxLoyaltyPoints.toLocaleString('id-ID') }} poin (5% dari subtotal). 1 poin = Rp 1.000.</p>
                 <div v-if="loyaltyDiscountAmount > 0" class="flex justify-between mt-2 pt-2 border-t text-olive" style="border-color: rgba(184,138,68,0.2);">
                   <span class="text-xs">Potongan Loyalty Points</span>
                   <span class="text-xs font-bold">-Rp {{ loyaltyDiscountAmount.toLocaleString('id-ID') }}</span>
@@ -1250,7 +1229,7 @@ const submitOrder = async () => {
                 <span class="text-base font-bold text-ink">Total Pembayaran</span>
                 <span class="text-2xl font-black text-primary" style="color: var(--gold);">Rp {{ grandTotal.toLocaleString('id-ID') }}</span>
               </div>
-              <p v-if="loyaltyPointsToUse > 0 || levelDiscountAmount > 0" class="text-[10px] text-right" style="color: var(--taupe);">
+              <p v-if="loyaltyPointsToUse > 0 || levelDiscountAmount > 0" class="text-[10px] text-right" style="color: #5c4a3a;">
                 Hemat Rp {{ (levelDiscountAmount + loyaltyDiscountAmount + (cartStore.calculatedData?.discount_amount || 0) + (cartStore.calculatedData?.promo_discount_amount || 0)).toLocaleString('id-ID') }} dari total belanja
               </p>
             </div>
@@ -1326,14 +1305,14 @@ const submitOrder = async () => {
               </div>
               <div>
                 <p class="text-xs font-black uppercase tracking-[0.2em]" style="color: var(--ink);">Pembayaran Aman</p>
-                <p class="text-[10px]" style="color: var(--taupe);">Diproses oleh Xendit · SSL Terenkripsi</p>
+                <p class="text-[10px]" style="color: #5c4a3a;">Diproses oleh Xendit · SSL Terenkripsi</p>
               </div>
             </div>
             <div class="flex items-center gap-3">
               <!-- Polling indicator -->
               <div v-if="isPollingPayment" class="flex items-center gap-1.5">
                 <div class="w-1.5 h-1.5 rounded-full animate-pulse" style="background: var(--gold);"></div>
-                <span class="text-[10px]" style="color: var(--taupe);">Menunggu pembayaran...</span>
+                <span class="text-[10px]" style="color: #5c4a3a;">Menunggu pembayaran...</span>
               </div>
               <button
                 @click="closeXenditModal"
@@ -1363,11 +1342,11 @@ const submitOrder = async () => {
 
           <!-- Footer -->
           <div class="px-6 py-3 border-t flex items-center justify-between" style="border-color: rgba(184,138,68,0.15); background: rgba(245,242,238,0.6);">
-            <p class="text-[10px]" style="color: var(--taupe);">Tutup jendela ini untuk melanjutkan pembayaran nanti dari halaman pesanan.</p>
+            <p class="text-[10px]" style="color: #5c4a3a;">Tutup jendela ini untuk melanjutkan pembayaran nanti dari halaman pesanan.</p>
             <button
               @click="closeXenditModal"
               class="text-[10px] font-black uppercase tracking-wider underline flex-shrink-0 ml-4"
-              style="color: var(--taupe);"
+              style="color: #5c4a3a;"
             >
               Bayar Nanti
             </button>

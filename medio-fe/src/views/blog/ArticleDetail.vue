@@ -12,11 +12,11 @@
     />
 
     <!-- Main Content -->
-    <main class="container-premium max-w-5xl py-12 pb-20">
+    <main class="container-premium max-w-4xl py-10 pb-20">
       <!-- Loading State -->
       <div v-if="loading" class="premium-card p-12 space-y-8">
         <div class="h-8 bg-surface-container-low w-3/4 animate-pulse"></div>
-        <div class="h-64 bg-surface-container-low w-full animate-pulse"></div>
+        <div class="mx-auto h-56 w-full max-w-3xl bg-surface-container-low animate-pulse"></div>
         <div class="space-y-4">
           <div v-for="i in 10" :key="i" class="h-4 bg-surface-container-low w-full animate-pulse"></div>
         </div>
@@ -33,10 +33,10 @@
       </div>
 
       <!-- Article Content -->
-      <article v-else-if="article" class="premium-card overflow-hidden">
+      <article v-else-if="article" class="premium-card overflow-hidden p-5 sm:p-6 md:p-8">
         <!-- Featured Image -->
-        <div v-if="article.featured_image" class="w-full aspect-[21/9] overflow-hidden bg-surface-container">
-          <img :src="resolveImageUrl(article.featured_image)" :alt="article.title" class="w-full h-full object-cover">
+        <div v-if="article.featured_image" class="mx-auto w-full max-w-3xl aspect-[16/9] overflow-hidden rounded-lg bg-surface-container">
+          <img :src="resolveImageUrl(article.featured_image)" :alt="article.title" class="h-full w-full object-cover">
         </div>
 
         <div class="p-8 md:p-16">
@@ -106,11 +106,11 @@
         </div>
 
         <!-- Related Articles -->
-        <div v-if="relatedArticles.length > 0" class="bg-surface-container-low p-8 md:p-16 border-t border-outline-variant/10">
-          <h3 class="text-2xl font-black text-on-surface mb-10" style="font-family: 'Cormorant Garamond', serif;">Artikel Terkait</h3>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div v-if="relatedArticles.length > 0" class="mt-8 border-t border-outline-variant/10 bg-surface-container-low p-6 md:p-10">
+          <h3 class="mb-6 text-2xl font-black text-on-surface" style="font-family: 'Cormorant Garamond', serif;">Artikel Terkait</h3>
+          <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
             <router-link v-for="related in relatedArticles" :key="related.id" :to="`/blog/${related.slug}`" class="group">
-              <div class="aspect-[16/10] overflow-hidden bg-surface-container mb-4">
+              <div class="mb-3 aspect-[4/3] overflow-hidden bg-surface-container">
                 <img 
                   v-if="related.featured_image" 
                   :src="resolveImageUrl(related.featured_image)" 
@@ -211,7 +211,7 @@ onMounted(() => {
   @apply mb-8 text-on-surface-variant leading-relaxed text-lg;
 }
 .prose img {
-  @apply rounded-lg border border-outline-variant/10 my-12 shadow-card;
+  @apply mx-auto my-10 max-w-3xl rounded-lg border border-outline-variant/10 shadow-card;
 }
 .prose ul, .prose ol {
   @apply mb-8 space-y-3 pl-6;

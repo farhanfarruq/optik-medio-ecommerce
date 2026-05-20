@@ -426,6 +426,14 @@ class ProductCatalogSeeder extends Seeder
 
     private function writeCategorySvg(string $slug, string $name): string
     {
+        // Prefer pre-generated PNG icon; fall back to SVG placeholder if missing
+        $pngRelative = "categories/seed/{$slug}.png";
+        $pngAbsolute = storage_path('app/public/' . $pngRelative);
+
+        if (File::exists($pngAbsolute)) {
+            return $pngRelative;
+        }
+
         return $this->writeSvg("categories/seed/{$slug}.svg", $name, '#c19a51');
     }
 

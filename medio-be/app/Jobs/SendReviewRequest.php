@@ -25,9 +25,17 @@ class SendReviewRequest implements ShouldQueue
 
         $orders = Order::with(['user', 'items'])
             ->where('status', 'delivered')
-            ->whereNotNull('delivered_at')
-            ->where('delivered_at', '<=', $cutoff)
-            ->where('updated_at', '<=', $cutoff)
+            ->where(function ($q) use ($cutoff) {
+                $q->where(function ($inner) use ($cutoff) {
+                    // Order yang punya delivered_at dan sudah lewat cutoff
+                    $inner->whereNotNull('delivered_at')
+                          ->where('delivered_at', '<=', $cutoff);
+                })->orWhere(function ($inner) use ($cutoff) {
+                    // Order lama yang delivered_at-nya null, pakai updated_at sebagai fallback
+                    $inner->whereNull('delivered_at')
+                          ->where('updated_at', '<=', $cutoff);
+                });
+            })
             ->whereDoesntHave('returnRequest', fn ($query) => $query
                 ->whereIn('status', ['pending', 'approved']))
             ->whereDoesntHave('complains', fn ($query) => $query
@@ -36,7 +44,14 @@ class SendReviewRequest implements ShouldQueue
 
         foreach ($orders as $order) {
             try {
-                $order->update(['status' => 'completed']);
+                $updateData = ['status' => 'completed'];
+
+                // Isi delivered_at jika masih null (pakai updated_at sebagai estimasi waktu delivered)
+                if ($order->delivered_at === null) {
+                    $updateData['delivered_at'] = $order->updated_at;
+                }
+
+                $order->update($updateData);
 
                 $email = $order->user?->email;
                 if ($email && $order->items->isNotEmpty() && $order->review_requested_at === null) {

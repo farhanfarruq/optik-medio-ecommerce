@@ -7,6 +7,8 @@ use App\Models\Cart;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CartController extends Controller
 {
@@ -30,6 +32,10 @@ class CartController extends Controller
     /**
      * POST /api/cart/items
      * Tambah atau update item di cart.
+     *
+     * NOTE (P0-1): operasi cek stok + write cart_items dibungkus dalam
+     * DB::transaction + lockForUpdate untuk mencegah race condition pada
+     * stok produk saat order placement berjalan paralel.
      */
     public function addItem(Request $request): JsonResponse
     {
@@ -44,46 +50,53 @@ class CartController extends Controller
             'configuration_snapshot'  => 'nullable|array',
         ]);
 
-        $product = Product::where('id', $request->product_id)
-            ->where('is_active', true)
-            ->firstOrFail();
+        $cart = DB::transaction(function () use ($request) {
+            // Lock baris produk agar pembacaan stok konsisten dengan transaksi
+            // lain yang sedang decrement stok (order placement).
+            $product = Product::where('id', $request->product_id)
+                ->where('is_active', true)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        if ($product->stock < $request->quantity) {
-            return response()->json([
-                'message' => 'Stok produk tidak mencukupi.',
-            ], 422);
-        }
-
-        $cart = Cart::activeForUser($request->user()->id);
-        $cart->update(['last_activity_at' => now()]);
-
-        // Cek apakah item dengan konfigurasi sama sudah ada
-        $existing = $cart->items()
-            ->where('product_id', $request->product_id)
-            ->where('lens_option_id', $request->lens_option_id)
-            ->where('lens_coating_id', $request->lens_coating_id)
-            ->first();
-
-        if ($existing && ! $request->has('prescription') && ! $request->has('prescription_profile_id')) {
-            $newQty = $existing->quantity + $request->quantity;
-            if ($newQty > $product->stock) {
-                return response()->json([
-                    'message' => 'Total kuantitas melebihi stok yang tersedia.',
-                ], 422);
+            if ($product->stock < $request->quantity) {
+                throw ValidationException::withMessages([
+                    'quantity' => ['Stok produk tidak mencukupi.'],
+                ]);
             }
-            $existing->update(['quantity' => $newQty]);
-        } else {
-            $cart->items()->create([
-                'product_id'              => $request->product_id,
-                'quantity'                => $request->quantity,
-                'variant'                 => $request->variant,
-                'prescription'            => $request->prescription,
-                'lens_option_id'          => $request->lens_option_id,
-                'lens_coating_id'         => $request->lens_coating_id,
-                'prescription_profile_id' => $request->prescription_profile_id,
-                'configuration_snapshot'  => $request->configuration_snapshot,
-            ]);
-        }
+
+            $cart = Cart::activeForUser($request->user()->id);
+            $cart->update(['last_activity_at' => now()]);
+
+            // Cek apakah item dengan konfigurasi sama sudah ada
+            $existing = $cart->items()
+                ->where('product_id', $request->product_id)
+                ->where('lens_option_id', $request->lens_option_id)
+                ->where('lens_coating_id', $request->lens_coating_id)
+                ->first();
+
+            if ($existing && ! $request->has('prescription') && ! $request->has('prescription_profile_id')) {
+                $newQty = $existing->quantity + $request->quantity;
+                if ($newQty > $product->stock) {
+                    throw ValidationException::withMessages([
+                        'quantity' => ['Total kuantitas melebihi stok yang tersedia.'],
+                    ]);
+                }
+                $existing->update(['quantity' => $newQty]);
+            } else {
+                $cart->items()->create([
+                    'product_id'              => $request->product_id,
+                    'quantity'                => $request->quantity,
+                    'variant'                 => $request->variant,
+                    'prescription'            => $request->prescription,
+                    'lens_option_id'          => $request->lens_option_id,
+                    'lens_coating_id'         => $request->lens_coating_id,
+                    'prescription_profile_id' => $request->prescription_profile_id,
+                    'configuration_snapshot'  => $request->configuration_snapshot,
+                ]);
+            }
+
+            return $cart;
+        });
 
         $cart->load([
             'items.product.productImages',
@@ -97,6 +110,9 @@ class CartController extends Controller
     /**
      * PUT /api/cart/items/{itemId}
      * Update kuantitas item.
+     *
+     * NOTE (P0-1): pembacaan stok di-lock agar tidak race dengan
+     * decrement stok di order placement.
      */
     public function updateItem(Request $request, int $itemId): JsonResponse
     {
@@ -104,18 +120,25 @@ class CartController extends Controller
             'quantity' => 'required|integer|min:1|max:99',
         ]);
 
-        $cart = Cart::activeForUser($request->user()->id);
-        $item = $cart->items()->findOrFail($itemId);
+        $cart = DB::transaction(function () use ($request, $itemId) {
+            $cart = Cart::activeForUser($request->user()->id);
+            $item = $cart->items()->findOrFail($itemId);
 
-        $product = Product::findOrFail($item->product_id);
-        if ($product->stock < $request->quantity) {
-            return response()->json([
-                'message' => 'Stok produk tidak mencukupi.',
-            ], 422);
-        }
+            $product = Product::where('id', $item->product_id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        $item->update(['quantity' => $request->quantity]);
-        $cart->update(['last_activity_at' => now()]);
+            if ($product->stock < $request->quantity) {
+                throw ValidationException::withMessages([
+                    'quantity' => ['Stok produk tidak mencukupi.'],
+                ]);
+            }
+
+            $item->update(['quantity' => $request->quantity]);
+            $cart->update(['last_activity_at' => now()]);
+
+            return $cart;
+        });
 
         $cart->load(['items.product.productImages', 'items.lensOption', 'items.lensCoating']);
 
@@ -155,6 +178,9 @@ class CartController extends Controller
      * POST /api/cart/sync
      * Sync cart dari localStorage ke server (dipanggil setelah login).
      * Payload: { items: [{ product_id, quantity, variant, ... }] }
+     *
+     * NOTE (P0-1): dibungkus transaction + lockForUpdate per produk untuk
+     * konsistensi dengan operasi order yang berjalan paralel.
      */
     public function sync(Request $request): JsonResponse
     {
@@ -170,46 +196,52 @@ class CartController extends Controller
             'items.*.configuration_snapshot' => 'nullable|array',
         ]);
 
-        $cart = Cart::activeForUser($request->user()->id);
+        $cart = DB::transaction(function () use ($request) {
+            $cart = Cart::activeForUser($request->user()->id);
 
-        foreach ($request->items as $itemData) {
-            $product = Product::where('id', $itemData['product_id'])
-                ->where('is_active', true)
-                ->first();
+            foreach ($request->items as $itemData) {
+                $product = Product::where('id', $itemData['product_id'])
+                    ->where('is_active', true)
+                    ->lockForUpdate()
+                    ->first();
 
-            if (! $product) {
-                continue; // skip produk tidak aktif
+                if (! $product) {
+                    continue; // skip produk tidak aktif
+                }
+
+                $qty = min((int) $itemData['quantity'], $product->stock);
+                if ($qty < 1) {
+                    continue;
+                }
+
+                $existing = $cart->items()
+                    ->where('product_id', $itemData['product_id'])
+                    ->where('lens_option_id', $itemData['lens_option_id'] ?? null)
+                    ->where('lens_coating_id', $itemData['lens_coating_id'] ?? null)
+                    ->first();
+
+                if ($existing) {
+                    $newQty = min($existing->quantity + $qty, $product->stock);
+                    $existing->update(['quantity' => $newQty]);
+                } else {
+                    $cart->items()->create([
+                        'product_id'              => $itemData['product_id'],
+                        'quantity'                => $qty,
+                        'variant'                 => $itemData['variant'] ?? null,
+                        'prescription'            => $itemData['prescription'] ?? null,
+                        'lens_option_id'          => $itemData['lens_option_id'] ?? null,
+                        'lens_coating_id'         => $itemData['lens_coating_id'] ?? null,
+                        'prescription_profile_id' => $itemData['prescription_profile_id'] ?? null,
+                        'configuration_snapshot'  => $itemData['configuration_snapshot'] ?? null,
+                    ]);
+                }
             }
 
-            $qty = min((int) $itemData['quantity'], $product->stock);
-            if ($qty < 1) {
-                continue;
-            }
+            $cart->update(['last_activity_at' => now()]);
 
-            $existing = $cart->items()
-                ->where('product_id', $itemData['product_id'])
-                ->where('lens_option_id', $itemData['lens_option_id'] ?? null)
-                ->where('lens_coating_id', $itemData['lens_coating_id'] ?? null)
-                ->first();
+            return $cart;
+        });
 
-            if ($existing) {
-                $newQty = min($existing->quantity + $qty, $product->stock);
-                $existing->update(['quantity' => $newQty]);
-            } else {
-                $cart->items()->create([
-                    'product_id'              => $itemData['product_id'],
-                    'quantity'                => $qty,
-                    'variant'                 => $itemData['variant'] ?? null,
-                    'prescription'            => $itemData['prescription'] ?? null,
-                    'lens_option_id'          => $itemData['lens_option_id'] ?? null,
-                    'lens_coating_id'         => $itemData['lens_coating_id'] ?? null,
-                    'prescription_profile_id' => $itemData['prescription_profile_id'] ?? null,
-                    'configuration_snapshot'  => $itemData['configuration_snapshot'] ?? null,
-                ]);
-            }
-        }
-
-        $cart->update(['last_activity_at' => now()]);
         $cart->load(['items.product.productImages', 'items.lensOption', 'items.lensCoating']);
 
         return response()->json($this->formatCart($cart));

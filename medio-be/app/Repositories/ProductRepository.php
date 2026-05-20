@@ -27,7 +27,7 @@ class ProductRepository implements ProductRepositoryInterface
             ], 'rating')
             ->withSum([
                 'orderItems as purchase_count' => fn ($q) => $q->whereHas('order', fn ($orderQuery) => $orderQuery
-                    ->whereIn('status', ['paid', 'processing', 'shipped', 'delivered'])),
+                    ->whereIn('status', ['paid', 'processing', 'shipped', 'delivered', 'completed'])),
             ], 'quantity')
             ->where('is_active', true);
 
@@ -173,7 +173,7 @@ class ProductRepository implements ProductRepositoryInterface
             ->withAvg(['approvedReviews as avg_rating'], 'rating')
             ->withSum([
                 'orderItems as purchase_count' => fn ($q) => $q->whereHas('order', fn ($orderQuery) => $orderQuery
-                    ->whereIn('status', ['paid', 'processing', 'shipped', 'delivered'])),
+                    ->whereIn('status', ['paid', 'processing', 'shipped', 'delivered', 'completed'])),
             ], 'quantity')
             ->findOrFail($id);
     }
@@ -193,7 +193,7 @@ class ProductRepository implements ProductRepositoryInterface
             ->withAvg(['approvedReviews as avg_rating'], 'rating')
             ->withSum([
                 'orderItems as purchase_count' => fn ($q) => $q->whereHas('order', fn ($orderQuery) => $orderQuery
-                    ->whereIn('status', ['paid', 'processing', 'shipped', 'delivered'])),
+                    ->whereIn('status', ['paid', 'processing', 'shipped', 'delivered', 'completed'])),
             ], 'quantity')
             ->where('slug', $slug)
             ->firstOrFail();

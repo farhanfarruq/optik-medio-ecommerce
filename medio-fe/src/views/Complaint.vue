@@ -105,7 +105,7 @@ onMounted(async () => {
       <div class="premium-card mb-6 p-5">
         <div class="grid grid-cols-5 gap-2 text-center">
           <div v-for="(step, index) in complaintSteps" :key="step.label" class="flex flex-col items-center gap-2">
-            <span class="flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-black" :style="step.done ? 'background: var(--ink); color: var(--ivory); border-color: var(--ink);' : 'background: var(--porcelain); color: var(--taupe); border-color: var(--mist);'">{{ index + 1 }}</span>
+            <span class="flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-black" :style="step.done ? 'background: var(--ink); color: var(--ivory); border-color: var(--ink);' : 'background: var(--porcelain); color: #5c4a3a; border-color: var(--mist);'">{{ index + 1 }}</span>
             <span class="text-[9px] font-black uppercase tracking-[0.12em] text-graphite/60">{{ step.label }}</span>
           </div>
         </div>

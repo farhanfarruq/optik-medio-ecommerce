@@ -11,6 +11,7 @@ import { useWishlistStore } from '../stores/wishlistStore';
 import { affiliateRepository, type AffiliateProfile, type AffiliateSummary, type AffiliateCommission, type AffiliateEarning } from '../repositories/AffiliateRepository';
 import { prescriptionRepository, type PrescriptionPayload, type PrescriptionProfile } from '../repositories/PrescriptionRepository';
 import WarrantyPage from './WarrantyPage.vue';
+import PageHero from '../components/layout/PageHero.vue';
 
 const { showToast } = useToast();
 
@@ -164,6 +165,16 @@ const formatLensTypeLabel = (lensType?: string | null) => {
   }
 };
 const isSharingWishlist = ref(false);
+const profileHeroMap: Record<string, { title: string; subtitle: string; crumb: string }> = {
+  profile: { title: "Akun Saya", subtitle: "Kelola profil, level loyalty, alamat, pesanan, wishlist, dan layanan akun.", crumb: "Akun Saya" },
+  addresses: { title: "Alamat Saya", subtitle: "Atur alamat pengiriman dan titik penerimaan pesanan optik.", crumb: "Alamat" },
+  prescriptions: { title: "Resep Optik", subtitle: "Simpan dan pakai ulang data resep untuk pemesanan lensa berikutnya.", crumb: "Resep Optik" },
+  orders: { title: "Pesanan Saya", subtitle: "Pantau status pesanan, pembayaran, pengiriman, dan tindakan lanjutan.", crumb: "Pesanan" },
+  wishlist: { title: "Wishlist", subtitle: "Koleksi produk favorit yang siap dibandingkan atau dibeli kembali.", crumb: "Wishlist" },
+  warranty: { title: "Garansi & Servis", subtitle: "Cek layanan garansi, servis frame, dan bantuan purna jual.", crumb: "Garansi" },
+  affiliate: { title: "Afiliasi & Komisi", subtitle: "Pantau performa referral dan data pencairan komisi.", crumb: "Afiliasi" }
+};
+
 const currentSection = computed(() => {
   switch (route.name) {
     case 'Addresses':
@@ -182,6 +193,8 @@ const currentSection = computed(() => {
       return 'profile';
   }
 });
+const profileHero = computed(() => profileHeroMap[currentSection.value] || profileHeroMap.profile);
+const profileBreadcrumbs = computed(() => [{ label: profileHero.value.crumb }]);
 
 watch(
   () => newPrescriptionForm.value.lens_type,
@@ -744,33 +757,13 @@ const deleteAddress = async (id: number) => {
 </script>
 
 <template>
-  <!-- Mini Hero with gradient bleed -->
-  <div class="relative w-full" style="margin-bottom: -60px;">
-    <div class="relative overflow-hidden" style="height: 280px;">
-      <img src="/gambar/hero-bg.jpeg" alt="" class="absolute inset-0 w-full h-full object-cover object-center" style="transform: scale(1.08); object-position: center 40%;" />
-      <div class="absolute inset-0" style="background: linear-gradient(135deg, rgba(10,8,5,0.65) 0%, rgba(30,20,10,0.45) 100%);"></div>
-      <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, var(--ivory) 100%);"></div>
-      <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,138,68,0.6), transparent);"></div>
-      <div class="container-commerce relative z-10 flex h-full flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 16px)', paddingBottom: '56px' }">
-        <!-- Breadcrumb + Back -->
-        <div>
-          <nav class="flex items-center gap-2 text-xs font-medium mb-2" style="color: rgba(255,255,255,0.55);">
-            <router-link to="/" class="hover:text-white transition-colors">Beranda</router-link>
-            <span class="material-symbols-outlined text-sm">chevron_right</span>
-            <span class="text-white">Akun Saya</span>
-          </nav>
-          <router-link to="/" class="flex items-center gap-2 text-sm font-bold group w-fit transition-all" style="color: rgba(184,138,68,0.9);">
-            <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
-            Kembali ke Beranda
-          </router-link>
-        </div>
-        <!-- Page Title -->
-        <h1 class="text-4xl font-black tracking-normal text-white" style="font-family: 'Cormorant Garamond', serif;">Akun Saya</h1>
-      </div>
-    </div>
-  </div>
+  <PageHero
+    :title="profileHero.title"
+    :subtitle="profileHero.subtitle"
+    :breadcrumbs="profileBreadcrumbs"
+  />
 
-  <main class="container-commerce pb-20 flex-grow" style="padding-top: calc(var(--header-height, 96px) + 40px);">
+  <main class="container-commerce pt-40 pb-20 flex-grow">
     <div class="flex flex-col lg:flex-row gap-8 xl:gap-10">
 
       <aside class="w-full lg:w-64 xl:w-72 shrink-0">
@@ -1025,16 +1018,16 @@ const deleteAddress = async (id: number) => {
             <h3 class="font-bold text-sm mb-4" style="color: var(--ink);">Tambah Resep Baru</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: var(--taupe);">Nama Resep *</label>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #5c4a3a;">Nama Resep *</label>
                 <input v-model="newPrescriptionForm.label" type="text" placeholder="Contoh: Resep Utama 2026" class="input-field py-2" style="border-color: var(--mist);" />
               </div>
               <div>
-                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: var(--taupe);">Tipe Lensa</label>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #5c4a3a;">Tipe Lensa</label>
                 <select v-model="newPrescriptionForm.lens_type" class="input-field py-2" style="border-color: var(--mist);">
                   <option value="single_vision">Single Vision</option>
                   <option value="progressive">Progresif / Bifokal</option>
                 </select>
-                <p class="text-[11px] mt-2" style="color: var(--taupe);">
+                <p class="text-[11px] mt-2" style="color: #5c4a3a;">
                   Fitur lensa seperti Blue Light, Photochromic, dan High Index dipilih saat checkout, bukan di resep dasar.
                 </p>
               </div>
@@ -1045,14 +1038,14 @@ const deleteAddress = async (id: number) => {
               <table class="w-full text-sm">
                 <thead>
                   <tr>
-                    <th class="text-left py-2 pr-4 text-xs font-black uppercase tracking-wider" style="color: var(--taupe); width: 60px;"></th>
-                    <th class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider" style="color: var(--taupe);">SPH</th>
-                    <th class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider" style="color: var(--taupe);">CYL</th>
-                    <th class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider" style="color: var(--taupe);">Axis</th>
+                    <th class="text-left py-2 pr-4 text-xs font-black uppercase tracking-wider" style="color: #5c4a3a; width: 60px;"></th>
+                    <th class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider" style="color: #5c4a3a;">SPH</th>
+                    <th class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider" style="color: #5c4a3a;">CYL</th>
+                    <th class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider" style="color: #5c4a3a;">Axis</th>
                     <th
                       v-if="supportsAddForNewPrescription"
                       class="text-center py-2 px-2 text-xs font-black uppercase tracking-wider"
-                      style="color: var(--taupe);"
+                      style="color: #5c4a3a;"
                     >
                       ADD
                     </th>
@@ -1092,22 +1085,22 @@ const deleteAddress = async (id: number) => {
 
               <div v-if="newPrescriptionPdMode === 'single'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: var(--taupe);">PD Tunggal (mm)</label>
+                  <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #5c4a3a;">PD Tunggal (mm)</label>
                   <input v-model="newPrescriptionForm.pd_single" type="number" min="50" max="75" step="0.5" placeholder="64" class="input-field py-2" style="border-color: var(--mist);" />
-                  <p class="text-[10px] mt-1" style="color: #b0a590;">Rentang umum 50 - 75 mm.</p>
+                  <p class="text-[10px] mt-1" style="color: #6b5748;">Rentang umum 50 - 75 mm.</p>
                 </div>
               </div>
 
               <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: var(--taupe);">PD Kanan (mm)</label>
+                  <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #5c4a3a;">PD Kanan (mm)</label>
                   <input v-model="newPrescriptionForm.pd_right" type="number" min="25" max="38" step="0.5" placeholder="32" class="input-field py-2" style="border-color: var(--mist);" />
-                  <p class="text-[10px] mt-1" style="color: #b0a590;">Rentang umum 25 - 38 mm.</p>
+                  <p class="text-[10px] mt-1" style="color: #6b5748;">Rentang umum 25 - 38 mm.</p>
                 </div>
                 <div>
-                  <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: var(--taupe);">PD Kiri (mm)</label>
+                  <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #5c4a3a;">PD Kiri (mm)</label>
                   <input v-model="newPrescriptionForm.pd_left" type="number" min="25" max="38" step="0.5" placeholder="32" class="input-field py-2" style="border-color: var(--mist);" />
-                  <p class="text-[10px] mt-1" style="color: #b0a590;">Rentang umum 25 - 38 mm.</p>
+                  <p class="text-[10px] mt-1" style="color: #6b5748;">Rentang umum 25 - 38 mm.</p>
                 </div>
               </div>
             </div>
@@ -1115,13 +1108,13 @@ const deleteAddress = async (id: number) => {
             <!-- Notes + Attachment -->
             <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: var(--taupe);">Catatan</label>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #5c4a3a;">Catatan</label>
                 <textarea v-model="newPrescriptionForm.notes" rows="2" placeholder="Catatan tambahan..." class="input-field py-2" style="border-color: var(--mist);"></textarea>
               </div>
               <div>
-                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: var(--taupe);">Upload Resep (Opsional)</label>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1" style="color: #5c4a3a;">Upload Resep (Opsional)</label>
                 <input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" @change="handleNewPrescriptionFile" class="block w-full text-sm" />
-                <p class="text-[10px] mt-1" style="color: #b0a590;">JPG, PNG, WEBP, atau PDF. Maks 4 MB.</p>
+                <p class="text-[10px] mt-1" style="color: #6b5748;">JPG, PNG, WEBP, atau PDF. Maks 4 MB.</p>
               </div>
             </div>
 
@@ -1142,7 +1135,7 @@ const deleteAddress = async (id: number) => {
                 <span v-if="isCreatingPrescription" class="material-symbols-outlined animate-spin text-sm align-middle mr-1">sync</span>
                 {{ isCreatingPrescription ? 'Menyimpan...' : 'Simpan Resep' }}
               </button>
-              <button @click="showCreatePrescriptionForm = false" class="px-4 py-3 border text-xs font-black uppercase tracking-wider" style="border-color: var(--mist); color: var(--taupe);">
+              <button @click="showCreatePrescriptionForm = false" class="px-4 py-3 border text-xs font-black uppercase tracking-wider" style="border-color: var(--mist); color: #5c4a3a;">
                 Batal
               </button>
             </div>
@@ -1248,7 +1241,7 @@ const deleteAddress = async (id: number) => {
                   />
                 </div>
                 <div v-else class="w-16 h-16 shrink-0 bg-ivory border p-1 rounded-lg flex items-center justify-center">
-                  <span class="material-symbols-outlined text-ivory/70">shopping_bag</span>
+                  <span class="material-symbols-outlined text-graphite/40">shopping_bag</span>
                 </div>
 
                 <div>
@@ -1437,7 +1430,7 @@ const deleteAddress = async (id: number) => {
                   <div class="grid grid-cols-3 gap-3 text-right">
                     <div><p class="text-[10px] uppercase tracking-widest text-graphite/45">Order</p><p class="font-bold text-xs" style="color: var(--ink);">{{ formatMoney(earning.base_amount) }}</p></div>
                     <div><p class="text-[10px] uppercase tracking-widest text-graphite/45">Komisi</p><p class="font-bold text-xs" style="color: #16a34a;">{{ formatMoney(earning.total_commission) }}</p></div>
-                    <div><p class="text-[10px] uppercase tracking-widest text-graphite/45">Tersedia</p><p class="font-bold text-xs" :style="earning.is_available_for_payout ? 'color: #16a34a;' : 'color: var(--taupe);'">{{ formatMoney(earning.remaining_commission) }}</p></div>
+                    <div><p class="text-[10px] uppercase tracking-widest text-graphite/45">Tersedia</p><p class="font-bold text-xs" :style="earning.is_available_for_payout ? 'color: #16a34a;' : 'color: #5c4a3a;'">{{ formatMoney(earning.remaining_commission) }}</p></div>
                   </div>
                 </div>
               </div>

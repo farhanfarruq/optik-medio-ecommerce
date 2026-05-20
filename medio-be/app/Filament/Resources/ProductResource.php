@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductResource\Pages;
+use App\Filament\Support\PublicUpload;
 use App\Models\LensOption;
 use App\Models\Product;
 use Filament\Forms;
@@ -77,15 +78,15 @@ class ProductResource extends Resource
                             ->rows(5)
                             ->helperText('Isi bahan, kegunaan, target pengguna, dan keunggulan produk.')
                             ->columnSpanFull(),
-                        Forms\Components\FileUpload::make('images')
+                        PublicUpload::image(Forms\Components\FileUpload::make('images'), 'products', '180px')
                             ->label('Gambar Produk')
                             ->required(fn (Get $get): bool => (bool) $get('is_active'))
                             ->multiple()
-                            ->image()
-                            ->disk('public')
-                            ->visibility('public')
-                            ->directory('products')
-                            ->helperText('Upload minimal satu foto produk yang jelas.')
+                            ->reorderable()
+                            ->appendFiles()
+                            ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'])
+                            ->maxSize(4096)
+                            ->helperText('Upload minimal satu foto produk yang jelas. Bisa preview, buka, download, urutkan, dan hapus.')
                             ->columnSpanFull(),
                     ]),
 

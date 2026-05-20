@@ -33,7 +33,7 @@ onMounted(async () => {
         </section>
 
         <section class="space-y-5">
-          <h3 class="text-xs font-semibold uppercase tracking-[0.18em] text-ivory/78">Hubungi Kami</h3>
+          <h3 class="text-xs font-semibold uppercase tracking-[0.18em] text-white">Hubungi Kami</h3>
           <ul class="space-y-4 text-sm text-ivory/68">
             <li class="flex items-start gap-3"><span class="material-symbols-outlined mt-0.5 text-lg text-gold">location_on</span><span>{{ settings?.store_address || 'Pasar, Bandarsari, Lampung Tengah' }}</span></li>
             <li class="flex items-center gap-3"><span class="material-symbols-outlined text-lg text-gold">call</span><span>{{ settings?.store_phone || '0813-1196-9585' }}</span></li>
@@ -42,7 +42,7 @@ onMounted(async () => {
         </section>
 
         <section class="space-y-5">
-          <h3 class="text-xs font-semibold uppercase tracking-[0.18em] text-ivory/78">Navigasi</h3>
+          <h3 class="text-xs font-semibold uppercase tracking-[0.18em] text-white">Navigasi</h3>
           <ul class="space-y-3 text-sm text-ivory/64">
             <li><a href="/" class="transition-colors hover:text-ivory">Beranda</a></li>
             <li><a href="/products" class="transition-colors hover:text-ivory">Koleksi Kacamata</a></li>
@@ -52,7 +52,7 @@ onMounted(async () => {
         </section>
 
         <section class="space-y-5">
-          <h3 class="text-xs font-semibold uppercase tracking-[0.18em] text-ivory/78">Temukan Kami</h3>
+          <h3 class="text-xs font-semibold uppercase tracking-[0.18em] text-white">Temukan Kami</h3>
           <div class="rounded-lg border border-white/10 bg-white/[0.03] p-4">
             <p class="text-sm leading-6 text-ivory/68">Pickup store, konsultasi resep, dan fitting frame tersedia di toko.</p>
             <a :href="settings?.store_location_url" target="_blank" class="mt-5 inline-flex items-center gap-2 rounded-lg border border-gold/35 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-gold transition-colors hover:bg-gold/10"><span class="material-symbols-outlined text-lg">directions</span>Buka Maps</a>

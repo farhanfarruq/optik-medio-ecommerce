@@ -5,6 +5,7 @@ import { productRepository } from '../repositories/ProductRepository';
 import { useCompareStore } from '../stores/compareStore';
 import { resolveImageUrl } from '../core/utils/image';
 import type { Product } from '../types';
+import PageHero from '../components/layout/PageHero.vue';
 
 const router = useRouter();
 const compareStore = useCompareStore();
@@ -12,14 +13,6 @@ const products = ref<Product[]>([]);
 const isLoading = ref(false);
 const errorMessage = ref('');
 
-const goBack = () => {
-  if (window.history.length > 1) {
-    router.back();
-    return;
-  }
-
-  router.push('/products');
-};
 
 const attributeLabels: Record<string, string> = {
   brand: 'Brand',
@@ -73,33 +66,15 @@ watch(() => compareStore.items.map(item => item.id).join(','), loadCompare);
 </script>
 
 <template>
-  <div class="relative w-full bg-[var(--ivory)]" style="margin-bottom: -60px;">
-    <div class="relative overflow-hidden" style="height: 280px;">
-      <img src="/gambar/hero-bg.jpeg" alt="" class="absolute inset-0 w-full h-full object-cover object-center" style="transform: scale(1.08); object-position: center 40%;" />
-      <div class="absolute inset-0" style="background: linear-gradient(135deg, rgba(10,8,5,0.68) 0%, rgba(30,20,10,0.48) 100%);"></div>
-      <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, var(--ivory) 100%);"></div>
-      <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,138,68,0.6), transparent);"></div>
-      <div class="relative z-10 h-full container-premium flex flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 16px)', paddingBottom: '56px' }">
-        <div>
-          <nav class="flex items-center gap-2 text-xs font-medium mb-2" style="color: rgba(255,255,255,0.55);">
-            <router-link to="/" class="hover:text-white transition-colors">Beranda</router-link>
-            <span class="material-symbols-outlined text-sm">chevron_right</span>
-            <span class="text-white">Compare</span>
-          </nav>
-          <button @click="goBack" class="flex items-center gap-2 text-sm font-bold group w-fit transition-all" style="color: rgba(184,138,68,0.95);">
-            <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
-            Kembali
-          </button>
-        </div>
-        <div>
-          <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-3" style="color: var(--gold);">Compare</p>
-          <h1 class="text-4xl md:text-5xl font-black tracking-normal text-white" style="font-family: 'Cormorant Garamond', serif;">Bandingkan Produk</h1>
-        </div>
-      </div>
-    </div>
-  </div>
+  <PageHero
+    title="Bandingkan Produk"
+    subtitle="Pilih 2 sampai 4 produk untuk melihat perbedaan fitur, harga, dan rekomendasi."
+    :breadcrumbs="[{ label: 'Compare' }]"
+    back-to="/products"
+    back-label="Kembali ke Katalog"
+  />
 
-  <main class="min-h-screen bg-ivory pb-24 pt-24">
+  <main class="min-h-screen bg-ivory pb-24 pt-40">
     <section class="container-premium">
       <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-5 mb-8">
         <div>

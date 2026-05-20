@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
 import { productRepository, type ProductSearchSuggestions } from '../repositories/ProductRepository';
 import { resolveImageUrl } from '../core/utils/image';
 import type { Product } from '../types';
+import PageHero from '../components/layout/PageHero.vue';
 
-const router = useRouter();
 const photoDataUrl = ref('');
 const selectedProduct = ref<Product | null>(null);
 const searchQuery = ref('');
@@ -55,14 +54,6 @@ const clearSavedPreviews = () => {
   window.localStorage.removeItem('medio_virtual_try_on_previews');
 };
 
-const goBack = () => {
-  if (window.history.length > 1) {
-    router.back();
-    return;
-  }
-
-  router.push('/products');
-};
 
 /**
  * Load an image from a URL into an HTMLImageElement.
@@ -246,35 +237,16 @@ watch(searchQuery, (query) => {
 
 
 <template>
-  <!-- Hero banner -->
-  <div class="relative w-full bg-[var(--ivory)]" style="margin-bottom: -60px;">
-    <div class="relative overflow-hidden" style="height: 280px;">
-      <img src="/gambar/hero-bg.jpeg" alt="" class="absolute inset-0 w-full h-full object-cover object-center" style="transform: scale(1.08); object-position: center 40%;" />
-      <div class="absolute inset-0" style="background: linear-gradient(135deg, rgba(10,8,5,0.68) 0%, rgba(30,20,10,0.48) 100%);"></div>
-      <div class="absolute bottom-0 left-0 right-0" style="height: 100px; background: linear-gradient(to bottom, transparent 0%, var(--ivory) 100%);"></div>
-      <div class="absolute" style="bottom: 100px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,138,68,0.6), transparent);"></div>
-      <div class="relative z-10 h-full container-commerce flex flex-col justify-between" :style="{ paddingTop: 'calc(var(--header-height, 96px) + 16px)', paddingBottom: '56px' }">
-        <div>
-          <nav class="flex items-center gap-2 text-xs font-medium mb-2" style="color: rgba(255,255,255,0.55);">
-            <router-link to="/" class="hover:text-white transition-colors">Beranda</router-link>
-            <span class="material-symbols-outlined text-sm">chevron_right</span>
-            <span class="text-white">Virtual Try-On</span>
-          </nav>
-          <button @click="goBack" class="flex items-center gap-2 text-sm font-bold group w-fit transition-all" style="color: rgba(184,138,68,0.95);">
-            <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
-            Kembali
-          </button>
-        </div>
-        <div>
-          <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-3" style="color: var(--gold);">Virtual Try-On</p>
-          <h1 class="text-4xl md:text-5xl font-black tracking-normal text-white" style="font-family: 'Cormorant Garamond', serif;">Coba Frame dari Foto</h1>
-        </div>
-      </div>
-    </div>
-  </div>
+  <PageHero
+    title="Coba Frame dari Foto"
+    subtitle="Upload foto wajah dan sesuaikan frame secara visual sebelum memilih produk."
+    :breadcrumbs="[{ label: 'Virtual Try-On' }]"
+    back-to="/products"
+    back-label="Kembali ke Katalog"
+  />
 
   <!-- ═══ DESKTOP layout (lg+) ═══════════════════════════════════════════ -->
-  <main class="hidden lg:block min-h-screen bg-[var(--ivory)] pb-24 pt-24">
+  <main class="hidden lg:block min-h-screen bg-[var(--ivory)] pb-24 pt-40">
     <section class="max-w-[1440px] mx-auto px-12">
       <div class="grid grid-cols-[1fr_360px] gap-8">
         <section class="premium-card p-6">
@@ -340,7 +312,7 @@ watch(searchQuery, (query) => {
       <section v-if="savedPreviews.length > 0" class="mt-10">
         <div class="flex items-end justify-between gap-4 mb-5">
           <h2 class="text-2xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Preview Tersimpan</h2>
-          <button @click="clearSavedPreviews" class="text-xs font-bold uppercase tracking-widest" style="color: var(--taupe);">Bersihkan</button>
+          <button @click="clearSavedPreviews" class="text-xs font-bold uppercase tracking-widest" style="color: #5c4a3a;">Bersihkan</button>
         </div>
         <div class="grid grid-cols-4 gap-4">
           <article v-for="preview in savedPreviews" :key="preview.id" class="premium-card p-3">
@@ -376,7 +348,7 @@ watch(searchQuery, (query) => {
             {{ photoDataUrl ? 'Foto dipilih ✓' : 'Pilih dari galeri...' }}
           </p>
         </div>
-        <span class="material-symbols-outlined text-ivory/70 shrink-0">chevron_right</span>
+        <span class="material-symbols-outlined text-graphite/40 shrink-0">chevron_right</span>
         <input type="file" accept="image/*" @change="handlePhotoUpload" class="hidden" />
       </label>
 
@@ -441,7 +413,7 @@ watch(searchQuery, (query) => {
     <section v-if="savedPreviews.length > 0" class="mx-4 mt-6">
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-base font-black" style="color: var(--ink);">Preview Tersimpan</h2>
-        <button @click="clearSavedPreviews" class="text-xs font-bold" style="color: var(--taupe);">Bersihkan</button>
+        <button @click="clearSavedPreviews" class="text-xs font-bold" style="color: #5c4a3a;">Bersihkan</button>
       </div>
       <div class="grid grid-cols-2 gap-3">
         <article v-for="preview in savedPreviews" :key="preview.id" class="bg-porcelain rounded-2xl p-3 shadow-card">

@@ -252,7 +252,7 @@ onMounted(() => {
 
             <!-- Pilih Cabang -->
             <div class="border p-6" style="background: white; border-color: rgba(184,138,68,0.2);">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: var(--taupe);">1. Pilih Cabang</p>
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: #5c4a3a;">1. Pilih Cabang</p>
               <div class="grid gap-3">
                 <label
                   v-for="branch in branches"
@@ -263,8 +263,8 @@ onMounted(() => {
                   <input type="radio" v-model="form.branch_id" :value="branch.id" class="mt-1" @change="availability = null; form.appointment_time = ''" />
                   <div>
                     <p class="font-bold text-sm" style="color: var(--ink);">{{ branch.name }}</p>
-                    <p class="text-xs mt-0.5" style="color: var(--taupe);">{{ branch.address }}, {{ branch.city }}</p>
-                    <p v-if="branch.phone" class="flex items-center gap-1.5 text-xs mt-0.5" style="color: var(--taupe);">
+                    <p class="text-xs mt-0.5" style="color: #5c4a3a;">{{ branch.address }}, {{ branch.city }}</p>
+                    <p v-if="branch.phone" class="flex items-center gap-1.5 text-xs mt-0.5" style="color: #5c4a3a;">
                       <span class="material-symbols-outlined text-sm">call</span>
                       {{ branch.phone }}
                     </p>
@@ -275,7 +275,7 @@ onMounted(() => {
 
             <!-- Pilih Layanan -->
             <div class="border p-6" style="background: white; border-color: rgba(184,138,68,0.2);">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: var(--taupe);">2. Pilih Layanan</p>
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: #5c4a3a;">2. Pilih Layanan</p>
               <div class="grid gap-2">
                 <label
                   v-for="svc in serviceOptions"
@@ -287,7 +287,7 @@ onMounted(() => {
                   <span class="material-symbols-outlined text-xl" style="color: var(--gold);">{{ svc.icon }}</span>
                   <div>
                     <p class="font-bold text-sm" style="color: var(--ink);">{{ svc.label }}</p>
-                    <p class="text-xs" style="color: var(--taupe);">{{ svc.desc }}</p>
+                    <p class="text-xs" style="color: #5c4a3a;">{{ svc.desc }}</p>
                   </div>
                 </label>
               </div>
@@ -295,7 +295,7 @@ onMounted(() => {
 
             <!-- Pilih Tanggal & Waktu -->
             <div class="border p-6" style="background: white; border-color: rgba(184,138,68,0.2);">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: var(--taupe);">3. Pilih Tanggal & Waktu</p>
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: #5c4a3a;">3. Pilih Tanggal & Waktu</p>
               <div class="flex gap-3 mb-4">
                 <input
                   v-model="form.appointment_date"
@@ -308,7 +308,7 @@ onMounted(() => {
                 />
               </div>
 
-              <div v-if="isCheckingAvailability" class="text-xs text-center py-3" style="color: var(--taupe);">
+              <div v-if="isCheckingAvailability" class="text-xs text-center py-3" style="color: #5c4a3a;">
                 <span class="material-symbols-outlined animate-spin text-sm align-middle">sync</span> Mengecek ketersediaan...
               </div>
 
@@ -317,7 +317,7 @@ onMounted(() => {
                   Slot untuk tanggal ini sudah penuh atau cabang tutup.
                 </div>
                 <div v-else>
-                  <p class="text-xs mb-3" style="color: var(--taupe);">{{ availability.available }} slot tersedia</p>
+                  <p class="text-xs mb-3" style="color: #5c4a3a;">{{ availability.available }} slot tersedia</p>
                   <div class="flex flex-wrap gap-2">
                     <button
                       v-for="slot in availability.available_slots"
@@ -337,7 +337,7 @@ onMounted(() => {
 
             <!-- Data Pelanggan -->
             <div class="border p-6" style="background: white; border-color: rgba(184,138,68,0.2);">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: var(--taupe);">4. Data Anda</p>
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: #5c4a3a;">4. Data Anda</p>
               <div class="grid gap-3">
                 <input v-model="form.customer_name" type="text" placeholder="Nama lengkap" class="border px-4 py-3 text-sm focus:outline-none" style="border-color: var(--mist);" />
                 <input v-model="form.customer_phone" type="tel" placeholder="Nomor telepon" class="border px-4 py-3 text-sm focus:outline-none" style="border-color: var(--mist);" />
@@ -361,13 +361,13 @@ onMounted(() => {
             <h2 class="text-xl font-black mb-4" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Appointment Saya</h2>
 
             <div v-if="!isLoggedIn" class="border p-6 text-center" style="background: var(--porcelain); border-color: rgba(184,138,68,0.2);">
-              <p class="text-sm mb-3" style="color: var(--taupe);">Login untuk melihat appointment Anda.</p>
+              <p class="text-sm mb-3" style="color: #5c4a3a;">Login untuk melihat appointment Anda.</p>
               <button @click="router.push('/login')" class="px-4 py-2 text-xs font-black uppercase tracking-wider text-white" style="background: var(--ink);">Login</button>
             </div>
 
             <div v-else-if="myAppointments.length === 0" class="border p-6 text-center" style="background: var(--porcelain); border-color: rgba(184,138,68,0.2);">
               <span class="material-symbols-outlined text-3xl mb-2 block" style="color: var(--gold);">calendar_today</span>
-              <p class="text-sm" style="color: var(--taupe);">Belum ada appointment.</p>
+              <p class="text-sm" style="color: #5c4a3a;">Belum ada appointment.</p>
             </div>
 
             <div v-else class="space-y-3">
@@ -387,7 +387,7 @@ onMounted(() => {
                   </span>
                 </div>
                 <p class="text-xs" style="color: var(--graphite);">{{ apt.branch?.name }}</p>
-                <p class="text-xs" style="color: var(--taupe);">{{ apt.appointment_date }} · {{ apt.appointment_time?.substring(0,5) }}</p>
+                <p class="text-xs" style="color: #5c4a3a;">{{ apt.appointment_date }} · {{ apt.appointment_time?.substring(0,5) }}</p>
                 <div class="mt-3 flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -415,7 +415,7 @@ onMounted(() => {
             <div v-if="selectedAppointment" class="mt-5 border p-5" style="background: var(--porcelain); border-color: rgba(184,138,68,0.25);">
               <div class="flex items-start justify-between gap-3 mb-4">
                 <div>
-                  <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: var(--taupe);">Detail Appointment</p>
+                  <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: #5c4a3a;">Detail Appointment</p>
                   <h3 class="text-base font-black mt-1" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">
                     {{ selectedAppointment.appointment_number }}
                   </h3>
@@ -425,7 +425,7 @@ onMounted(() => {
                 </span>
               </div>
 
-              <div v-if="isLoadingAppointmentDetail" class="flex items-center gap-2 text-xs" style="color: var(--taupe);">
+              <div v-if="isLoadingAppointmentDetail" class="flex items-center gap-2 text-xs" style="color: #5c4a3a;">
                 <span class="material-symbols-outlined animate-spin text-sm">sync</span>
                 Memuat detail...
               </div>
@@ -435,14 +435,14 @@ onMounted(() => {
                   <span class="material-symbols-outlined text-lg" style="color: var(--gold);">calendar_today</span>
                   <div>
                     <p class="font-bold" style="color: var(--ink);">{{ selectedAppointment.appointment_date }} · {{ selectedAppointment.appointment_time?.substring(0,5) }}</p>
-                    <p style="color: var(--taupe);">{{ serviceLabel(selectedAppointment.service_type) }}</p>
+                    <p style="color: #5c4a3a;">{{ serviceLabel(selectedAppointment.service_type) }}</p>
                   </div>
                 </div>
                 <div class="flex items-start gap-3">
                   <span class="material-symbols-outlined text-lg" style="color: var(--gold);">store</span>
                   <div>
                     <p class="font-bold" style="color: var(--ink);">{{ selectedAppointment.branch?.name }}</p>
-                    <p style="color: var(--taupe);">{{ selectedAppointment.branch?.address }}, {{ selectedAppointment.branch?.city }}</p>
+                    <p style="color: #5c4a3a;">{{ selectedAppointment.branch?.address }}, {{ selectedAppointment.branch?.city }}</p>
                     <a
                       v-if="selectedAppointment.branch?.maps_url"
                       :href="selectedAppointment.branch.maps_url"
@@ -460,7 +460,7 @@ onMounted(() => {
                   <span class="material-symbols-outlined text-lg" style="color: var(--gold);">person</span>
                   <div>
                     <p class="font-bold" style="color: var(--ink);">{{ selectedAppointment.customer_name }}</p>
-                    <p style="color: var(--taupe);">{{ selectedAppointment.customer_phone }}</p>
+                    <p style="color: #5c4a3a;">{{ selectedAppointment.customer_phone }}</p>
                   </div>
                 </div>
                 <div v-if="selectedAppointment.notes" class="flex items-start gap-3">

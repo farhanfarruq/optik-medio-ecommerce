@@ -31,8 +31,8 @@
         </div>
 
         <!-- Loading State -->
-        <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div v-for="i in 4" :key="i" class="h-80 bg-surface-container-low animate-pulse"></div>
+        <div v-if="loading" class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div v-for="i in 6" :key="i" class="h-64 bg-surface-container-low animate-pulse"></div>
         </div>
 
         <!-- Error State -->
@@ -53,9 +53,9 @@
         </div>
 
         <!-- Articles Grid -->
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12">
+        <div v-else class="grid grid-cols-1 gap-x-6 gap-y-10 md:grid-cols-2 lg:grid-cols-3">
           <article v-for="article in articles" :key="article.id" class="group">
-            <router-link :to="`/blog/${article.slug}`" class="block overflow-hidden mb-5 aspect-[16/10] bg-surface-container">
+            <router-link :to="`/blog/${article.slug}`" class="mb-4 block aspect-[4/3] overflow-hidden bg-surface-container">
               <img 
                 v-if="article.featured_image" 
                 :src="resolveImageUrl(article.featured_image)" 
@@ -73,7 +73,7 @@
                 <span v-if="Array.isArray(article.tags) && article.tags[0]" class="bg-primary/5 px-2 py-0.5">{{ article.tags[0] }}</span>
               </div>
               <router-link :to="`/blog/${article.slug}`" class="block group">
-                <h3 class="text-xl font-bold text-on-surface group-hover:text-primary transition-colors leading-snug">
+                <h3 class="text-lg font-bold leading-snug text-on-surface transition-colors group-hover:text-primary">
                   {{ article.title }}
                 </h3>
                 <p class="mt-3 text-sm text-on-surface-variant line-clamp-2 leading-relaxed">

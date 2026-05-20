@@ -10,6 +10,7 @@ import { useWishlistStore } from '../stores/wishlistStore';
 import { useCartStore } from '../stores/cartStore';
 import { useCompareStore } from '../stores/compareStore';
 import { useToast } from '../composables/useToast';
+import PageHero from '../components/layout/PageHero.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -62,6 +63,34 @@ const testimonials = ref<Testimonial[]>([]);
 const banners = ref<BannerItem[]>([]);
 const currentBannerIndex = ref(0);
 const activeBanner = computed(() => banners.value[currentBannerIndex.value] || null);
+const isHomePage = computed(() => route.name === "Home");
+const isCatalogPage = computed(() => route.name === "Products" || route.name === "ProductsByCategory");
+const catalogHeroTitle = computed(() => (route.name === "Products" ? "Katalog Produk" : categoryTitle.value));
+const catalogHeroSubtitle = computed(() => (route.name === "Products"
+  ? "Jelajahi frame, lensa, dan koleksi optik yang siap difilter sesuai kebutuhan."
+  : "Temukan produk pilihan dari kategori ini dengan filter katalog yang lebih rapi."));
+const catalogHeroBreadcrumbs = computed(() => route.name === "Products"
+  ? [{ label: "Katalog Produk" }]
+  : [{ label: "Katalog Produk", to: "/products" }, { label: categoryTitle.value }]);
+
+// Resolve category image URL from relative storage path
+const resolveCategoryImage = (category?: Pick<Category, 'name' | 'slug' | 'image'> | null): string | null => {
+  if (!category?.image) return null;
+  const img = category.image;
+  if (img.startsWith('http')) return img;
+  const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api').replace('/api', '');
+  return `${apiUrl}/storage/${img}`;
+};
+
+
+const categoryTileClass = (active = false, promo = false) => [
+  "group flex min-h-[60px] flex-col items-center justify-center gap-1 rounded-lg border px-2 py-1.5 text-center transition-all duration-200 hover:shadow-card active:scale-95",
+  active
+    ? "border-gold bg-amber-50/80 text-[#7a5c2e] shadow-card ring-1 ring-gold/40"
+    : promo
+      ? "border-red-500/30 bg-red-50 text-red-700 hover:border-red-500/50 hover:bg-red-100"
+      : "border-gold/25 bg-white/60 text-[#6F4E1D] hover:border-gold/50 hover:bg-amber-50/60"
+].join(" ");
 let bannerTimer: ReturnType<typeof setInterval> | null = null;
 
 const categoryTitle = computed(() => {
@@ -455,7 +484,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="relative w-full" style="margin-bottom: -80px;">
+  <div v-if="isHomePage" class="relative w-full" style="margin-bottom: -80px;">
     <section class="relative w-full overflow-hidden" style="height: 520px;">
       <img
         src="/gambar/hero-bg.jpeg"
@@ -481,10 +510,19 @@ onUnmounted(() => {
     </section>
   </div>
 
+  <PageHero
+    v-else
+    :title="catalogHeroTitle"
+    :subtitle="catalogHeroSubtitle"
+    :breadcrumbs="catalogHeroBreadcrumbs"
+    back-to="/products"
+    back-label="Kembali ke Katalog"
+  />
+
   <main class="container-premium pt-4 pb-16 w-full flex-grow relative z-10">
 
     <!-- Banner Carousel Dinamis -->
-    <div v-if="activeBanner" class="relative mb-8 w-full overflow-hidden" style="border-radius: 0; margin-top: 72px;">
+    <div v-if="isHomePage && activeBanner" class="relative mb-8 w-full overflow-hidden" style="border-radius: 0; margin-top: 72px;">
       <div class="relative flex aspect-[16/9] w-full justify-center overflow-hidden bg-graphite shadow-soft sm:aspect-[16/7] md:aspect-auto md:justify-end">
         <img
           v-if="activeBanner.image_path"
@@ -517,65 +555,90 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div class="mb-8" style="padding-top: 80px;">
-      <!-- Baris utama: Semua + Promo + kategori yang terlihat -->
-      <div class="flex flex-wrap items-center gap-2.5">
+    <section v-if="isCatalogPage" class="mb-8 mt-16 rounded-lg border border-mist bg-white/75 px-5 py-5 shadow-soft backdrop-blur-xl md:mt-24 md:px-7 md:py-6">
+      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-[0.3em] text-gold">Katalog Produk</p>
+          <h2 class="mt-2 text-xl font-black tracking-normal md:text-2xl" style="font-family: Cormorant Garamond, serif; color: var(--ink);">{{ categoryTitle }}</h2>
+          <p class="mt-2 max-w-2xl text-sm leading-relaxed text-graphite/65">Pilih kategori, filter detail frame, dan urutkan koleksi tanpa konten promo halaman awal.</p>
+        </div>
+        <div class="grid grid-cols-3 gap-3 text-center md:min-w-[300px]">
+          <div class="rounded-lg border border-mist bg-ivory px-3 py-3">
+            <p class="text-xl font-black text-ink">{{ totalProducts }}</p>
+            <p class="text-[9px] font-black uppercase tracking-[0.2em] text-graphite/45">Produk</p>
+          </div>
+          <div class="rounded-lg border border-mist bg-ivory px-3 py-3">
+            <p class="text-xl font-black text-ink">{{ categories.length }}</p>
+            <p class="text-[9px] font-black uppercase tracking-[0.2em] text-graphite/45">Kategori</p>
+          </div>
+          <div class="rounded-lg border border-mist bg-ivory px-3 py-3">
+            <p class="text-xl font-black text-ink">{{ activeFilterChips.length }}</p>
+            <p class="text-[9px] font-black uppercase tracking-[0.2em] text-graphite/45">Filter</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="mb-6 pt-5 md:pt-8">
+      <div class="mb-3 flex items-end justify-between gap-4">
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-[0.3em] text-gold">Kategori</p>
+          <h2 class="mt-2 text-xl font-black tracking-normal md:text-2xl" style="font-family: Cormorant Garamond, serif; color: var(--ink);">Pilih Koleksi</h2>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9">
         <button
           @click="goToCategory(null)"
-          class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all hover:shadow-card active:scale-95"
-          :style="!categorySlug
-            ? 'background: linear-gradient(135deg, var(--ink), #3d2c0e); color: white; box-shadow: 0 4px 14px rgba(26,18,9,0.25);'
-            : 'background: rgba(184,138,68,0.08); color: #6F4E1D; border: 1px solid rgba(184,138,68,0.3);'"
+          :class="categoryTileClass(categorySlug ? false : hasPromo === false)"
         >
-          <span class="material-symbols-outlined text-sm">apps</span>
-          Semua
+          <!-- "Semua" tile: always uses grid icon -->
+          <span class="material-symbols-outlined text-2xl">apps</span>
+          <span class="text-[10px] font-black uppercase leading-tight tracking-[0.14em]">Semua</span>
         </button>
 
         <button
           @click="togglePromoFilter"
-          class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all hover:shadow-card active:scale-95"
-          :style="hasPromo
-            ? 'background: linear-gradient(135deg, #ef4444, #991b1b); color: white; box-shadow: 0 4px 14px rgba(239,68,68,0.25);'
-            : 'background: rgba(184,138,68,0.08); color: #ef4444; border: 1px solid rgba(239,68,68,0.3);'"
+          :class="categoryTileClass(hasPromo, true)"
         >
-          <span class="material-symbols-outlined text-sm">sell</span>
-          Promo %
+          <!-- "Promo" tile: always uses tag icon -->
+          <span class="material-symbols-outlined text-2xl">local_offer</span>
+          <span class="text-[10px] font-black uppercase leading-tight tracking-[0.14em]">Promo</span>
         </button>
 
-        <!-- Kategori yang selalu terlihat (aktif atau 4 pertama di desktop, 2 di mobile) -->
         <template v-for="(cat, idx) in categories" :key="cat.id">
           <button
-            v-if="categorySlug === cat.slug || (showAllCategories ? true : idx < (isMobileView ? 2 : 4))"
+            v-if="categorySlug === cat.slug || (showAllCategories ? true : idx < (isMobileView ? 2 : 7))"
             @click="goToCategory(cat.slug)"
-            class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all hover:shadow-card active:scale-95"
-            :style="categorySlug === cat.slug
-              ? 'background: linear-gradient(135deg, var(--ink), #3d2c0e); color: white; box-shadow: 0 4px 14px rgba(26,18,9,0.25);'
-              : 'background: rgba(184,138,68,0.08); color: #6F4E1D; border: 1px solid rgba(184,138,68,0.3);'"
+            :class="categoryTileClass(categorySlug === cat.slug)"
           >
-            {{ cat.name }}
-            <span
-              v-if="cat.products_count !== undefined"
-              class="text-[9px] px-1.5 py-0.5 rounded-lg"
-              :style="categorySlug === cat.slug ? 'background: rgba(255,255,255,0.2); color: rgba(255,255,255,0.8);' : 'background: rgba(184,138,68,0.15); color: var(--gold);'"
-            >{{ cat.products_count }}</span>
+            <!-- Category image from backend: mix-blend-multiply hides white PNG bg -->
+            <img
+              v-if="resolveCategoryImage(cat)"
+              :src="resolveCategoryImage(cat)!"
+              :alt="cat.name"
+              class="h-9 w-9 object-contain mix-blend-multiply transition-transform duration-200 group-hover:scale-110"
+              loading="lazy"
+            />
+            <!-- Fallback icon when no image -->
+            <span v-else class="material-symbols-outlined text-2xl">category</span>
+              <span class="line-clamp-2 text-[10px] font-black uppercase leading-tight tracking-[0.12em]">{{ cat.name }}</span>
           </button>
         </template>
 
-        <!-- Tombol toggle semua kategori -->
         <button
-          v-if="categories.length > (isMobileView ? 2 : 4)"
-          @click="showAllCategories = !showAllCategories"
-          class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all hover:shadow-card active:scale-95"
-          style="background: rgba(184,138,68,0.08); color: #6F4E1D; border: 1px solid rgba(184,138,68,0.3);"
+          v-if="categories.length > (isMobileView ? 2 : 7)"
+          @click="showAllCategories = showAllCategories ? false : true"
+          class="group flex min-h-[76px] flex-col items-center justify-center gap-1.5 rounded-lg border border-gold/25 bg-gold/10 px-2 py-2 text-center text-[#6F4E1D] transition-all duration-200 hover:border-gold/50 hover:bg-white hover:shadow-card active:scale-95"
         >
-          <span class="material-symbols-outlined text-sm transition-transform" :style="showAllCategories ? 'transform: rotate(180deg)' : ''">expand_more</span>
-          {{ showAllCategories ? 'Sembunyikan' : `+${categories.length - (isMobileView ? 2 : 4)} Kategori` }}
+          <span class="material-symbols-outlined text-xl transition-transform">expand_more</span>
+          <span class="text-[10px] font-black uppercase leading-tight tracking-[0.14em]">{{ showAllCategories ? "Tutup" : "+" + (categories.length - (isMobileView ? 2 : 7)) }}</span>
         </button>
       </div>
     </div>
 
     <div class="-mx-4 mb-6 flex flex-col gap-4 border-y border-mist bg-ivory px-4 py-4 md:mx-0 md:flex-row md:items-center md:justify-between md:rounded-lg md:border">
-      <p class="text-sm font-medium" style="color: var(--taupe);">
+      <p class="text-sm font-medium" style="color: #5c4a3a;">
         <span v-if="!isLoading && !hasError">
           Menampilkan <strong style="color: var(--ink);">{{ totalProducts }}</strong> produk
         </span>
@@ -861,7 +924,7 @@ onUnmounted(() => {
         </div>
 
         <div class="p-3 md:p-5 flex flex-col flex-grow min-w-0">
-          <span class="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] mb-1" style="color: var(--taupe);">
+          <span class="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] mb-1" style="color: #5c4a3a;">
             {{ product.name }}
           </span>
           <h3
@@ -871,7 +934,7 @@ onUnmounted(() => {
           >
             {{ product.brand || 'Optik Medio' }}
           </h3>
-          <div class="grid grid-cols-1 gap-1.5 mb-2 md:mb-3 text-[10px] md:text-[11px]" style="color: var(--taupe);">
+          <div class="grid grid-cols-1 gap-1.5 mb-2 md:mb-3 text-[10px] md:text-[11px]" style="color: #5c4a3a;">
             <span class="flex items-center gap-1.5 min-w-0">
               <span class="material-symbols-outlined text-sm" style="color: var(--gold);">star</span>
               {{ Number(product.avg_rating || 0).toFixed(1) }} · {{ product.review_count || 0 }} ulasan
@@ -1011,7 +1074,7 @@ onUnmounted(() => {
             />
           </div>
           <div class="p-4">
-            <p class="text-[9px] font-black uppercase tracking-[0.2em] mb-2" style="color: var(--taupe);">{{ lens.brand || 'Lensa' }}</p>
+            <p class="text-[9px] font-black uppercase tracking-[0.2em] mb-2" style="color: #5c4a3a;">{{ lens.brand || 'Lensa' }}</p>
             <h3 class="font-bold text-sm leading-tight line-clamp-2 min-h-[2.5rem]" style="color: var(--ink);">{{ lens.name }}</h3>
             <div class="mt-4 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest" style="color: var(--gold);">
               Informasi
@@ -1022,81 +1085,93 @@ onUnmounted(() => {
       </div>
     </section>
 
-    <section class="mt-24 mb-12">
-      <div class="flex flex-col items-center justify-between gap-4 text-center md:flex-row md:items-end md:text-left mb-10">
-        <div class="text-center md:text-left">
-          <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-3" style="color: var(--gold);">Wawasan & Tips</p>
-          <h2 class="text-3xl md:text-4xl font-black tracking-normal" style="font-family: 'Cormorant Garamond', serif; color: var(--ink);">Blog & Edukasi</h2>
-          <div class="w-12 h-1 bg-gold mx-auto mt-4 md:mx-0"></div>
-        </div>
-        <router-link to="/blog" class="text-xs font-black uppercase tracking-widest text-gold hover:text-gold transition-all flex items-center gap-2 group">
+    <section v-if="isHomePage" class="mt-24 mb-12">
+      <!-- Header: fully centered, consistent with Review section -->
+      <div class="text-center mb-10">
+        <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-3" style="color: var(--gold);">Wawasan & Tips</p>
+        <h2 class="text-3xl md:text-4xl font-black tracking-normal" style="font-family: 'Cormorant Garamond', serif; color: var(--ink);">Blog & Edukasi</h2>
+        <div class="w-12 h-1 bg-gold mx-auto mt-4"></div>
+        <router-link to="/blog" class="inline-flex items-center gap-2 mt-5 text-xs font-black uppercase tracking-widest text-gold hover:text-gold transition-all group">
           Lihat Semua Artikel
           <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
         </router-link>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <!-- Blog grid: 2 cols mobile, 3 cols desktop -->
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
         <div class="group cursor-pointer" @click="router.push('/blog/cara-memilih-frame-sesuai-bentuk-wajah')">
-          <div class="aspect-video overflow-hidden mb-5 relative">
+          <div class="aspect-[4/3] overflow-hidden mb-3 relative">
             <img src="/blog_feature_1_face_shape_1777451535680.png" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
             <div class="absolute inset-0 bg-graphite/20 group-hover:bg-transparent transition-all"></div>
           </div>
-          <h3 class="font-bold text-lg mb-2 group-hover:text-gold transition-colors" style="font-family: 'Cormorant Garamond', serif;">Cara Memilih Frame Sesuai Bentuk Wajah</h3>
-          <p class="text-sm text-graphite/65 leading-relaxed line-clamp-2">Temukan panduan lengkap untuk mendapatkan kacamata yang paling pas dan menunjang penampilan Anda.</p>
+          <h3 class="font-bold text-sm md:text-lg mb-1 md:mb-2 group-hover:text-gold transition-colors leading-snug" style="font-family: 'Cormorant Garamond', serif;">Cara Memilih Frame Sesuai Bentuk Wajah</h3>
+          <p class="hidden md:block text-sm text-graphite/65 leading-relaxed line-clamp-2">Temukan panduan lengkap untuk mendapatkan kacamata yang paling pas dan menunjang penampilan Anda.</p>
         </div>
         <div class="group cursor-pointer" @click="router.push('/blog/pentingnya-perlindungan-lensa-blueray')">
-          <div class="aspect-video overflow-hidden mb-5 relative">
+          <div class="aspect-[4/3] overflow-hidden mb-3 relative">
             <img src="/blog_feature_2_blueray_lens_1777451550672.png" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
             <div class="absolute inset-0 bg-graphite/20 group-hover:bg-transparent transition-all"></div>
           </div>
-          <h3 class="font-bold text-lg mb-2 group-hover:text-gold transition-colors" style="font-family: 'Cormorant Garamond', serif;">Pentingnya Perlindungan Lensa Blueray</h3>
-          <p class="text-sm text-graphite/65 leading-relaxed line-clamp-2">Lindungi mata Anda dari radiasi layar digital dengan teknologi lensa terkini dari Optik Medio.</p>
+          <h3 class="font-bold text-sm md:text-lg mb-1 md:mb-2 group-hover:text-gold transition-colors leading-snug" style="font-family: 'Cormorant Garamond', serif;">Pentingnya Perlindungan Lensa Blueray</h3>
+          <p class="hidden md:block text-sm text-graphite/65 leading-relaxed line-clamp-2">Lindungi mata Anda dari radiasi layar digital dengan teknologi lensa terkini dari Optik Medio.</p>
         </div>
-        <div class="group cursor-pointer" @click="router.push('/blog/update-tren-kacamata-2026')">
-          <div class="aspect-video overflow-hidden mb-5 relative">
+        <div class="group cursor-pointer col-span-2 md:col-span-1" @click="router.push('/blog/update-tren-kacamata-2026')">
+          <div class="aspect-[16/7] md:aspect-[4/3] overflow-hidden mb-3 relative">
             <img src="/blog_feature_3_trends_2026_1777451566973.png" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
             <div class="absolute inset-0 bg-graphite/20 group-hover:bg-transparent transition-all"></div>
           </div>
-          <h3 class="font-bold text-lg mb-2 group-hover:text-gold transition-colors" style="font-family: 'Cormorant Garamond', serif;">Update Tren Kacamata 2026</h3>
-          <p class="text-sm text-graphite/65 leading-relaxed line-clamp-2">Jelajahi gaya terbaru yang akan mendominasi tahun ini, mulai dari gaya retro hingga futuristik.</p>
+          <h3 class="font-bold text-sm md:text-lg mb-1 md:mb-2 group-hover:text-gold transition-colors leading-snug" style="font-family: 'Cormorant Garamond', serif;">Update Tren Kacamata 2026</h3>
+          <p class="hidden md:block text-sm text-graphite/65 leading-relaxed line-clamp-2">Jelajahi gaya terbaru yang akan mendominasi tahun ini, mulai dari gaya retro hingga futuristik.</p>
         </div>
       </div>
     </section>
 
-    <section v-if="testimonials.length > 0" class="mt-24 mb-16 px-6 md:px-0">
+    <section v-if="isHomePage && testimonials.length > 0" class="mt-24 mb-16 px-6 md:px-0">
       <div class="text-center mb-12">
         <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-3" style="color: var(--gold);">Apa Kata Pelanggan Kami</p>
         <h2 class="text-3xl md:text-4xl font-black tracking-normal" style="font-family: 'Cormorant Garamond', serif; color: var(--ink);">Review Google Maps</h2>
         <div class="w-12 h-1 bg-gold mx-auto mt-4"></div>
       </div>
 
-      <div class="flex overflow-x-auto md:grid md:grid-cols-3 2xl:grid-cols-4 gap-6 md:gap-8 pb-4 md:pb-0 snap-x snap-mandatory scrollbar-hide">
-        <div 
-          v-for="(t, idx) in testimonials" 
+      <!-- Mobile: horizontal scroll centered; Desktop: flex-wrap centered -->
+      <div class="flex overflow-x-auto md:flex-wrap md:overflow-visible md:justify-center gap-4 md:gap-6 pb-4 md:pb-0 snap-x snap-mandatory md:snap-none scrollbar-hide"
+           style="scroll-padding-inline: calc((100% - 72vw) / 2);">
+        <!-- Left spacer so first card is centered on mobile -->
+        <div class="shrink-0 w-[calc((100vw-72vw)/2)] md:hidden" aria-hidden="true"></div>
+
+        <div
+          v-for="(t, idx) in testimonials"
           :key="idx"
-          class="min-w-[85vw] md:min-w-0 p-8 relative group transition-all duration-500 hover:shadow-soft border border-mist snap-center"
+          class="shrink-0 w-[72vw] sm:w-[54vw] md:w-[30%] md:max-w-[320px] px-5 py-6 group transition-all duration-500 hover:shadow-soft border border-mist snap-center md:snap-align-none flex flex-col items-center text-center"
           style="background: white;"
         >
-          <div class="absolute -top-4 -left-4 w-12 h-12 flex items-center justify-center bg-graphite text-gold">
-            <span class="material-symbols-outlined">format_quote</span>
+          <!-- Quote icon -->
+          <div class="w-9 h-9 flex items-center justify-center bg-graphite text-gold mb-4">
+            <span class="material-symbols-outlined text-base">format_quote</span>
           </div>
-          
-          <div class="flex gap-1 mb-4">
-            <span v-for="star in t.rating" :key="star" class="material-symbols-outlined text-sm" style="color: #fbbf24;">star</span>
+
+          <!-- Stars -->
+          <div class="flex justify-center gap-0.5 mb-3">
+            <span v-for="star in t.rating" :key="star" class="material-symbols-outlined text-xs" style="color: #fbbf24;">star</span>
           </div>
-          
-          <p class="text-graphite/80 italic leading-relaxed mb-6">"{{ t.review }}"</p>
-          
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full flex items-center justify-center font-black text-xs" style="background: var(--ivory); color: var(--gold);">
+
+          <!-- Review text -->
+          <p class="w-full text-graphite/80 italic text-sm leading-relaxed mb-4 text-center line-clamp-4">"{{ t.review }}"</p>
+
+          <!-- Reviewer info -->
+          <div class="flex flex-col items-center gap-1.5 mt-auto">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs" style="background: var(--ivory); color: var(--gold);">
               {{ t.name.charAt(0) }}
             </div>
-            <div>
-              <h4 class="font-bold text-sm text-ink">{{ t.name }}</h4>
-              <p class="text-[10px] uppercase tracking-widest text-graphite/45">Google Reviewer</p>
+            <div class="text-center">
+              <h4 class="font-bold text-xs text-ink">{{ t.name }}</h4>
+              <p class="text-[9px] uppercase tracking-widest text-graphite/45">Google Reviewer</p>
             </div>
           </div>
         </div>
+
+        <!-- Right spacer so last card is centered on mobile -->
+        <div class="shrink-0 w-[calc((100vw-72vw)/2)] md:hidden" aria-hidden="true"></div>
       </div>
     </section>
   </main>

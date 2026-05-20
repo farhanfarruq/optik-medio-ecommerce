@@ -167,6 +167,7 @@ const drawerTop = computed(() => {
 });
 
 const mobileNavItems = [
+  { to: '/', label: 'Beranda', icon: 'home' },
   { to: '/products', label: 'Produk', icon: 'storefront' },
   { to: '/face-shape-quiz', label: 'Quiz Bentuk Wajah', icon: 'quiz' },
   { to: '/virtual-try-on', label: 'Coba Virtual', icon: 'face_retouching_natural' },
@@ -254,6 +255,14 @@ const mobileNavItems = [
       
       <!-- Center Links (desktop only) -->
       <div class="hidden md:flex items-center justify-center gap-1 flex-grow">
+        <router-link
+          to="/"
+          class="rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors"
+          :class="isLightNav ? 'hover:bg-ivory' : 'hover:bg-white/10'"
+          :style="navTextStyle"
+        >
+          Beranda
+        </router-link>
         <router-link
           to="/products"
           class="rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors"

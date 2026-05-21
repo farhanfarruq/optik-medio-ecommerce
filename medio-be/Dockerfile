@@ -24,6 +24,7 @@ COPY . .
 # the public disk during image build. storage:link exposes them at /storage.
 RUN mkdir -p storage/app/public/products/foto_produk \
     && cp -R public/images/foto_produk/. storage/app/public/products/foto_produk/
+RUN node scripts/prepare-public-storage-assets.js
 
 # Install PHP dependencies (production, no dev)
 RUN composer install --no-dev --optimize-autoloader --no-interaction

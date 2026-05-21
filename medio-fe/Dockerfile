@@ -1,19 +1,25 @@
-FROM node:20-alpine
+# Build stage
+FROM node:20-alpine AS build
 
-# Set working directory
 WORKDIR /app
-
-# Copy package.json and package-lock.json
 COPY package*.json ./
+RUN npm ci
 
-# Install dependencies
-RUN npm install
-
-# Copy the rest of the application
 COPY . .
 
-# Expose the port Vite runs on
-EXPOSE 5173
+# VITE_API_URL di-inject saat build
+ARG VITE_API_URL=http://localhost:8000/api
+ENV VITE_API_URL=$VITE_API_URL
 
-# Start the development server
-CMD ["npm", "run", "dev", "--", "--host"]
+RUN npm run build
+
+# Production stage
+FROM node:20-alpine AS production
+
+RUN npm install -g serve
+
+WORKDIR /app
+COPY --from=build /app/dist ./dist
+
+EXPOSE 3000
+CMD ["serve", "-s", "dist", "-l", "3000"]

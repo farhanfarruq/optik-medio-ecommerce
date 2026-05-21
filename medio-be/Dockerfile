@@ -1,47 +1,38 @@
-FROM php:8.3-fpm-alpine
+FROM php:8.3-cli-alpine
 
-# Set working directory
 WORKDIR /var/www/html
 
-# Install system dependencies
+# System dependencies
 RUN apk add --no-cache \
-    curl \
-    libpng-dev \
-    libxml2-dev \
-    zip \
-    unzip \
-    git \
-    oniguruma-dev \
-    libzip-dev \
-    freetype-dev \
-    libjpeg-turbo-dev \
-    icu-dev
+    curl libpng-dev libxml2-dev zip unzip git \
+    oniguruma-dev libzip-dev freetype-dev \
+    libjpeg-turbo-dev icu-dev
 
-# Install PHP extensions
+# PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
-    pdo_mysql \
-    mbstring \
-    exif \
-    pcntl \
-    bcmath \
-    gd \
-    zip \
-    intl
+    pdo_mysql mbstring exif pcntl bcmath gd zip intl opcache
 
-# Install Composer
+# Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copy existing application directory contents
+# Copy source
 COPY . .
 
-# Set permissions
-RUN mkdir -p /var/www/html/storage/framework/cache \
-    /var/www/html/storage/framework/sessions \
-    /var/www/html/storage/framework/views \
-    /var/www/html/storage/logs \
-    /var/www/html/bootstrap/cache \
-    && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+# Install PHP dependencies (production, no dev)
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-EXPOSE 9000
-CMD ["php-fpm"]
+# Permissions
+RUN mkdir -p storage/framework/{cache,sessions,views} \
+    storage/logs bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
+EXPOSE 8000
+
+# Start: cache config → migrate → serve
+CMD php artisan config:cache && \
+    php artisan route:cache && \
+    php artisan view:cache && \
+    php artisan storage:link || true && \
+    php artisan migrate --force && \
+    php -S 0.0.0.0:${PORT:-8000} -t public/

@@ -63,6 +63,39 @@ class OrderRepository {
   }
 
   /**
+   * Sync payment status dari Xendit gateway.
+   */
+  async syncPayment(id: number): Promise<{ message: string; status: string; order: any }> {
+    const { data } = await apiClient.post(`/orders/${id}/sync-payment`);
+    return data;
+  }
+
+  /**
+   * Polling ringan untuk cek status pembayaran.
+   * Digunakan oleh WaitingPayment page.
+   */
+  async getPaymentStatus(id: number): Promise<{
+    order_id: number;
+    order_number: string;
+    order_status: string;
+    is_payment_verified: boolean;
+    paid_at: string | null;
+    payment: {
+      provider: string;
+      status: string;
+      payment_type: string | null;
+      payment_method: string | null;
+      checkout_url: string | null;
+      paid_at: string | null;
+    } | null;
+    should_redirect: boolean;
+    is_expired: boolean;
+  }> {
+    const { data } = await apiClient.get(`/orders/${id}/payment-status`);
+    return data;
+  }
+
+  /**
    * Konfirmasi penerimaan barang oleh customer.
    * Returns points_earned dan updated order.
    */

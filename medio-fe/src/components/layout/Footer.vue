@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { logger } from '../../core/utils/logger';
+import { ref, onMounted, computed } from 'vue';
 import { settingRepository, type AppSettings } from '../../repositories/SettingRepository';
 
 const settings = ref<AppSettings | null>(null);
@@ -8,101 +9,366 @@ onMounted(async () => {
   try {
     settings.value = await settingRepository.getSettings();
   } catch (error) {
-    console.error('Failed to load settings', error);
+    logger.error('Failed to load settings', error);
   }
 });
+
+const currentYear = computed(() => new Date().getFullYear());
+const storeAddress = computed(() => settings.value?.store_address || 'Pasar, Bandarsari, Lampung Tengah');
+const storePhone = computed(() => settings.value?.store_phone || '0813-1196-9585');
+const storeHours = computed(() => settings.value?.store_opening_hours || 'Buka 09.00 — 20.30');
+const storeLocationUrl = computed(() => settings.value?.store_location_url || '#');
 </script>
 
 <template>
-  <footer class="w-full relative overflow-hidden" style="background: #120e09; color: #f5f2ee;">
-    <!-- Decorative background elements -->
-    <div class="absolute top-0 left-0 w-full h-[1px]" style="background: linear-gradient(90deg, transparent, rgba(193,154,81,0.3), transparent);"></div>
-    <div class="absolute -bottom-24 -right-24 w-96 h-96 rounded-full" style="background: radial-gradient(circle, rgba(193,154,81,0.05) 0%, transparent 70%);"></div>
-
-    <div class="max-w-[1440px] mx-auto px-6 md:px-12 py-16 relative z-10">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-        
-        <!-- Brand Info -->
-        <div class="space-y-6">
+  <footer class="site-footer">
+    <div class="container-premium site-footer__inner">
+      <!-- Trust strip — high-credibility row, sebelum link grid -->
+      <ul class="site-footer__trust">
+        <li class="site-footer__trust-tile">
+          <span class="material-symbols-outlined">verified</span>
           <div>
-            <h2 class="text-2xl font-black tracking-tight" style="font-family: 'Outfit', sans-serif; color: #f5f2ee;">
-              Optik <span style="color: #c19a51;">Medio</span>
-            </h2>
-            <div class="h-1 w-12 mt-2" style="background: #c19a51;"></div>
+            <p class="site-footer__trust-title">Produk Original</p>
+            <p class="site-footer__trust-meta">Distribusi resmi dengan kartu garansi</p>
           </div>
-          <p class="text-sm leading-relaxed text-stone-400 max-w-xs">
-            Destinasi kacamata premium terpercaya di Lampung Tengah. Kami menghadirkan koleksi frame terkini dengan pelayanan jujur dan berpengalaman.
+        </li>
+        <li class="site-footer__trust-tile">
+          <span class="material-symbols-outlined">visibility</span>
+          <div>
+            <p class="site-footer__trust-title">Konsultasi Optik</p>
+            <p class="site-footer__trust-meta">Refraksi & rekomendasi lensa</p>
+          </div>
+        </li>
+        <li class="site-footer__trust-tile">
+          <span class="material-symbols-outlined">workspace_premium</span>
+          <div>
+            <p class="site-footer__trust-title">Garansi & Servis</p>
+            <p class="site-footer__trust-meta">Klaim garansi mudah</p>
+          </div>
+        </li>
+        <li class="site-footer__trust-tile">
+          <span class="material-symbols-outlined">storefront</span>
+          <div>
+            <p class="site-footer__trust-title">Pickup di Toko</p>
+            <p class="site-footer__trust-meta">Fitting & ambil sendiri</p>
+          </div>
+        </li>
+      </ul>
+
+      <div class="site-footer__grid">
+        <section class="site-footer__brand">
+          <div class="site-footer__brand-mark">
+            <h2 class="site-footer__logo">Optik <span class="text-gold">Medio</span></h2>
+            <span class="site-footer__rule" aria-hidden="true"></span>
+          </div>
+          <p class="site-footer__lede">
+            Destinasi optical commerce di Lampung Tengah untuk frame premium, lensa berkualitas, konsultasi resep, dan pickup di toko.
           </p>
-          <div class="flex items-center gap-4">
-            <a href="#" class="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110" style="background: rgba(193,154,81,0.1); border: 1px solid rgba(193,154,81,0.2);">
-              <i class="material-symbols-outlined text-sm" style="color: #c19a51;">facebook</i>
-            </a>
-            <a href="#" class="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110" style="background: rgba(193,154,81,0.1); border: 1px solid rgba(193,154,81,0.2);">
-              <span class="text-[10px] font-bold" style="color: #c19a51;">IG</span>
-            </a>
-            <a href="#" class="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110" style="background: rgba(193,154,81,0.1); border: 1px solid rgba(193,154,81,0.2);">
-              <span class="text-[10px] font-bold" style="color: #c19a51;">WA</span>
-            </a>
-          </div>
-        </div>
 
-        <!-- Contact Info -->
-        <div class="space-y-6">
-          <h3 class="text-xs font-black uppercase tracking-[0.2em] text-stone-300">Hubungi Kami</h3>
-          <ul class="space-y-4">
-            <li class="flex items-start gap-3">
-              <span class="material-symbols-outlined text-lg" style="color: #c19a51;">location_on</span>
-              <span class="text-sm text-stone-400">{{ settings?.store_address || 'Pasar, Bandarsari, Lampung Tengah' }}</span>
+          <ul class="site-footer__social" aria-label="Media sosial Optik Medio">
+            <li>
+              <a href="#" class="site-footer__social-link" aria-label="Instagram">
+                <span class="material-symbols-outlined">photo_camera</span>
+              </a>
             </li>
-            <li class="flex items-center gap-3">
-              <span class="material-symbols-outlined text-lg" style="color: #c19a51;">call</span>
-              <span class="text-sm text-stone-400">{{ settings?.store_phone || '0813-1196-9585' }}</span>
+            <li>
+              <a href="#" class="site-footer__social-link" aria-label="Facebook">
+                <span class="material-symbols-outlined">public</span>
+              </a>
             </li>
-            <li class="flex items-center gap-3">
-              <span class="material-symbols-outlined text-lg" style="color: #c19a51;">schedule</span>
-              <span class="text-sm text-stone-400">{{ settings?.store_opening_hours || 'Tutup pukul 20.30' }}</span>
+            <li>
+              <a
+                :href="storePhone ? `https://wa.me/${storePhone.replace(/\D/g, '')}` : '#'"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="site-footer__social-link"
+                aria-label="WhatsApp"
+              >
+                <span class="material-symbols-outlined">chat</span>
+              </a>
             </li>
           </ul>
-        </div>
+        </section>
 
-        <!-- Links -->
-        <div class="space-y-6">
-          <h3 class="text-xs font-black uppercase tracking-[0.2em] text-stone-300">Navigasi</h3>
-          <ul class="space-y-3">
-            <li><a href="/" class="text-sm text-stone-400 hover:text-white transition-colors">Beranda</a></li>
-            <li><a href="/products" class="text-sm text-stone-400 hover:text-white transition-colors">Koleksi Kacamata</a></li>
-            <li><a href="/faq" class="text-sm text-stone-400 hover:text-white transition-colors">FAQ & Bantuan</a></li>
-            <li><a :href="settings?.store_location_url" target="_blank" class="text-sm text-stone-400 hover:text-white transition-colors">Cek Lokasi (Maps)</a></li>
+        <nav class="site-footer__nav" aria-label="Belanja">
+          <h3 class="site-footer__heading">Belanja</h3>
+          <ul class="site-footer__list">
+            <li><router-link to="/products" class="site-footer__link">Semua Koleksi</router-link></li>
+            <li><router-link to="/products?has_promo=true" class="site-footer__link">Promo Aktif</router-link></li>
+            <li><router-link to="/face-shape-quiz" class="site-footer__link">Quiz Bentuk Wajah</router-link></li>
+            <li><router-link to="/virtual-try-on" class="site-footer__link">Coba Virtual</router-link></li>
+            <li><router-link to="/compare" class="site-footer__link">Bandingkan Produk</router-link></li>
           </ul>
-        </div>
+        </nav>
 
-        <!-- Maps Preview / Action -->
-        <div class="space-y-6">
-          <h3 class="text-xs font-black uppercase tracking-[0.2em] text-stone-300">Temukan Kami</h3>
-          <div class="relative group cursor-pointer overflow-hidden rounded-sm aspect-video bg-stone-800 flex items-center justify-center">
-            <img src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&q=80&w=400" class="absolute inset-0 w-full h-full object-cover opacity-40 grayscale transition-all duration-700 group-hover:scale-110 group-hover:grayscale-0" />
-            <a :href="settings?.store_location_url" target="_blank" class="relative z-10 flex flex-col items-center gap-2 px-6 py-3 bg-stone-900/80 backdrop-blur-md border border-stone-700 group-hover:border-amber-600 transition-all">
-               <span class="material-symbols-outlined text-amber-500">directions</span>
-               <span class="text-[10px] font-black uppercase tracking-widest text-white">Buka di Maps</span>
-            </a>
-          </div>
-        </div>
+        <nav class="site-footer__nav" aria-label="Bantuan">
+          <h3 class="site-footer__heading">Bantuan</h3>
+          <ul class="site-footer__list">
+            <li><router-link to="/appointment" class="site-footer__link">Booking Konsultasi</router-link></li>
+            <li><router-link to="/blog" class="site-footer__link">Blog & Artikel</router-link></li>
+            <li><router-link to="/faq" class="site-footer__link">FAQ</router-link></li>
+            <li><router-link to="/loyalty" class="site-footer__link">Program Loyalty</router-link></li>
+            <li><router-link to="/complaints/new" class="site-footer__link">Komplain</router-link></li>
+          </ul>
+        </nav>
 
+        <section class="site-footer__contact" aria-label="Kontak Optik Medio">
+          <h3 class="site-footer__heading">Hubungi Kami</h3>
+          <ul class="site-footer__contact-list">
+            <li>
+              <span class="material-symbols-outlined">location_on</span>
+              <span>{{ storeAddress }}</span>
+            </li>
+            <li>
+              <span class="material-symbols-outlined">call</span>
+              <a :href="`tel:${storePhone}`" class="site-footer__link">{{ storePhone }}</a>
+            </li>
+            <li>
+              <span class="material-symbols-outlined">schedule</span>
+              <span>{{ storeHours }}</span>
+            </li>
+          </ul>
+          <a
+            :href="storeLocationUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="site-footer__map-cta"
+          >
+            <span class="material-symbols-outlined">directions</span>
+            <span>Petunjuk ke Toko</span>
+          </a>
+        </section>
       </div>
 
-      <div class="mt-16 pt-8 border-t border-stone-800/50 flex flex-col md:flex-row justify-between items-center gap-4">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-stone-500">
-          © 2026 Optik Medio. All Rights Reserved.
-        </p>
-        <div class="flex items-center gap-6">
-          <a href="#" class="text-[10px] font-bold uppercase tracking-widest text-stone-500 hover:text-stone-300">Syarat & Ketentuan</a>
-          <a href="#" class="text-[10px] font-bold uppercase tracking-widest text-stone-500 hover:text-stone-300">Kebijakan Privasi</a>
-        </div>
+      <div class="site-footer__bottom">
+        <p class="site-footer__copy">© {{ currentYear }} Optik Medio. Seluruh hak cipta dilindungi.</p>
+        <ul class="site-footer__legal">
+          <li><router-link to="/terms" class="site-footer__link">Syarat & Ketentuan</router-link></li>
+          <li><router-link to="/privacy" class="site-footer__link">Kebijakan Privasi</router-link></li>
+          <li><router-link to="/faq" class="site-footer__link">FAQ</router-link></li>
+        </ul>
       </div>
     </div>
   </footer>
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap');
+.site-footer {
+  width: 100%;
+  background: var(--graphite);
+  color: var(--ivory);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.site-footer__inner {
+  padding-top: clamp(48px, 6vw, 88px);
+  padding-bottom: clamp(28px, 3vw, 36px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(28px, 4vw, 56px);
+}
+
+/* Trust strip */
+.site-footer__trust {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+@media (min-width: 768px) {
+  .site-footer__trust {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: 22px;
+  }
+}
+
+.site-footer__trust-tile {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 4px;
+}
+
+.site-footer__trust-tile .material-symbols-outlined {
+  color: var(--gold);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.site-footer__trust-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.3;
+}
+
+.site-footer__trust-meta {
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(247, 243, 236, 0.62);
+  line-height: 1.4;
+}
+
+/* Main grid */
+.site-footer__grid {
+  display: grid;
+  gap: clamp(28px, 3vw, 40px);
+}
+
+@media (min-width: 768px) {
+  .site-footer__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1024px) {
+  .site-footer__grid { grid-template-columns: 1.4fr 1fr 1fr 1.1fr; }
+}
+
+/* Brand column */
+.site-footer__brand-mark {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.site-footer__logo {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(1.75rem, 1.4rem + 0.6vw, 2.125rem);
+  color: var(--ivory);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.site-footer__rule {
+  display: block;
+  width: 56px;
+  height: 1px;
+  background: rgba(184, 138, 68, 0.7);
+}
+
+.site-footer__lede {
+  margin-top: 16px;
+  max-width: 38ch;
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(247, 243, 236, 0.68);
+}
+
+.site-footer__social {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.site-footer__social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--gold);
+  transition: border-color var(--motion-base), background-color var(--motion-base), color var(--motion-base);
+}
+
+.site-footer__social-link:hover {
+  border-color: rgba(184, 138, 68, 0.55);
+  background: rgba(184, 138, 68, 0.10);
+  color: #fff;
+}
+
+/* Headings + lists */
+.site-footer__heading {
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: #fff;
+  margin-bottom: 18px;
+}
+
+.site-footer__list {
+  display: grid;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.site-footer__link {
+  color: rgba(247, 243, 236, 0.66);
+  transition: color var(--motion-base) var(--easing-standard);
+}
+.site-footer__link:hover { color: var(--ivory); }
+
+/* Contact */
+.site-footer__contact-list {
+  display: grid;
+  gap: 14px;
+  font-size: 14px;
+  color: rgba(247, 243, 236, 0.72);
+}
+
+.site-footer__contact-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.site-footer__contact-list .material-symbols-outlined {
+  color: var(--gold);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.site-footer__map-cta {
+  margin-top: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(184, 138, 68, 0.42);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  transition: background-color var(--motion-base);
+}
+
+.site-footer__map-cta:hover { background: rgba(184, 138, 68, 0.10); }
+
+/* Bottom legal */
+.site-footer__bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(247, 243, 236, 0.45);
+}
+
+@media (min-width: 768px) {
+  .site-footer__bottom {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.site-footer__legal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
 </style>

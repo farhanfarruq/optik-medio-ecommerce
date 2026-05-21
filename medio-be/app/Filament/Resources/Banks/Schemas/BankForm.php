@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Banks\Schemas;
 
+use App\Filament\Support\PublicUpload;
 use Filament\Schemas\Schema;
 
 class BankForm
@@ -29,10 +30,8 @@ class BankForm
                             ->label('Nomor Rekening')
                             ->required()
                             ->maxLength(50),
-                        \Filament\Forms\Components\FileUpload::make('logo')
-                            ->label('Logo Bank')
-                            ->image()
-                            ->directory('banks'),
+                        PublicUpload::image(\Filament\Forms\Components\FileUpload::make('logo'), 'banks', '120px')
+                            ->label('Logo Bank'),
                         \Filament\Forms\Components\Toggle::make('is_active')
                             ->label('Aktif')
                             ->default(true),

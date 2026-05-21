@@ -261,13 +261,20 @@ class ImportOptikProducts extends Command
 
         // Cari di beberapa lokasi umum
         $candidates = [
-            base_path('data_sunglasses.json'),         // Kacamata Hitam
+            // Lokasi resmi (di-commit di repo): database/seeders/data/
+            database_path('seeders/data/data_sunglasses.json'),     // Kacamata Hitam
+            database_path('seeders/data/data_semua_merek.json'),    // Informasi merek lensa
+            database_path('seeders/data/data_lensa_kontak.json'),   // Lensa kontak
+            database_path('seeders/data/data_optik_lengkap.json'),  // Frame
+
+            // Fallback legacy paths (akan dihapus pada rilis berikutnya)
+            base_path('data_sunglasses.json'),
             base_path('../data_sunglasses.json'),
-            base_path('data_semua_merek.json'),       // Informasi merek lensa
+            base_path('data_semua_merek.json'),
             base_path('../data_semua_merek.json'),
-            base_path('data_lensa_kontak.json'),       // Lensa kontak
+            base_path('data_lensa_kontak.json'),
             base_path('../data_lensa_kontak.json'),
-            base_path('data_optik_lengkap.json'),       // Frame
+            base_path('data_optik_lengkap.json'),
             base_path('../data_optik_lengkap.json'),
         ];
 

@@ -16,7 +16,9 @@ class StoreCloseResource extends Resource
 {
     protected static ?string $model = StoreClose::class;
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-no-symbol';
-    protected static string | \UnitEnum | null $navigationGroup = 'Master Data';
+    protected static string | \UnitEnum | null $navigationGroup = 'Pengaturan';
+    protected static ?string $navigationLabel = 'Jadwal Tutup';
+    protected static ?int $navigationSort = 5;
 
     public static function form(Schema $schema): Schema
     {

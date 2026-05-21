@@ -5,6 +5,19 @@ export interface Product {
   slug: string;
   description: string;
   brand: string;
+  gender?: string | null;
+  frame_shape?: string | null;
+  frame_material?: string | null;
+  frame_color?: string | null;
+  face_size_fit?: string | null;
+  lens_width?: number | null;
+  bridge_width?: number | null;
+  temple_length?: number | null;
+  frame_width?: number | null;
+  google_product_category?: string | null;
+  gtin?: string | null;
+  mpn?: string | null;
+  condition?: string | null;
   price: number;
   stock: number;
   weight: number;
@@ -13,6 +26,7 @@ export interface Product {
   images: string[];
   is_active: boolean;
   is_prescription_required: boolean;
+  prescription_rules?: Record<string, string | number | boolean> | null;
   image_url?: string;
   brand_name?: string;
   buy_promos?: any[];

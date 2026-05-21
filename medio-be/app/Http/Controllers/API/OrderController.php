@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Actions\Order\DecrementProductStockAction;
+use App\Actions\Order\RestoreProductStockAction;
 use App\Http\Controllers\Controller;
 use App\Models\Bank;
 use App\Models\LoyaltyPointLog;
@@ -10,7 +12,11 @@ use App\Models\Product;
 use App\Models\Discount;
 use App\Models\Promo;
 use App\Models\ShippingAddress;
+use App\Models\LensCoating;
+use App\Models\LensOption;
+use App\Models\PrescriptionProfile;
 use App\Repositories\Interfaces\OrderRepositoryInterface;
+use App\Services\OpticalPricingService;
 use App\Services\RajaOngkirService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,6 +29,9 @@ class OrderController extends Controller
     public function __construct(
         private OrderRepositoryInterface $orderRepo,
         private RajaOngkirService $shippingService,
+        private OpticalPricingService $opticalPricingService,
+        private DecrementProductStockAction $decrementStock,
+        private RestoreProductStockAction $restoreStock,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -37,19 +46,40 @@ class OrderController extends Controller
             'items'                        => 'required|array|min:1',
             'items.*.product_id'           => 'required|exists:products,id',
             'items.*.quantity'             => 'required|integer|min:1',
+            'items.*.variant'              => 'nullable|array',
+            'items.*.prescription'         => 'nullable|array',
+            'items.*.linked_item_index'    => 'nullable|integer',
+            'items.*.lens_option_id'       => 'nullable|exists:lens_options,id',
+            'items.*.lens_coating_id'      => 'nullable|exists:lens_coatings,id',
+            'items.*.prescription_profile_id' => 'nullable|exists:prescription_profiles,id',
             'discount_id'                  => 'nullable|exists:discounts,id',
             'promo_id'                     => 'nullable|exists:promos,id',
             'shipping_address_id'          => 'nullable|exists:shipping_addresses,id',
             'shipping_rate_id'             => 'nullable|exists:shipping_rates,id',
             'shipping_cost'                => 'nullable|numeric|min:0',
+            'shipping_protection_opted'    => 'nullable|boolean',
             'courier'                      => 'nullable|string',
             'courier_service'              => 'nullable|string',
             'payment_method_id'            => 'nullable|exists:payment_methods,id',
             'bank_id'                      => 'nullable|exists:banks,id',
+            'loyalty_points_used'          => 'nullable|integer|min:0',
         ]);
 
         if ($request->discount_id && $request->promo_id) {
             return response()->json(['message' => 'Hanya bisa menggunakan satu jenis potongan (Promo atau Diskon).'], 422);
+        }
+
+        if ($request->filled('shipping_address_id')) {
+            $ownsAddress = ShippingAddress::query()
+                ->whereKey($request->shipping_address_id)
+                ->where('user_id', $request->user()->id)
+                ->exists();
+
+            if (!$ownsAddress) {
+                return response()->json([
+                    'message' => 'Alamat pengiriman tidak ditemukan atau bukan milik Anda.',
+                ], 403);
+            }
         }
 
         $items = [];
@@ -59,29 +89,67 @@ class OrderController extends Controller
 
         foreach ($request->items as $item) {
             $product = Product::findOrFail($item['product_id']);
+            $isLinkedLens = isset($item['linked_item_index']);
+
+            if ($product->stock < $item['quantity']) {
+                return response()->json([
+                    'message' => 'Stok produk "' . $product->name . '" tidak mencukupi.',
+                ], 422);
+            }
+
+            if ($product->is_prescription_required && empty($item['prescription']) && empty($item['prescription_profile_id']) && !$isLinkedLens) {
+                return response()->json([
+                    'message' => 'Produk "' . $product->name . '" membutuhkan data resep mata.',
+                ], 422);
+            }
+
+            $opticalConfiguration = $this->resolveOpticalConfiguration($request, $product, $item);
+            if (!$opticalConfiguration['compatible']) {
+                return response()->json([
+                    'message' => $opticalConfiguration['warnings'][0] ?? 'Konfigurasi optik tidak kompatibel.',
+                ], 422);
+            }
+
+            $unitPrice = $product->price + $opticalConfiguration['price_breakdown']['lens_price'] + $opticalConfiguration['price_breakdown']['coating_price'];
+
             $cartProducts[] = $product;
-            $subtotal += $product->price * $item['quantity'];
+            $subtotal += $unitPrice * $item['quantity'];
             $productQty[$product->id] = ($productQty[$product->id] ?? 0) + $item['quantity'];
             
             $items[] = [
                 'product_id'    => $product->id,
                 'product_name'  => $product->name,
                 'name'          => $product->name,
-                'product_price' => $product->price,
-                'price'         => $product->price,
+                'product_price' => $unitPrice,
+                'price'         => $unitPrice,
                 'quantity'      => $item['quantity'],
                 'is_free'       => false,
                 'variant'       => $item['variant'] ?? null,
                 'image'         => $product->primaryImagePath(),
+                'lens_price'    => $opticalConfiguration['price_breakdown']['lens_price'],
+                'coating_price' => $opticalConfiguration['price_breakdown']['coating_price'],
+                'configuration_snapshot' => $opticalConfiguration['configuration_snapshot'],
             ];
         }
 
         $discountAmount = 0;
         $promoDiscountAmount = 0;
+        $promoSummary = null;
+        $freePromoItems = [];
 
         if ($request->discount_id) {
             $discount = Discount::find($request->discount_id);
             if ($discount && $discount->isValid()) {
+                $alreadyUsed = \App\Models\DiscountUsage::where('user_id', $request->user()->id)
+                    ->where('discount_id', $discount->id)
+                    ->exists();
+
+                if ($alreadyUsed) {
+                    return response()->json([
+                        'message' => 'Kode diskon ini sudah pernah Anda gunakan.',
+                    ], 422);
+                }
+
                 if ($discount->type === 'percentage') {
                     $discountAmount = ($subtotal * $discount->value) / 100;
                 } else {
@@ -151,14 +219,35 @@ class OrderController extends Controller
                         if ($getProd) {
                             $items[] = [
                                 'product_id'    => $getProd->id,
-                                'product_name'  => $getProd->name . ' (Free)',
-                                'name'          => $getProd->name . ' (Free)',
+                                'product_name'  => $getProd->name,
+                                'name'          => $getProd->name,
                                 'product_price' => 0,
                                 'price'         => 0,
+                                'original_price'=> $getProd->price,
                                 'quantity'      => $freeQty,
                                 'is_free'       => true,
+                                'promo_id'      => $promo->id,
+                                'promo_name'    => $promo->name,
                                 'image'         => $getProd->primaryImagePath(),
                                 'variant'       => null,
+                            ];
+
+                            $freePromoItems[] = [
+                                'product_id'    => $getProd->id,
+                                'name'          => $getProd->name,
+                                'quantity'      => $freeQty,
+                                'image'         => $getProd->primaryImagePath(),
+                                'original_price'=> $getProd->price,
+                            ];
+
+                            $promoSummary = [
+                                'id'          => $promo->id,
+                                'name'        => $promo->name,
+                                'type'        => $promo->type,
+                                'label'       => 'Bonus produk gratis',
+                                'description' => $promo->description,
+                                'free_items'  => $freePromoItems,
+                                'discount_amount' => 0,
                             ];
                         }
                     }
@@ -170,6 +259,18 @@ class OrderController extends Controller
                             $promoDiscountAmount = $promo->discount_value;
                         }
                         $promoDiscountAmount = min($promoDiscountAmount, $subtotal);
+
+                        if ($promoDiscountAmount > 0) {
+                            $promoSummary = [
+                                'id'          => $promo->id,
+                                'name'        => $promo->name,
+                                'type'        => $promo->type,
+                                'label'       => 'Diskon transaksi',
+                                'description' => $promo->description,
+                                'discount_amount' => $promoDiscountAmount,
+                                'free_items'  => [],
+                            ];
+                        }
                     }
                 } elseif ($promo->type === 'product_discount') {
                     $discBase = $this->getPromoDiscountBase($promo, $productQty, $cartProducts);
@@ -180,6 +281,18 @@ class OrderController extends Controller
                             $promoDiscountAmount = $promo->discount_value * $discBase['qty'];
                         }
                         $promoDiscountAmount = min($promoDiscountAmount, $subtotal);
+
+                        if ($promoDiscountAmount > 0) {
+                            $promoSummary = [
+                                'id'          => $promo->id,
+                                'name'        => $promo->name,
+                                'type'        => $promo->type,
+                                'label'       => 'Diskon produk',
+                                'description' => $promo->description,
+                                'discount_amount' => $promoDiscountAmount,
+                                'free_items'  => [],
+                            ];
+                        }
                     }
                 }
             }
@@ -189,7 +302,39 @@ class OrderController extends Controller
         $bank = $this->resolveBank($request, $paymentMethod);
         $shippingSelection = $this->resolveShippingSelection($request);
         $shipping = $shippingSelection['shipping_cost'];
-        $totalPrice = max(0, $subtotal + $shipping - $discountAmount - $promoDiscountAmount);
+        $shippingProtectionFee = $this->calculateShippingProtectionFee(
+            $subtotal,
+            $shipping,
+            $request->boolean('shipping_protection_opted'),
+        );
+
+        // ── Level Member Discount ──────────────────────────────────────────────
+        $levelDiscountAmount = 0;
+        $levelMembership = $request->user()
+            ->levelMemberships()
+            ->with('levelMember')
+            ->whereNull('effective_until')
+            ->latest()
+            ->first();
+        $levelMember = $levelMembership?->levelMember;
+        if ($levelMember && $levelMember->discount_percentage > 0) {
+            $levelDiscountAmount = round(($subtotal * $levelMember->discount_percentage) / 100, 2);
+            $levelDiscountAmount = min($levelDiscountAmount, $subtotal);
+        }
+
+        // ── Loyalty Points Redemption ──────────────────────────────────────────
+        // 1 poin = Rp 1.000. User bisa redeem maks 5% dari subtotal.
+        $loyaltyPointsToUse = max(0, (int) $request->input('loyalty_points_used', 0));
+        $loyaltyDiscountAmount = 0;
+        if ($loyaltyPointsToUse > 0) {
+            $userPoints = $request->user()->loyalty_points;
+            $loyaltyPointsToUse = min($loyaltyPointsToUse, $userPoints);
+            $maxLoyaltyDiscount = (int) floor($subtotal * 0.05); // maks 5% subtotal
+            $loyaltyDiscountAmount = min($loyaltyPointsToUse * 1000, $maxLoyaltyDiscount);
+            $loyaltyPointsToUse = (int) ceil($loyaltyDiscountAmount / 1000);
+        }
+
+        $totalPrice = max(0, $subtotal + $shipping + $shippingProtectionFee - $discountAmount - $promoDiscountAmount - $levelDiscountAmount - $loyaltyDiscountAmount);
 
         // Add individual item discount info for the UI
         if ($appliedPromo && $appliedPromo->type === 'product_discount') {
@@ -200,7 +345,8 @@ class OrderController extends Controller
                 
                 if (!$isMatch && $appliedPromo->discount_brands) {
                     $p = collect($cartProducts)->firstWhere('id', $item['product_id']);
-                    if ($p && in_array($p->brand, $appliedPromo->discount_brands)) {
+                    $normalizedBrands = array_map('strtolower', $appliedPromo->discount_brands);
+                    if ($p && in_array(strtolower((string) $p->brand), $normalizedBrands)) {
                         $isMatch = true;
                     }
                 }
@@ -218,27 +364,40 @@ class OrderController extends Controller
         }
 
         return response()->json([
-            'subtotal'              => $subtotal,
-            'shipping_cost'         => $shipping,
-            'discount_amount'       => $discountAmount,
-            'promo_discount_amount' => $promoDiscountAmount,
-            'total_price'           => $totalPrice,
-            'items'                 => $items,
-            'applied_promo'         => $appliedPromo,
-            'payment_method'        => $paymentMethod,
-            'selected_bank'         => $bank,
-            'shipping_selection'    => $shippingSelection,
+            'subtotal'                => $subtotal,
+            'shipping_cost'           => $shipping,
+            'shipping_protection_opted' => $request->boolean('shipping_protection_opted'),
+            'shipping_protection_fee' => $shippingProtectionFee,
+            'discount_amount'         => $discountAmount,
+            'promo_discount_amount'   => $promoDiscountAmount,
+            'level_discount_amount'   => $levelDiscountAmount,
+            'level_member'            => $levelMember ? ['name' => $levelMember->name, 'discount_percentage' => $levelMember->discount_percentage] : null,
+            'loyalty_points_balance'  => $request->user()->loyalty_points,
+            'loyalty_points_used'     => $loyaltyPointsToUse,
+            'loyalty_discount_amount' => $loyaltyDiscountAmount,
+            'total_price'             => $totalPrice,
+            'items'                   => $items,
+            'free_items'              => $freePromoItems,
+            'promo_summary'           => $promoSummary,
+            'applied_promo'           => $appliedPromo,
+            'payment_method'          => $paymentMethod,
+            'selected_bank'           => $bank,
+            'shipping_selection'      => $shippingSelection,
         ]);
     }
 
     public function store(Request $request): JsonResponse
     {
+        $isPickup = $request->input('fulfillment_method') === 'store_pickup';
+
         $request->validate([
-            'shipping_address_id'          => 'required|exists:shipping_addresses,id',
+            'fulfillment_method'           => 'nullable|in:delivery,store_pickup',
+            'shipping_address_id'          => $isPickup ? 'nullable|exists:shipping_addresses,id' : 'required|exists:shipping_addresses,id',
             'shipping_rate_id'             => 'nullable|exists:shipping_rates,id',
             'courier'                      => 'nullable|string',
             'courier_service'              => 'nullable|string',
             'shipping_cost'                => 'nullable|numeric|min:0',
+            'shipping_protection_opted'    => 'nullable|boolean',
             'payment_method_id'            => 'required|exists:payment_methods,id',
             'bank_id'                      => 'nullable|exists:banks,id',
             'items'                        => 'required|array|min:1',
@@ -247,18 +406,45 @@ class OrderController extends Controller
             'items.*.variant'              => 'nullable|array',
             'items.*.prescription'         => 'nullable|array',
             'items.*.linked_item_index'    => 'nullable|integer',
+            'items.*.lens_option_id'       => 'nullable|exists:lens_options,id',
+            'items.*.lens_coating_id'      => 'nullable|exists:lens_coatings,id',
+            'items.*.prescription_profile_id' => 'nullable|exists:prescription_profiles,id',
             'notes'                        => 'nullable|string|max:500',
             'discount_id'                  => 'nullable|exists:discounts,id',
             'promo_id'                     => 'nullable|exists:promos,id',
+            'loyalty_points_used'          => 'nullable|integer|min:0',
         ]);
 
         if ($request->discount_id && $request->promo_id) {
             return response()->json(['message' => 'Hanya bisa menggunakan satu jenis potongan (Promo atau Diskon).'], 422);
         }
 
+        // ── CHKOUT-003: Validasi kepemilikan shipping address (hanya untuk delivery) ──
+        if (!$isPickup) {
+            $shippingAddress = \App\Models\ShippingAddress::where('id', $request->shipping_address_id)
+                ->where('user_id', $request->user()->id)
+                ->first();
+
+            if (!$shippingAddress) {
+                return response()->json([
+                    'message' => 'Alamat pengiriman tidak ditemukan atau bukan milik Anda.',
+                ], 403);
+            }
+        }
+
         $paymentMethod = $this->resolvePaymentMethod($request, true);
         $bank = $this->resolveBank($request, $paymentMethod);
-        $shippingSelection = $this->resolveShippingSelection($request, true);
+
+        // Untuk store_pickup: ongkir selalu 0, tidak perlu resolveShippingSelection
+        if ($isPickup) {
+            $shippingSelection = [
+                'shipping_cost'    => 0,
+                'courier'          => null,
+                'courier_service'  => null,
+            ];
+        } else {
+            $shippingSelection = $this->resolveShippingSelection($request, true);
+        }
 
         $items    = [];
         $subtotal = 0;
@@ -276,28 +462,44 @@ class OrderController extends Controller
                 ], 422);
             }
 
-            if ($product->is_prescription_required && empty($item['prescription']) && !$isLinkedLens) {
+            if ($product->is_prescription_required && empty($item['prescription']) && empty($item['prescription_profile_id']) && !$isLinkedLens) {
                 return response()->json([
                     'message' => 'Produk "' . $product->name . '" membutuhkan data resep mata.',
                 ], 422);
             }
 
-            $subtotal += $product->price * $item['quantity'];
+            $opticalConfiguration = $this->resolveOpticalConfiguration($request, $product, $item);
+            if (!$opticalConfiguration['compatible']) {
+                return response()->json([
+                    'message' => $opticalConfiguration['warnings'][0] ?? 'Konfigurasi optik tidak kompatibel.',
+                ], 422);
+            }
+
+            $unitPrice = $product->price + $opticalConfiguration['price_breakdown']['lens_price'] + $opticalConfiguration['price_breakdown']['coating_price'];
+
+            $subtotal += $unitPrice * $item['quantity'];
             $productQty[$product->id] = ($productQty[$product->id] ?? 0) + $item['quantity'];
 
             $items[] = [
                 'product_id'        => $product->id,
                 'product_name'      => $product->name,
-                'product_price'     => $product->price,
+                'product_price'     => $unitPrice,
                 'quantity'          => $item['quantity'],
                 'weight'            => $product->weight,
                 'variant'           => $item['variant'] ?? null,
                 'prescription'      => $item['prescription'] ?? null,
                 'linked_item_index' => $item['linked_item_index'] ?? null,
+                'lens_option_id'    => $item['lens_option_id'] ?? null,
+                'lens_coating_id'   => $item['lens_coating_id'] ?? null,
+                'prescription_profile_id' => $item['prescription_profile_id'] ?? null,
+                'lens_price'        => $opticalConfiguration['price_breakdown']['lens_price'],
+                'coating_price'     => $opticalConfiguration['price_breakdown']['coating_price'],
+                'configuration_snapshot' => $opticalConfiguration['configuration_snapshot'],
             ];
         }
 
         $discountAmount = 0;
+        $discountToRecord = null;
         if ($request->discount_id) {
             $discount = Discount::find($request->discount_id);
             if ($discount && $discount->isValid()) {
@@ -318,13 +520,7 @@ class OrderController extends Controller
                     $discountAmount = $discount->value;
                 }
                 $discountAmount = min($discountAmount, $subtotal);
-                $discount->increment('used_count');
-
-                // Catat usage
-                \App\Models\DiscountUsage::create([
-                    'user_id'     => $request->user()->id,
-                    'discount_id' => $discount->id,
-                ]);
+                $discountToRecord = $discount;
             }
         }
 
@@ -338,8 +534,8 @@ class OrderController extends Controller
                 ->where('start_date', '<=', now())
                 ->where('end_date', '>=', now())
                 ->get()
-                ->first(function($p) use ($productQty) {
-                    return isset($productQty[$p->buy_product_id]) && $productQty[$p->buy_product_id] >= $p->buy_quantity;
+                ->first(function($p) use ($productQty, $cartProducts) {
+                    return $this->getPromoBuyQty($p, $productQty, $cartProducts) >= $p->buy_quantity;
                 });
             
             if ($applicablePromo) {
@@ -353,7 +549,8 @@ class OrderController extends Controller
         }
 
         if ($promoId) {
-            $promo = Promo::where('is_active', true)
+            $promo = Promo::with(['buyProducts', 'discountProducts', 'getProduct', 'discountProduct'])
+                ->where('is_active', true)
                 ->where('start_date', '<=', now())
                 ->where('end_date', '>=', now())
                 ->find($promoId);
@@ -376,13 +573,15 @@ class OrderController extends Controller
                         if ($getProd) {
                             $items[] = [
                                 'product_id'        => $getProd->id,
-                                'product_name'      => $getProd->name . ' (Free)',
+                                'product_name'      => $getProd->name,
                                 'product_price'     => 0,
                                 'quantity'          => $freeQty,
                                 'weight'            => $getProd->weight,
                                 'variant'           => null,
                                 'prescription'      => null,
                                 'linked_item_index' => null,
+                                'is_free'           => true,
+                                'image'             => $getProd->primaryImagePath(),
                             ];
                         }
                     }
@@ -409,40 +608,136 @@ class OrderController extends Controller
             }
         }
 
+        // ── Level Member Discount (store) ─────────────────────────────────────
+        $levelDiscountAmount = 0;
+        $storeLevelMembership = $request->user()
+            ->levelMemberships()
+            ->with('levelMember')
+            ->whereNull('effective_until')
+            ->latest()
+            ->first();
+        $storeLevelMember = $storeLevelMembership?->levelMember;
+        if ($storeLevelMember && $storeLevelMember->discount_percentage > 0) {
+            $levelDiscountAmount = round(($subtotal * $storeLevelMember->discount_percentage) / 100, 2);
+            $levelDiscountAmount = min($levelDiscountAmount, $subtotal);
+        }
+
+        // ── Loyalty Points Redemption (store) ─────────────────────────────────
+        $loyaltyPointsToUse = max(0, (int) $request->input('loyalty_points_used', 0));
+        $loyaltyDiscountAmount = 0;
+        if ($loyaltyPointsToUse > 0) {
+            $userPoints = $request->user()->loyalty_points;
+            $loyaltyPointsToUse = min($loyaltyPointsToUse, $userPoints);
+            $maxLoyaltyDiscount = (int) floor($subtotal * 0.05); // maks 5% subtotal
+            $loyaltyDiscountAmount = min($loyaltyPointsToUse * 1000, $maxLoyaltyDiscount);
+            $loyaltyPointsToUse = (int) ceil($loyaltyDiscountAmount / 1000);
+        }
+
+        $shippingProtectionFee = $isPickup ? 0 : $this->calculateShippingProtectionFee(
+            $subtotal,
+            $shippingSelection['shipping_cost'],
+            $request->boolean('shipping_protection_opted'),
+        );
+
         $orderData = [
-            'user_id'             => $request->user()->id,
-            'shipping_address_id' => $request->shipping_address_id,
-            'status'              => 'unpaid',
-            'subtotal'            => $subtotal,
-            'shipping_cost'       => $shippingSelection['shipping_cost'],
-            'discount_id'         => $request->discount_id,
-            'discount_amount'     => $discountAmount,
-            'promo_id'            => $promoId,
-            'promo_discount_amount' => $promoDiscountAmount,
-            'total_price'         => max(0, $subtotal + $shippingSelection['shipping_cost'] - $discountAmount - $promoDiscountAmount),
-            'courier'             => $shippingSelection['courier'],
-            'courier_service'     => $shippingSelection['courier_service'],
-            'notes'               => $request->notes,
-            'bank_id'             => $bank?->id,
-            'payment_method_model' => $paymentMethod,
+            'user_id'                 => $request->user()->id,
+            'shipping_address_id'     => $isPickup ? null : $request->shipping_address_id,
+            'fulfillment_method'      => $isPickup ? 'store_pickup' : 'delivery',
+            'status'                  => 'unpaid',
+            'subtotal'                => $subtotal,
+            'shipping_cost'           => $shippingSelection['shipping_cost'],
+            'shipping_protection_opted' => $isPickup ? false : $request->boolean('shipping_protection_opted'),
+            'shipping_protection_fee' => $shippingProtectionFee,
+            'discount_id'             => $request->discount_id,
+            'discount_amount'         => $discountAmount,
+            'promo_id'                => $promoId,
+            'promo_discount_amount'   => $promoDiscountAmount,
+            'level_discount_amount'   => $levelDiscountAmount,
+            'loyalty_points_used'     => $loyaltyPointsToUse,
+            'loyalty_discount_amount' => $loyaltyDiscountAmount,
+            'total_price'             => max(0, $subtotal + $shippingSelection['shipping_cost'] + $shippingProtectionFee - $discountAmount - $promoDiscountAmount - $levelDiscountAmount - $loyaltyDiscountAmount),
+            'courier'                 => $shippingSelection['courier'],
+            'courier_service'         => $shippingSelection['courier_service'],
+            'notes'                   => $request->notes,
+            'bank_id'                 => $bank?->id,
+            'payment_channel'         => $bank ? $bank->name : (
+                strtolower($paymentMethod->code ?? '') === 'cod' ? 'COD' : (
+                    str_contains(strtolower($paymentMethod->code ?? ''), 'xendit') ? 'Xendit' : ($paymentMethod->name ?? null)
+                )
+            ),
+            'payment_method_model'    => $paymentMethod,
         ];
 
-        $order = $this->orderRepo->create($orderData, $items);
-
-        // Record promo usage if applied
-        if ($promoId) {
-            \App\Models\PromoUsage::create([
-                'user_id'  => $request->user()->id,
-                'promo_id' => $promoId,
-                'order_id' => $order->id,
-            ]);
-        }
-
-        foreach ($request->items as $item) {
-            if (!isset($item['linked_item_index'])) {
-                Product::where('id', $item['product_id'])->decrement('stock', $item['quantity']);
+        // ── SHIP-002: Validasi berat total item di backend (hanya untuk delivery) ─
+        if (!$isPickup) {
+            $totalWeight = 0;
+            foreach ($items as $item) {
+                if (!isset($item['linked_item_index'])) {
+                    $totalWeight += ($item['weight'] ?? 0) * $item['quantity'];
+                }
+            }
+            if ($totalWeight <= 0) {
+                return response()->json([
+                    'message' => 'Total berat produk tidak valid. Pastikan semua produk memiliki data berat.',
+                ], 422);
             }
         }
+
+        $order = DB::transaction(function () use ($request, $orderData, $items, $promoId, $loyaltyPointsToUse, $discountToRecord) {
+            // ── P0-1 + P1-6 (Phase 3): lock + recheck + decrement stok ──
+            // Logic dipindahkan ke DecrementProductStockAction agar bisa
+            // di-test secara unit dan reuse oleh Action lain (mis. PlaceOrderAction).
+            // Action ini WAJIB dipanggil di dalam DB::transaction caller agar
+            // rollback bersama jika ada step lain yang gagal.
+            $this->decrementStock->execute($request->items);
+
+            $order = $this->orderRepo->create($orderData, $items);
+
+            if ($discountToRecord) {
+                $discountToRecord->increment('used_count');
+
+                \App\Models\DiscountUsage::create([
+                    'user_id'     => $request->user()->id,
+                    'discount_id' => $discountToRecord->id,
+                    'order_id'    => $order->id,
+                ]);
+            }
+
+            if ($promoId) {
+                \App\Models\PromoUsage::create([
+                    'user_id'  => $request->user()->id,
+                    'promo_id' => $promoId,
+                    'order_id' => $order->id,
+                ]);
+            }
+
+            if ($loyaltyPointsToUse > 0) {
+                $redeemed = $request->user()->redeemLoyaltyPoints(
+                    $loyaltyPointsToUse,
+                    $order->id,
+                    "Poin digunakan untuk diskon pesanan #{$order->order_number}"
+                );
+
+                if (!$redeemed) {
+                    throw ValidationException::withMessages([
+                        'loyalty_points_used' => ['Saldo loyalty points tidak mencukupi.'],
+                    ]);
+                }
+            }
+
+            return $order->fresh(['items', 'payment.paymentMethod', 'shippingAddress', 'bank', 'logs.actedBy']);
+        });
+
+        // Catat business event order_created
+        \App\Models\BusinessEvent::record(
+            eventType: \App\Models\BusinessEvent::ORDER_CREATED,
+            payload: [
+                'order_id'    => $order->id,
+                'order_number'=> $order->order_number,
+                'total_price' => (float) $order->total_price,
+                'item_count'  => $order->items->count(),
+            ]
+        );
 
         return response()->json($order, 201);
     }
@@ -527,7 +822,6 @@ class OrderController extends Controller
                 'is_payment_verified' => $order->is_payment_verified,
                 'payment_verified_at' => optional($order->payment_verified_at)?->toISOString(),
                 'logs' => $order->logs
-                    ->sortBy('created_at')
                     ->values()
                     ->map(fn ($log) => [
                         'id' => $log->id,
@@ -576,6 +870,43 @@ class OrderController extends Controller
         ]);
     }
 
+    /**
+     * GET /api/orders/{id}/payment-status
+     * Polling endpoint ringan untuk cek status pembayaran.
+     * Digunakan oleh WaitingPayment page untuk auto-refresh.
+     */
+    public function paymentStatus(Request $request, int $id): JsonResponse
+    {
+        $order = $this->orderRepo->findById($id);
+
+        if ($order->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $payment = $order->payment;
+
+        return response()->json([
+            'order_id'            => $order->id,
+            'order_number'        => $order->order_number,
+            'order_status'        => $order->status,
+            'is_payment_verified' => (bool) $order->is_payment_verified,
+            'paid_at'             => optional($order->paid_at)?->toISOString(),
+            'payment' => $payment ? [
+                'provider'       => $payment->provider,
+                'status'         => $payment->status,
+                'payment_type'   => $payment->payment_type,
+                'payment_method' => $payment->payment_method,
+                'checkout_url'   => $payment->checkout_url,
+                'paid_at'        => optional($payment->paid_at)?->toISOString(),
+            ] : null,
+            // Apakah perlu redirect ke halaman order detail
+            'should_redirect' => in_array($order->status, ['paid', 'processing', 'shipped', 'delivered', 'completed']),
+            // Apakah pembayaran sudah expired/cancelled
+            'is_expired'      => in_array($order->status, ['cancelled']) &&
+                                  in_array($payment?->status, ['expired', 'failed', 'cancelled']),
+        ]);
+    }
+
     public function confirmDelivery(Request $request, int $id): JsonResponse
     {
         $order = $this->orderRepo->findById($id);
@@ -590,14 +921,32 @@ class OrderController extends Controller
             ], 422);
         }
 
-        $pointsToEarn = max(1, (int) round($order->total_price * 0.01));
+        // Poin yang didapat: 1 poin per Rp 10.000 dari total_price (dibulatkan ke bawah, min 1)
+        $pointsToEarn = max(1, (int) floor($order->total_price / 10000));
 
         DB::transaction(function () use ($order, $pointsToEarn) {
-            $order->update([
-                'status'                 => 'delivered',
-                'delivered_at'           => now(),
-                'loyalty_points_earned'  => $pointsToEarn,
-            ]);
+            $updateData = [
+                'status'                => 'delivered',
+                'delivered_at'          => now(),
+                'loyalty_points_earned' => $pointsToEarn,
+            ];
+
+            // COD: otomatis verifikasi pembayaran saat barang diterima
+            $isCod = strtolower($order->payment?->paymentMethod?->code ?? '') === 'cod';
+            if ($isCod && !$order->is_payment_verified) {
+                $updateData['is_payment_verified']  = true;
+                $updateData['payment_verified_at']  = now();
+                $updateData['paid_at']              = $order->paid_at ?? now();
+
+                if ($order->payment) {
+                    $order->payment->update([
+                        'status'  => 'success',
+                        'paid_at' => now(),
+                    ]);
+                }
+            }
+
+            $order->update($updateData);
 
             $order->user->addLoyaltyPoints(
                 $pointsToEarn,
@@ -629,11 +978,9 @@ class OrderController extends Controller
         }
 
         DB::transaction(function () use ($order) {
-            foreach ($order->items as $item) {
-                if (!$item->parent_item_id) {
-                    Product::where('id', $item->product_id)->increment('stock', $item->quantity);
-                }
-            }
+            // P1-6 (Phase 3): logic restore stock dipindahkan ke
+            // RestoreProductStockAction agar reusable & testable.
+            $this->restoreStock->execute($order);
 
             $order->update(['status' => 'cancelled']);
         });
@@ -677,10 +1024,11 @@ class OrderController extends Controller
             }
         }
 
-        // 3. Brands
+        // 3. Brands (case-insensitive)
         if ($promo->buy_brands && count($promo->buy_brands) > 0) {
+            $normalizedBuyBrands = array_map('strtolower', $promo->buy_brands);
             foreach ($cartProducts as $p) {
-                if (!in_array($p->id, $countedIds) && in_array($p->brand, $promo->buy_brands)) {
+                if (!in_array($p->id, $countedIds) && in_array(strtolower((string) $p->brand), $normalizedBuyBrands)) {
                     $totalQty += ($productQty[$p->id] ?? 0);
                     $countedIds[] = $p->id;
                 }
@@ -715,10 +1063,11 @@ class OrderController extends Controller
             }
         }
 
-        // 3. Brands
+        // 3. Brands (case-insensitive)
         if ($promo->discount_brands && count($promo->discount_brands) > 0) {
+            $normalizedDiscBrands = array_map('strtolower', $promo->discount_brands);
             foreach ($cartProducts as $p) {
-                if (!in_array($p->id, $countedIds) && in_array($p->brand, $promo->discount_brands)) {
+                if (!in_array($p->id, $countedIds) && in_array(strtolower((string) $p->brand), $normalizedDiscBrands)) {
                     $qty += ($productQty[$p->id] ?? 0);
                     $totalPrice += ($p->price * ($productQty[$p->id] ?? 0));
                     $countedIds[] = $p->id;
@@ -727,6 +1076,23 @@ class OrderController extends Controller
         }
 
         return ['qty' => $qty, 'total_price' => $totalPrice];
+    }
+
+    private function calculateShippingProtectionFee(float|int $subtotal, float|int $shippingCost, bool $isSelected): float
+    {
+        if (! $isSelected) {
+            return 0;
+        }
+
+        $insuredValue = max(0, (float) $subtotal + (float) $shippingCost);
+
+        if ($insuredValue <= 0) {
+            return 0;
+        }
+
+        $rawFee = $insuredValue * 0.005;
+
+        return (float) max(2000, ceil($rawFee / 500) * 500);
     }
 
     private function resolvePaymentMethod(Request $request, bool $strict = false): ?PaymentMethod
@@ -755,6 +1121,35 @@ class OrderController extends Controller
         }
 
         return $paymentMethod;
+    }
+
+    /**
+     * @param array<string, mixed> $item
+     * @return array<string, mixed>
+     */
+    private function resolveOpticalConfiguration(Request $request, Product $product, array $item): array
+    {
+        $lensOption = !empty($item['lens_option_id'])
+            ? LensOption::where('is_active', true)->findOrFail($item['lens_option_id'])
+            : null;
+        $lensCoating = !empty($item['lens_coating_id'])
+            ? LensCoating::where('is_active', true)->findOrFail($item['lens_coating_id'])
+            : null;
+        $profile = null;
+
+        if (!empty($item['prescription_profile_id'])) {
+            $profile = PrescriptionProfile::where('user_id', $request->user()->id)
+                ->whereKey($item['prescription_profile_id'])
+                ->firstOrFail();
+        }
+
+        return $this->opticalPricingService->configure(
+            frame: $product,
+            lensOption: $lensOption,
+            lensCoating: $lensCoating,
+            prescriptionProfile: $profile,
+            prescription: $item['prescription'] ?? null,
+        );
     }
 
     private function resolveBank(Request $request, ?PaymentMethod $paymentMethod): ?Bank

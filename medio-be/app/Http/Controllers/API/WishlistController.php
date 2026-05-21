@@ -7,6 +7,8 @@ use App\Models\Product;
 use App\Models\Wishlist;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
+use Throwable;
 
 class WishlistController extends Controller
 {
@@ -15,12 +17,93 @@ class WishlistController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $wishlists = Wishlist::with(['product.category'])
+        $wishlists = Wishlist::with([
+                'product' => function ($query) {
+                    $query->with('category')
+                          ->withCount(['approvedReviews as review_count'])
+                          ->withAvg(['approvedReviews as avg_rating'], 'rating');
+                },
+            ])
             ->where('user_id', $request->user()->id)
             ->latest()
             ->get();
 
         return response()->json($wishlists);
+    }
+
+    public function createShareLink(Request $request): JsonResponse
+    {
+        $productIds = Wishlist::query()
+            ->where('user_id', $request->user()->id)
+            ->pluck('product_id')
+            ->values();
+
+        $shareableIds = Product::query()
+            ->whereIn('id', $productIds)
+            ->where('is_active', true)
+            ->where('stock', '>', 0)
+            ->pluck('id')
+            ->values();
+
+        if ($shareableIds->isEmpty()) {
+            return response()->json([
+                'message' => 'Wishlist belum memiliki produk aktif yang bisa dibagikan.',
+            ], 422);
+        }
+
+        $encryptedPayload = Crypt::encryptString(json_encode([
+            'product_ids' => $shareableIds,
+            'created_at' => now()->toIso8601String(),
+        ]));
+
+        return response()->json([
+            'token' => rtrim(strtr(base64_encode($encryptedPayload), '+/', '-_'), '='),
+        ]);
+    }
+
+    public function shared(string $token): JsonResponse
+    {
+        try {
+            $base64 = strtr($token, '-_', '+/');
+            $base64 .= str_repeat('=', (4 - strlen($base64) % 4) % 4);
+            $encryptedPayload = base64_decode($base64, true);
+            if ($encryptedPayload === false) {
+                throw new \RuntimeException('Invalid token encoding.');
+            }
+
+            $payload = json_decode(Crypt::decryptString($encryptedPayload), true, flags: JSON_THROW_ON_ERROR);
+        } catch (Throwable) {
+            return response()->json([
+                'message' => 'Link wishlist tidak valid.',
+            ], 404);
+        }
+
+        $ids = collect($payload['product_ids'] ?? [])
+            ->filter(fn ($id) => is_numeric($id))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->take(40)
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return response()->json([
+                'products' => [],
+            ]);
+        }
+
+        $products = Product::with(['category', 'activeProductImages'])
+            ->withCount(['approvedReviews as review_count'])
+            ->withAvg(['approvedReviews as avg_rating'], 'rating')
+            ->whereIn('id', $ids)
+            ->where('is_active', true)
+            ->where('stock', '>', 0)
+            ->get()
+            ->sortBy(fn (Product $product) => $ids->search($product->id))
+            ->values();
+
+        return response()->json([
+            'products' => $products,
+        ]);
     }
 
     /**

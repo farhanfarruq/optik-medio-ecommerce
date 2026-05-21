@@ -22,7 +22,11 @@ class PromoResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-sparkles';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'Promo & Loyalty';
+    protected static string | \UnitEnum | null $navigationGroup = 'Promo & Diskon';
+
+    protected static ?string $navigationLabel = 'Promo';
+
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'name';
 

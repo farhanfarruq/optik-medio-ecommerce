@@ -1,0 +1,46 @@
+# ───────────────────────────────────────────────────────────────────────────
+# OS / Editor
+# ───────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ───────────────────────────────────────────────────────────────────────────
+# IDE
+# ───────────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+# ───────────────────────────────────────────────────────────────────────────
+# Data mentah / scraping / backup — JANGAN di-commit di root
+# Jika butuh data sumber katalog, simpan di:
+#   medio-be/database/seeders/data/
+# ───────────────────────────────────────────────────────────────────────────
+/data_*.json
+/backup_*.json
+/scraping.py
+/scripts/scraping.py
+
+# Data debug / patch one-off di project frontend
+/medio-fe/patch_*.php
+/medio-fe/*.bak
+
+# Data debug / patch one-off di project backend
+/medio-be/check_*.php
+/medio-be/data_*.json
+/medio-be/backup_*.json
+
+# ───────────────────────────────────────────────────────────────────────────
+# Log files
+# ───────────────────────────────────────────────────────────────────────────
+*.log
+
+# ───────────────────────────────────────────────────────────────────────────
+# Build artifacts (jaga-jaga jika ada build di root)
+# ───────────────────────────────────────────────────────────────────────────
+node_modules/
+dist/

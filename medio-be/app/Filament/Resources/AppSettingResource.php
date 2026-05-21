@@ -14,13 +14,15 @@ class AppSettingResource extends Resource
 {
     protected static ?string $model = AppSetting::class;
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-cog-8-tooth';
-    protected static string | \UnitEnum | null $navigationGroup = 'Master Data';
+    protected static string | \UnitEnum | null $navigationGroup = 'Pengaturan';
+    protected static ?string $navigationLabel = 'Pengaturan App';
+    protected static ?int $navigationSort = 6;
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
-                \Filament\Forms\Components\Section::make('Konfigurasi Sistem')
+                \Filament\Schemas\Components\Section::make('Konfigurasi Sistem')
                     ->description('Atur parameter e-commerce di sini.')
                     ->schema([
                         Forms\Components\Select::make('group')

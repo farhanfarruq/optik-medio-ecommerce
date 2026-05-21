@@ -15,8 +15,8 @@ class ProductReviewResource extends Resource
     protected static ?string $model = ProductReview::class;
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-star';
     protected static string | \UnitEnum | null $navigationGroup = 'Produk';
-    protected static ?string $navigationLabel = 'Ulasan Produk';
-    protected static ?int $navigationSort = 3;
+    protected static ?string $navigationLabel = 'Ulasan';
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {

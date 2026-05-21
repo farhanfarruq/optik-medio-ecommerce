@@ -1,36 +1,70 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { authRepository } from '../repositories/AuthRepository';
+import { apiClient } from '../core/api/axiosclient';
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<any>(null);
-  const token = ref<string | null>(localStorage.getItem('auth_token'));
+  const hasInitialized = ref(false);
 
-  const isAuthenticated = computed(() => !!token.value);
+  const isAuthenticated = computed(() => !!user.value);
+
+  /**
+   * Sync cart lokal ke server setelah login.
+   * Ambil items dari cartStore (localStorage) dan kirim ke /api/cart/sync.
+   */
+  async function syncCartAfterLogin(): Promise<void> {
+    try {
+      // Import dinamis untuk menghindari circular dependency
+      const { useCartStore } = await import('./cartStore');
+      const cartStore = useCartStore();
+
+      if (cartStore.items.length === 0) return;
+
+      const itemsPayload = cartStore.items.map((item: any) => ({
+        product_id:              item.id,
+        quantity:                item.quantity || 1,
+        variant:                 item.variant || null,
+        prescription:            item.prescription || null,
+        lens_option_id:          item.lens_option_id || null,
+        lens_coating_id:         item.lens_coating_id || null,
+        prescription_profile_id: item.prescription_profile_id || null,
+        configuration_snapshot:  item.configuration_snapshot || null,
+      }));
+
+      await apiClient.post('/cart/sync', { items: itemsPayload });
+    } catch {
+      // Silent — cart sync tidak boleh block login flow
+    }
+  }
 
   async function login(credentials: any) {
     const response = await authRepository.login(credentials);
 
-    // Jika server minta verifikasi OTP dulu
     if (response.requires_otp) {
       throw { response: { data: response, status: 403 } };
     }
 
-    token.value = response.token;
-    user.value = response.user;
-    localStorage.setItem('auth_token', response.token);
+    user.value = response.user ?? await authRepository.getUser();
+    hasInitialized.value = true;
+
+    // Sync cart lokal ke server setelah login berhasil
+    await syncCartAfterLogin();
   }
 
   async function register(userData: any) {
     const response = await authRepository.register(userData);
-    return response; // Kembalikan response (berisi email untuk OTP step)
+    return response;
   }
 
   async function verifyOtp(email: string, code: string) {
     const response = await authRepository.verifyOtp({ email, code });
-    token.value = response.token;
-    user.value = response.user;
-    localStorage.setItem('auth_token', response.token);
+    user.value = response.user ?? await authRepository.getUser();
+    hasInitialized.value = true;
+
+    // Sync cart setelah OTP verified (login via OTP)
+    await syncCartAfterLogin();
+
     return response;
   }
 
@@ -38,22 +72,36 @@ export const useAuthStore = defineStore('auth', () => {
     return await authRepository.resendOtp(email);
   }
 
-  function logout() {
-    authRepository.logout();
-    token.value = null;
-    user.value = null;
-    localStorage.removeItem('auth_token');
-  }
-
-  async function fetchUser() {
-    if (!token.value) return;
+  async function logout(options: { silent?: boolean } = {}) {
     try {
-      user.value = await authRepository.getUser();
+      await authRepository.logout();
     } catch (error) {
-      console.error('Failed to fetch user', error);
-      logout();
+      if (!options.silent) {
+        throw error;
+      }
+    } finally {
+      user.value = null;
+      hasInitialized.value = true;
     }
   }
 
-  return { user, token, isAuthenticated, login, register, verifyOtp, resendOtp, logout, fetchUser };
+  async function fetchUser() {
+    try {
+      user.value = await authRepository.getUser();
+      return user.value;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        user.value = null;
+        return null;
+      }
+      // Error lain (network, 500, dll) — set user null tapi jangan throw
+      // agar tidak menyebabkan logout loop di router.beforeEach
+      user.value = null;
+      return null;
+    } finally {
+      hasInitialized.value = true;
+    }
+  }
+
+  return { user, hasInitialized, isAuthenticated, login, register, verifyOtp, resendOtp, logout, fetchUser };
 });

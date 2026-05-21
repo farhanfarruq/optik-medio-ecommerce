@@ -11,6 +11,8 @@ class OrderItem extends Model
     protected $fillable = [
         'order_id', 'product_id', 'product_name', 'product_price',
         'quantity', 'weight', 'variant', 'subtotal', 'prescription', 'parent_item_id',
+        'lens_option_id', 'lens_coating_id', 'prescription_profile_id',
+        'lens_price', 'coating_price', 'configuration_snapshot',
     ];
 
     protected $casts = [
@@ -18,6 +20,9 @@ class OrderItem extends Model
         'subtotal'      => 'decimal:2',
         'variant'       => 'array',
         'prescription'  => 'array',
+        'lens_price'    => 'decimal:2',
+        'coating_price' => 'decimal:2',
+        'configuration_snapshot' => 'array',
     ];
 
     public function parentItem(): BelongsTo
@@ -38,6 +43,21 @@ class OrderItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function lensOption(): BelongsTo
+    {
+        return $this->belongsTo(LensOption::class);
+    }
+
+    public function lensCoating(): BelongsTo
+    {
+        return $this->belongsTo(LensCoating::class);
+    }
+
+    public function prescriptionProfile(): BelongsTo
+    {
+        return $this->belongsTo(PrescriptionProfile::class);
     }
 
     public function review(): HasOne

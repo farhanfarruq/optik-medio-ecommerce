@@ -13,6 +13,7 @@ class Complain extends Model
     protected $fillable = [
         'user_id',
         'order_id',
+        'complaint_type',
         'subject',
         'message',
         'contact_phone',
@@ -26,6 +27,14 @@ class Complain extends Model
     protected $casts = [
         'resolved_at' => 'datetime',
     ];
+
+    public function getComplaintTypeLabelAttribute(): string
+    {
+        return match ($this->complaint_type) {
+            'shipping_protection' => 'Klaim Proteksi Pengiriman',
+            default => 'Komplain Umum',
+        };
+    }
 
     public function user(): BelongsTo
     {

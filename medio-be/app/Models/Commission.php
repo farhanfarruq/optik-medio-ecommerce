@@ -22,6 +22,10 @@ class Commission extends Model
         'processed_at',
         'processed_by',
         'admin_notes',
+        'payout_method',
+        'payout_bank_name',
+        'payout_account_number',
+        'payout_account_name',
     ];
 
     protected $casts = [

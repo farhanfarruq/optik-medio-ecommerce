@@ -60,11 +60,18 @@ class DatabaseSeeder extends Seeder
 
         $this->call(ArticleSeeder::class);
         $this->call(BankSeeder::class);
+        $this->call(BannerSeeder::class);
+        $this->call(ExpeditionSeeder::class);
+        $this->call(FaqSeeder::class);
+        $this->call(LevelMemberSeeder::class);
         $this->call(PaymentMethodSeeder::class);
-
-        $this->command->info('✅ Seeder selesai: Settings, Discounts, Users, Articles, Banks, dan Payment Methods berhasil dibuat.');
-        $this->command->info('');
-        $this->command->info('📦 Untuk import produk, jalankan:');
-        $this->command->info('   php artisan import:optik-products');
+        $this->call(AdminShowcaseSeeder::class);
+        $this->call(ProductCatalogSeeder::class);
+        $this->call(ProductPhotoSeeder::class);
+        $this->call(ProductExpansionSeeder::class);
+        $this->call(ProductExpansionPhotoSeeder::class);
+        $this->call(OpticalConfigurationSeeder::class);
+        $this->call(ShippingRateSeeder::class);
+        
     }
 }

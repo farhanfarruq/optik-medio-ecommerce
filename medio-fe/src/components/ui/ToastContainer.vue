@@ -11,67 +11,27 @@ const iconMap = {
 };
 
 const styleMap = {
-  success: {
-    bg: 'linear-gradient(135deg, #166534, #15803d)',
-    icon: '#86efac',
-    border: 'rgba(134,239,172,0.25)',
-  },
-  error: {
-    bg: 'linear-gradient(135deg, #7f1d1d, #991b1b)',
-    icon: '#fca5a5',
-    border: 'rgba(252,165,165,0.25)',
-  },
-  info: {
-    bg: 'linear-gradient(135deg, #1e3a5f, #1d4ed8)',
-    icon: '#93c5fd',
-    border: 'rgba(147,197,253,0.25)',
-  },
-  warning: {
-    bg: 'linear-gradient(135deg, #78350f, #b45309)',
-    icon: '#fcd34d',
-    border: 'rgba(252,211,77,0.25)',
-  },
+  success: { icon: '#56604B', border: 'rgba(86,96,75,0.24)', bg: '#FCFAF6' },
+  error: { icon: '#A33A34', border: 'rgba(163,58,52,0.24)', bg: '#FFF7F5' },
+  info: { icon: '#3F6F8F', border: 'rgba(63,111,143,0.24)', bg: '#F4FAFC' },
+  warning: { icon: '#B88A44', border: 'rgba(184,138,68,0.28)', bg: '#FCFAF6' },
 };
 </script>
 
 <template>
   <Teleport to="body">
-    <div class="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none" style="max-width: 380px;">
+    <div class="fixed bottom-20 right-4 z-[9999] flex w-[calc(100%-2rem)] max-w-[380px] flex-col gap-3 pointer-events-none md:bottom-6 md:right-6">
       <TransitionGroup name="toast">
         <div
           v-for="toast in toasts"
           :key="toast.id"
-          class="flex items-start gap-4 px-5 py-4 rounded-2xl shadow-2xl pointer-events-auto cursor-pointer"
-          :style="`
-            background: ${styleMap[toast.type].bg};
-            border: 1px solid ${styleMap[toast.type].border};
-            backdrop-filter: blur(12px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2);
-          `"
+          class="flex cursor-pointer items-start gap-3 rounded-lg px-4 py-3 shadow-soft pointer-events-auto"
+          :style="{ background: styleMap[toast.type].bg, border: '1px solid ' + styleMap[toast.type].border, color: '#15120E' }"
           @click="removeToast(toast.id)"
         >
-          <!-- Icon -->
-          <span
-            class="material-symbols-outlined text-xl mt-0.5 shrink-0"
-            style="font-variation-settings: 'FILL' 1, 'wght' 500;"
-            :style="`color: ${styleMap[toast.type].icon};`"
-          >
-            {{ iconMap[toast.type] }}
-          </span>
-
-          <!-- Message -->
-          <p class="text-sm font-semibold leading-snug text-white flex-grow">
-            {{ toast.message }}
-          </p>
-
-          <!-- Close -->
-          <button
-            @click.stop="removeToast(toast.id)"
-            class="material-symbols-outlined text-lg shrink-0 transition-opacity hover:opacity-70"
-            style="color: rgba(255,255,255,0.6);"
-          >
-            close
-          </button>
+          <span class="material-symbols-outlined mt-0.5 shrink-0 text-xl" style="font-variation-settings: 'FILL' 1, 'wght' 500;" :style="{ color: styleMap[toast.type].icon }">{{ iconMap[toast.type] }}</span>
+          <p class="flex-grow text-sm font-semibold leading-snug text-ink">{{ toast.message }}</p>
+          <button @click.stop="removeToast(toast.id)" class="material-symbols-outlined shrink-0 rounded-full p-0.5 text-lg text-graphite/55 transition-colors hover:bg-ivory hover:text-ink" aria-label="Tutup notifikasi">close</button>
         </div>
       </TransitionGroup>
     </div>
@@ -79,21 +39,9 @@ const styleMap = {
 </template>
 
 <style scoped>
-.toast-enter-active {
-  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.toast-leave-active {
-  transition: all 0.25s ease-in;
-}
-.toast-enter-from {
-  opacity: 0;
-  transform: translateX(60px) scale(0.9);
-}
-.toast-leave-to {
-  opacity: 0;
-  transform: translateX(60px) scale(0.95);
-}
-.toast-move {
-  transition: transform 0.3s ease;
-}
+.toast-enter-active { transition: all 0.28s ease; }
+.toast-leave-active { transition: all 0.2s ease-in; }
+.toast-enter-from { opacity: 0; transform: translateY(8px); }
+.toast-leave-to { opacity: 0; transform: translateY(8px); }
+.toast-move { transition: transform 0.25s ease; }
 </style>

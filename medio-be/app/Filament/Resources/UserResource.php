@@ -15,6 +15,8 @@ class UserResource extends Resource
     protected static ?string $model = User::class;
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-users';
     protected static string | \UnitEnum | null $navigationGroup = 'Pelanggan';
+    protected static ?string $navigationLabel = 'User';
+    protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {
@@ -29,8 +31,13 @@ class UserResource extends Resource
                     ->maxLength(255),
                 Forms\Components\Select::make('role')
                     ->options([
-                        'user' => 'User',
-                        'admin' => 'Admin',
+                        'owner'           => '👑 Owner',
+                        'admin'           => '🔧 Admin',
+                        'finance'         => '💰 Finance',
+                        'warehouse'       => '📦 Warehouse',
+                        'customer_service'=> '🎧 Customer Service',
+                        'content_manager' => '✍️ Content Manager',
+                        'user'            => '👤 User',
                     ])
                     ->required(),
                 Forms\Components\TextInput::make('loyalty_points')
@@ -55,9 +62,14 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('role')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'user'  => 'primary',
-                        'admin' => 'danger',
-                        default => 'gray',
+                        'user'            => 'primary',
+                        'admin'           => 'danger',
+                        'owner'           => 'success',
+                        'finance'         => 'info',
+                        'warehouse'       => 'warning',
+                        'customer_service'=> 'gray',
+                        'content_manager' => 'gray',
+                        default           => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('loyalty_points')->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
@@ -68,9 +80,15 @@ class UserResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('role')
                     ->options([
-                        'user'  => 'User',
-                        'admin' => 'Admin',
-                    ]),
+                        'owner'           => '👑 Owner',
+                        'admin'           => '🔧 Admin',
+                        'finance'         => '💰 Finance',
+                        'warehouse'       => '📦 Warehouse',
+                        'customer_service'=> '🎧 Customer Service',
+                        'content_manager' => '✍️ Content Manager',
+                        'user'            => '👤 User',
+                    ])
+                    ->multiple(),
             ])
             ->actions([
                 \Filament\Actions\Action::make('view_orders')

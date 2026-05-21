@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\BannerResource\Pages\CreateBanner;
 use App\Filament\Resources\BannerResource\Pages\EditBanner;
 use App\Filament\Resources\BannerResource\Pages\ListBanners;
+use App\Filament\Support\PublicUpload;
 use App\Models\Banner;
 use Filament\Forms;
 use Filament\Resources\Resource;
@@ -16,7 +17,9 @@ class BannerResource extends Resource
 {
     protected static ?string $model = Banner::class;
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-photo';
-    protected static string | \UnitEnum | null $navigationGroup = 'Content Management';
+    protected static string | \UnitEnum | null $navigationGroup = 'Konten';
+    protected static ?string $navigationLabel = 'Banner';
+    protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {
@@ -46,7 +49,7 @@ class BannerResource extends Resource
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('title')->live(onBlur: true),
                     Forms\Components\TextInput::make('subtitle')->live(onBlur: true),
-                    Forms\Components\FileUpload::make('image_path')->image()->directory('banners')->required(),
+                    PublicUpload::image(Forms\Components\FileUpload::make('image_path'), 'banners', '180px')->required(),
                     Forms\Components\TextInput::make('cta_label')->live(onBlur: true),
                     Forms\Components\Select::make('link_type')
                         ->options([
@@ -77,8 +80,8 @@ class BannerResource extends Resource
                 Tables\Columns\ImageColumn::make('image_path')->label('Banner'),
                 Tables\Columns\TextColumn::make('title')->searchable()->placeholder('-'),
                 Tables\Columns\TextColumn::make('link_type')->badge(),
-                Tables\Columns\TextColumn::make('product.name')->label('Produk')->placeholder('-'),
-                Tables\Columns\TextColumn::make('category.name')->label('Kategori')->placeholder('-'),
+                Tables\Columns\TextColumn::make('product.name')->label('Produk')->placeholder('-')->searchable(),
+                Tables\Columns\TextColumn::make('category.name')->label('Kategori')->placeholder('-')->searchable(),
                 Tables\Columns\IconColumn::make('is_active')->boolean(),
             ])
             ->actions([\Filament\Actions\EditAction::make()])

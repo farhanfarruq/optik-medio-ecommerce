@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# ───────────────────────────────────────────────────────────────────────────
+# Data debug / patch one-off — JANGAN di-commit
+# Folder frontend tidak boleh berisi script PHP/JSON sumber data
+# ───────────────────────────────────────────────────────────────────────────
+patch_*.php
+check_*.php
+*.bak
+*.bak.json
+
+# Bundle analyzer output
+stats.html

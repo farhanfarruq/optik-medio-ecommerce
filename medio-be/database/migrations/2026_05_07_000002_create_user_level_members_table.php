@@ -42,6 +42,16 @@ return new class extends Migration
             });
         }
 
+        if (DB::getDriverName() !== 'mysql') {
+            if (! $this->hasIndex('user_level_members', 'user_level_members_active_unique')) {
+                Schema::table('user_level_members', function (Blueprint $table) {
+                    $table->unique('active_membership_user_id', 'user_level_members_active_unique');
+                });
+            }
+
+            return;
+        }
+
         if (! $this->hasIndex('user_level_members', 'user_level_members_user_id_effective_from_index')) {
             Schema::table('user_level_members', function (Blueprint $table) {
                 $table->index(['user_id', 'effective_from']);
@@ -80,6 +90,11 @@ return new class extends Migration
 
     private function hasIndex(string $table, string $indexName): bool
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return collect(Schema::getIndexes($table))
+                ->contains(fn (array $index) => ($index['name'] ?? null) === $indexName);
+        }
+
         return DB::table('information_schema.statistics')
             ->where('table_schema', DB::getDatabaseName())
             ->where('table_name', $table)
@@ -89,6 +104,10 @@ return new class extends Migration
 
     private function hasForeignKey(string $table, string $constraintName): bool
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return false;
+        }
+
         return DB::table('information_schema.table_constraints')
             ->where('table_schema', DB::getDatabaseName())
             ->where('table_name', $table)
@@ -99,6 +118,10 @@ return new class extends Migration
 
     private function isGeneratedColumn(string $table, string $column): bool
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return false;
+        }
+
         return DB::table('information_schema.columns')
             ->where('table_schema', DB::getDatabaseName())
             ->where('table_name', $table)

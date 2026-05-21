@@ -26,6 +26,14 @@ return [
     'xendit' => [
         'secret_key'    => env('XENDIT_SECRET_KEY'),
         'webhook_token' => env('XENDIT_WEBHOOK_TOKEN'),
+        // P1-2: IP whitelist untuk webhook callback Xendit.
+        // Set via env XENDIT_WEBHOOK_ALLOWED_IPS sebagai comma-separated list.
+        // Kosongkan / hilangkan untuk disable check (tidak direkomendasi di prod).
+        // Ref daftar IP terkini: https://docs.xendit.co/xenplatform/webhooks
+        'webhook_allowed_ips' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('XENDIT_WEBHOOK_ALLOWED_IPS', ''))
+        ))),
     ],
 
     'rajaongkir' => [

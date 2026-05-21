@@ -37,6 +37,12 @@ class OrderRepository implements OrderRepositoryInterface
                     'weight'        => $item['weight'],
                     'variant'       => $item['variant'] ?? null,
                     'prescription'  => $item['prescription'] ?? null,
+                    'lens_option_id' => $item['lens_option_id'] ?? null,
+                    'lens_coating_id' => $item['lens_coating_id'] ?? null,
+                    'prescription_profile_id' => $item['prescription_profile_id'] ?? null,
+                    'lens_price' => $item['lens_price'] ?? 0,
+                    'coating_price' => $item['coating_price'] ?? 0,
+                    'configuration_snapshot' => $item['configuration_snapshot'] ?? null,
                     'subtotal'      => $item['product_price'] * $item['quantity'],
                 ]);
                 
@@ -59,7 +65,16 @@ class OrderRepository implements OrderRepositoryInterface
             $paymentMethodCode = $paymentMethod?->code;
 
             if ($paymentProvider === 'xendit') {
-                $checkoutUrl = $this->xenditService->createInvoice($order);
+                // Untuk store_pickup: setelah bayar redirect ke halaman booking
+                $successRedirectUrl = null;
+                if (($orderData['fulfillment_method'] ?? 'delivery') === 'store_pickup') {
+                    $successRedirectUrl = config('app.frontend_url')
+                        . '/appointment?service=pickup'
+                        . '&order_id=' . $order->id
+                        . '&order_number=' . $order->order_number
+                        . '&source_label=' . urlencode('Pesanan #' . $order->order_number);
+                }
+                $checkoutUrl = $this->xenditService->createInvoice($order, $successRedirectUrl);
             }
 
             Payment::create([

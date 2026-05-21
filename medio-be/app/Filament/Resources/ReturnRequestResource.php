@@ -15,32 +15,62 @@ class ReturnRequestResource extends Resource
     protected static ?string $model = ReturnRequest::class;
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-arrow-uturn-left';
     protected static string | \UnitEnum | null $navigationGroup = 'Penjualan';
-    protected static ?string $navigationLabel = 'Return Requests';
+    protected static ?string $navigationLabel = 'Return';
+    protected static ?int $navigationSort = 3;
+
+    public static function getNavigationBadge(): ?string
+    {
+        $count = static::getModel()::query()
+            ->where('status', 'pending')
+            ->count();
+
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): string | array | null
+    {
+        return 'warning';
+    }
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Forms\Components\Placeholder::make('order.order_number')
-                ->label('Order Number')
-                ->content(fn (?ReturnRequest $record) => $record?->order?->order_number ?? '-'),
-            Forms\Components\Placeholder::make('user.name')
-                ->label('Customer')
-                ->content(fn (?ReturnRequest $record) => $record?->user?->name ?? '-'),
-            Forms\Components\Placeholder::make('reason')
-                ->content(fn (?ReturnRequest $record) => $record?->reason ?? '-'),
-            Forms\Components\Placeholder::make('description')
-                ->content(fn (?ReturnRequest $record) => $record?->description ?? '-'),
-            Forms\Components\Select::make('status')
-                ->options([
-                    'pending' => 'Pending',
-                    'approved' => 'Approved',
-                    'rejected' => 'Rejected',
-                ])
-                ->required(),
-            Forms\Components\Textarea::make('admin_notes')
-                ->label('Admin Notes')
-                ->rows(4)
-                ->columnSpanFull(),
+            \Filament\Schemas\Components\Grid::make(2)->schema([
+
+                \Filament\Schemas\Components\Section::make('Detail Pengajuan Return')
+                    ->columns(2)
+                    ->schema([
+                        Forms\Components\Placeholder::make('order.order_number')
+                            ->label('Nomor Order')
+                            ->content(fn (?ReturnRequest $record) => $record?->order?->order_number ?? '-'),
+                        Forms\Components\Placeholder::make('user.name')
+                            ->label('Pelanggan')
+                            ->content(fn (?ReturnRequest $record) => $record?->user?->name ?? '-'),
+                        Forms\Components\Placeholder::make('reason')
+                            ->label('Alasan Return')
+                            ->content(fn (?ReturnRequest $record) => $record?->reason ?? '-')
+                            ->columnSpanFull(),
+                        Forms\Components\Placeholder::make('description')
+                            ->label('Deskripsi')
+                            ->content(fn (?ReturnRequest $record) => $record?->description ?? '-')
+                            ->columnSpanFull(),
+                    ]),
+
+                \Filament\Schemas\Components\Section::make('Keputusan Admin')
+                    ->columns(1)
+                    ->schema([
+                        Forms\Components\Select::make('status')
+                            ->options([
+                                'pending'  => 'Pending',
+                                'approved' => 'Disetujui',
+                                'rejected' => 'Ditolak',
+                            ])
+                            ->required()->label('Status'),
+                        Forms\Components\Textarea::make('admin_notes')
+                            ->label('Catatan Admin')
+                            ->rows(8),
+                    ]),
+            ]),
         ]);
     }
 
@@ -49,10 +79,10 @@ class ReturnRequestResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('order.order_number')
-                    ->label('Order')
+                    ->label('Pesanan')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('user.name')
-                    ->label('Customer')
+                    ->label('Pelanggan')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('reason')
                     ->limit(40)
@@ -65,7 +95,7 @@ class ReturnRequestResource extends Resource
                         default => 'warning',
                     }),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Requested At')
+                    ->label('Diajukan Pada')
                     ->dateTime()
                     ->sortable(),
             ])
@@ -73,19 +103,19 @@ class ReturnRequestResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
                         'pending' => 'Pending',
-                        'approved' => 'Approved',
-                        'rejected' => 'Rejected',
+                        'approved' => 'Disetujui',
+                        'rejected' => 'Ditolak',
                     ]),
             ])
             ->actions([
                 \Filament\Actions\Action::make('approve')
-                    ->label('Approve')
+                    ->label('Setujui')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(fn (ReturnRequest $record): bool => $record->status === 'pending')
                     ->requiresConfirmation()
-                    ->modalHeading('Approve Return Request')
-                    ->modalDescription('Setujui pengajuan pengembalian ini? Customer akan mendapat notifikasi.')
+                    ->modalHeading('Setujui Pengajuan Return')
+                    ->modalDescription('Setujui pengajuan pengembalian ini? Pelanggan akan mendapat notifikasi.')
                     ->form([
                         Forms\Components\Textarea::make('admin_notes')
                             ->label('Catatan Admin (opsional)')
@@ -103,7 +133,7 @@ class ReturnRequestResource extends Resource
                     ->color('danger')
                     ->visible(fn (ReturnRequest $record): bool => $record->status === 'pending')
                     ->requiresConfirmation()
-                    ->modalHeading('Tolak Return Request')
+                    ->modalHeading('Tolak Pengajuan Return')
                     ->form([
                         Forms\Components\Textarea::make('admin_notes')
                             ->label('Alasan Penolakan')

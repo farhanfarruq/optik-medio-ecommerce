@@ -3,7 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Order;
-use App\Models\Payment;
+use App\Models\Complain;
 use App\Models\Product;
 use App\Models\ReturnRequest;
 use App\Models\User;
@@ -30,11 +30,18 @@ class StatsOverview extends BaseWidget
             ->sum('total_price');
 
         $pendingOrders = Order::where('status', 'paid')->count();
+        $unpaidOrders = Order::where('status', 'unpaid')->count();
         $processingOrders = Order::where('status', 'processing')->count();
         $totalOrders = Order::count();
         $totalCustomers = User::where('role', 'user')->count();
-        $lowStockCount = Product::where('stock', '<', 5)->where('is_active', true)->count();
+        $lowStockCount = Product::where('is_active', true)
+            ->whereColumn('stock', '<=', 'low_stock_threshold')
+            ->count();
         $pendingReturns = ReturnRequest::where('status', 'pending')->count();
+        $pendingPaymentProofs = Order::whereNotNull('payment_proof_image')
+            ->where('is_payment_verified', false)
+            ->count();
+        $openComplaints = Complain::whereIn('status', ['open', 'in_progress'])->count();
 
         // Trend: bandingkan pendapatan bulan ini vs bulan lalu
         $lastMonthRevenue = Order::whereIn('status', ['paid', 'processing', 'shipped', 'delivered'])
@@ -66,6 +73,16 @@ class StatsOverview extends BaseWidget
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->color($pendingOrders > 0 ? 'warning' : 'success'),
 
+            Stat::make('Pesanan Belum Dibayar', $unpaidOrders)
+                ->description('Menunggu pembayaran pelanggan')
+                ->descriptionIcon('heroicon-m-clock')
+                ->color($unpaidOrders > 0 ? 'warning' : 'success'),
+
+            Stat::make('Bukti Bayar Pending', $pendingPaymentProofs)
+                ->description('Bukti manual belum diverifikasi')
+                ->descriptionIcon('heroicon-m-receipt-refund')
+                ->color($pendingPaymentProofs > 0 ? 'danger' : 'success'),
+
             Stat::make('Pesanan Diproses', $processingOrders)
                 ->description('Sedang disiapkan untuk dikirim')
                 ->descriptionIcon('heroicon-m-cog')
@@ -82,7 +99,7 @@ class StatsOverview extends BaseWidget
                 ->color('info'),
 
             Stat::make('Stok Menipis', $lowStockCount)
-                ->description('Produk aktif dengan stok < 5')
+                ->description('Produk aktif di bawah batas minimum')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->color($lowStockCount > 0 ? 'danger' : 'success'),
 
@@ -90,6 +107,11 @@ class StatsOverview extends BaseWidget
                 ->description('Pengajuan retur menunggu respon')
                 ->descriptionIcon('heroicon-m-arrow-uturn-left')
                 ->color($pendingReturns > 0 ? 'danger' : 'success'),
+
+            Stat::make('Komplain Aktif', $openComplaints)
+                ->description('Status open atau in progress')
+                ->descriptionIcon('heroicon-m-chat-bubble-left-right')
+                ->color($openComplaints > 0 ? 'danger' : 'success'),
         ];
     }
 }

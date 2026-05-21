@@ -14,7 +14,9 @@ class DiscountResource extends Resource
 {
     protected static ?string $model = Discount::class;
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-ticket';
-    protected static string | \UnitEnum | null $navigationGroup = 'Promo & Loyalty';
+    protected static string | \UnitEnum | null $navigationGroup = 'Promo & Diskon';
+    protected static ?string $navigationLabel = 'Kode Diskon';
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {

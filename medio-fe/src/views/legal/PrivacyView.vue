@@ -1,34 +1,77 @@
 <template>
-  <section class="max-w-4xl mx-auto px-6 py-20">
-    <div class="mb-10">
-      <p class="text-xs font-black uppercase tracking-[0.25em] mb-3" style="color: #c19a51;">Legal</p>
-      <h1 class="text-4xl font-black mb-4" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Kebijakan Privasi</h1>
-      <p class="text-base leading-relaxed max-w-2xl" style="color: #5a5248;">
-        Kami menjaga informasi pribadi Anda dengan hati-hati dan hanya menggunakannya untuk memproses pesanan, pengiriman, serta layanan pelanggan.
-      </p>
-    </div>
+  <div class="bg-[var(--ivory)] min-h-screen">
+    <PageHero
+      title="Kebijakan Privasi"
+      :breadcrumbs="[{ label: 'Kebijakan Privasi' }]"
+    />
 
-    <div class="space-y-6">
-      <article class="border p-6 rounded-none" style="background: white; border-color: rgba(193,154,81,0.15);">
-        <h2 class="text-xl font-black mb-3" style="color: #1a1209;">Data yang Kami Kumpulkan</h2>
-        <p style="color: #5a5248;">
-          Kami dapat mengumpulkan nama, email, nomor telepon, alamat pengiriman, serta riwayat transaksi untuk keperluan pemesanan dan dukungan pelanggan.
-        </p>
-      </article>
+    <!-- Main Content -->
+    <main class="container-readable relative z-20 pt-24 pb-20 sm:pt-28">
+      <div class="bg-porcelain p-8 md:p-12 border border-outline-variant/15 shadow-card">
+        <div class="mb-12">
+          <p class="text-xs font-black uppercase tracking-[0.2em] mb-3 text-primary">Informasi Legal</p>
+          <p class="text-base leading-relaxed max-w-2xl text-on-surface-variant">
+            Optik Medio berkomitmen untuk melindungi privasi Anda. Kami hanya menggunakan data Anda untuk memproses pesanan dan meningkatkan layanan.
+          </p>
+        </div>
 
-      <article class="border p-6 rounded-none" style="background: white; border-color: rgba(193,154,81,0.15);">
-        <h2 class="text-xl font-black mb-3" style="color: #1a1209;">Penggunaan Informasi</h2>
-        <p style="color: #5a5248;">
-          Informasi digunakan untuk memverifikasi akun, memproses pembayaran, mengatur pengiriman, merespons pertanyaan, dan meningkatkan kualitas layanan toko.
-        </p>
-      </article>
+        <div class="space-y-12">
+          <section>
+            <h2 class="text-xl font-black mb-4 text-on-surface" style="font-family: 'Cormorant Garamond', serif;">1. Data yang Kami Kumpulkan</h2>
+            <p class="text-on-surface-variant leading-relaxed mb-4">
+              Kami mengumpulkan informasi pribadi yang Anda berikan saat mendaftar, melakukan pemesanan, atau menghubungi layanan pelanggan kami. Data ini meliputi:
+            </p>
+            <ul class="list-disc pl-6 text-on-surface-variant space-y-2">
+              <li>Nama lengkap dan informasi kontak (email, nomor telepon).</li>
+              <li>Alamat pengiriman dan penagihan.</li>
+              <li>Detail resep kacamata atau lensa yang Anda unggah.</li>
+              <li>Riwayat transaksi dan preferensi belanja.</li>
+            </ul>
+          </section>
 
-      <article class="border p-6 rounded-none" style="background: white; border-color: rgba(193,154,81,0.15);">
-        <h2 class="text-xl font-black mb-3" style="color: #1a1209;">Keamanan Data</h2>
-        <p style="color: #5a5248;">
-          Kami berupaya melindungi data Anda melalui pembatasan akses sistem, autentikasi akun, dan pengelolaan data transaksi secara terkontrol.
-        </p>
-      </article>
-    </div>
-  </section>
+          <section>
+            <h2 class="text-xl font-black mb-4 text-on-surface" style="font-family: 'Cormorant Garamond', serif;">2. Penggunaan Informasi</h2>
+            <p class="text-on-surface-variant leading-relaxed">
+              Informasi yang kami kumpulkan digunakan secara eksklusif untuk memproses pesanan Anda, memverifikasi pembayaran, mengatur pengiriman melalui ekspedisi mitra, serta memberikan bantuan teknis atau layanan purna jual yang Anda butuhkan.
+            </p>
+          </section>
+
+          <section>
+            <h2 class="text-xl font-black mb-4 text-on-surface" style="font-family: 'Cormorant Garamond', serif;">3. Keamanan Data</h2>
+            <p class="text-on-surface-variant leading-relaxed">
+              Keamanan data Anda adalah prioritas kami. Kami menggunakan enkripsi standar industri untuk melindungi transaksi finansial dan membatasi akses ke data pribadi Anda hanya kepada karyawan yang memerlukannya untuk memproses pesanan.
+            </p>
+          </section>
+          
+          <section>
+            <h2 class="text-xl font-black mb-4 text-on-surface" style="font-family: 'Cormorant Garamond', serif;">4. Pembaruan Kebijakan</h2>
+            <p class="text-on-surface-variant leading-relaxed">
+              Kami berhak memperbarui Kebijakan Privasi ini sewaktu-waktu. Perubahan akan segera berlaku setelah dipublikasikan di halaman ini. Kami menyarankan Anda untuk meninjau halaman ini secara berkala.
+            </p>
+          </section>
+        </div>
+
+        <div class="mt-16 pt-8 border-t border-outline-variant/10 text-center">
+          <p class="text-xs text-on-surface-variant italic">Terakhir diperbarui: 8 Mei 2026</p>
+        </div>
+      </div>
+    </main>
+  </div>
 </template>
+
+<script setup lang="ts">
+import { onMounted } from 'vue';
+import PageHero from '../../components/layout/PageHero.vue';
+import { useSeoMeta } from '../../composables/useSeoMeta';
+
+onMounted(() => {
+  // SEO-2 (Phase 6)
+  const { setSeo } = useSeoMeta();
+  setSeo({
+    title: 'Kebijakan Privasi',
+    description:
+      'Kebijakan privasi Optik Medio — bagaimana kami mengumpulkan, menggunakan, dan melindungi data pelanggan.',
+    ogType: 'article',
+  });
+});
+</script>

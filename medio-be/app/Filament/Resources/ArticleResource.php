@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ArticleResource\Pages;
+use App\Filament\Support\PublicUpload;
 use App\Models\Article;
 use App\Models\User;
 use Filament\Forms;
@@ -19,7 +20,7 @@ class ArticleResource extends Resource
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-newspaper';
     protected static string | \UnitEnum | null $navigationGroup = 'Konten';
     protected static ?string $navigationLabel = 'Blog';
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {
@@ -102,11 +103,8 @@ class ArticleResource extends Resource
                 ->icon('heroicon-o-photo')
                 ->columnSpan(1)
                 ->components([
-                    Forms\Components\FileUpload::make('featured_image')
+                    PublicUpload::image(Forms\Components\FileUpload::make('featured_image'), 'articles', '180px')
                         ->label('Gambar Featured')
-                        ->image()
-                        ->disk('public')
-                        ->directory('articles')
                         ->imageResizeMode('cover')
                         ->imageCropAspectRatio('16:9')
                         ->imageResizeTargetWidth('1200')
@@ -150,7 +148,8 @@ class ArticleResource extends Resource
                     ->limit(50)
                     ->weight('bold'),
                 Tables\Columns\TextColumn::make('author.name')
-                    ->label('Penulis'),
+                    ->label('Penulis')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('tags')
                     ->label('Tags')
                     ->badge()

@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import type { Product } from '../types';
 import { apiClient } from '../core/api/axiosclient';
 import { useAuthStore } from './authStore';
+import { logger } from '../core/utils/logger';
 
 export const useWishlistStore = defineStore('wishlist', () => {
   const items = ref<Product[]>([]);
@@ -18,11 +19,15 @@ export const useWishlistStore = defineStore('wishlist', () => {
     try {
       isLoading.value = true;
       const response = await apiClient.get('/wishlist');
-      // Backend returns the collection directly as JSON array
+      // Backend returns array of Wishlist objects with nested 'product' relation
+      // e.g. [{ id, user_id, product_id, product: { id, name, price, ... } }]
       const data = response.data;
-      items.value = Array.isArray(data) ? data : (data.data || []);
+      const rawList = Array.isArray(data) ? data : (data.data || []);
+      items.value = rawList
+        .map((item: any) => item.product ?? item)
+        .filter((p: any) => p && p.id);
     } catch (error) {
-      console.error('Failed to fetch wishlist', error);
+      logger.error('Failed to fetch wishlist', error);
     } finally {
       isLoading.value = false;
     }
@@ -42,7 +47,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
       try {
         await apiClient.post('/wishlist/toggle', { product_id: product.id });
       } catch (error) {
-        console.error('Failed to toggle wishlist', error);
+        logger.error('Failed to toggle wishlist', error);
         // Revert on error
         if (wasWishlisted) {
           items.value = [{ ...product }, ...items.value];
@@ -63,13 +68,19 @@ export const useWishlistStore = defineStore('wishlist', () => {
       try {
         await apiClient.post('/wishlist/toggle', { product_id: productId });
       } catch (error) {
-        console.error('Failed to remove from wishlist', error);
+        logger.error('Failed to remove from wishlist', error);
         // Revert on error
         if (productToRestore) {
           items.value = [productToRestore, ...items.value];
         }
       }
     }
+  };
+
+  const createShareLink = async () => {
+    const response = await apiClient.post('/wishlist/share');
+    const token = response.data.token;
+    return `${window.location.origin}/wishlist/shared/${encodeURIComponent(token)}`;
   };
 
   // Sync when auth state changes
@@ -81,7 +92,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
     }
   });
 
-  return { items, isLoading, isWishlisted, toggleWishlist, removeFromWishlist, fetchWishlist };
+  return { items, isLoading, isWishlisted, toggleWishlist, removeFromWishlist, fetchWishlist, createShareLink };
 }, {
   persist: {
     key: 'optik-medio-wishlist',

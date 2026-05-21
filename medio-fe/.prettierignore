@@ -1,0 +1,6 @@
+dist/
+node_modules/
+.vite/
+stats.html
+public/
+package-lock.json

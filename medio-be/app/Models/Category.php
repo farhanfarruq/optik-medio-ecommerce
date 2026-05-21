@@ -11,7 +11,7 @@ class Category extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'slug', 'description', 'image', 'is_active'];
+    protected $fillable = ['name', 'slug', 'description', 'image', 'meta_title', 'meta_description', 'og_image', 'is_active'];
 
     protected $casts = ['is_active' => 'boolean'];
 

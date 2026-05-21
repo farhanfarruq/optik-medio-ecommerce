@@ -4,6 +4,18 @@ export const resolveImageUrl = (imageOrProduct: any, productName: string = '') =
     return apiUrl.replace('/api', '') + '/storage/';
   };
 
+  const normalizeImage = (image: any): any => {
+    if (Array.isArray(image)) {
+      return image[0];
+    }
+
+    if (image && typeof image === 'object') {
+      return image.url || image.image_url || image.image_path || image.path || image[0];
+    }
+
+    return image;
+  };
+
   let image = imageOrProduct;
   let name = productName;
 
@@ -11,6 +23,8 @@ export const resolveImageUrl = (imageOrProduct: any, productName: string = '') =
   if (imageOrProduct && typeof imageOrProduct === 'object' && !Array.isArray(imageOrProduct)) {
     if (imageOrProduct.image_url) {
       image = imageOrProduct.image_url;
+    } else if (imageOrProduct.resolved_images) {
+      image = imageOrProduct.resolved_images;
     } else if (imageOrProduct.images) {
       image = imageOrProduct.images;
     }
@@ -31,13 +45,11 @@ export const resolveImageUrl = (imageOrProduct: any, productName: string = '') =
   }
 
   // Handle array/JSON from Filament
-  let imagePath = image;
-  if (Array.isArray(image)) {
-    imagePath = image[0];
-  } else if (typeof image === 'string' && image.startsWith('[')) {
+  let imagePath = normalizeImage(image);
+  if (typeof image === 'string' && image.startsWith('[')) {
     try {
       const parsed = JSON.parse(image);
-      if (Array.isArray(parsed)) imagePath = parsed[0];
+      if (Array.isArray(parsed)) imagePath = normalizeImage(parsed);
     } catch (e) {}
   }
 

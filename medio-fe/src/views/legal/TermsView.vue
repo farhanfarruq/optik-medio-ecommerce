@@ -1,34 +1,67 @@
 <template>
-  <section class="max-w-4xl mx-auto px-6 py-20">
-    <div class="mb-10">
-      <p class="text-xs font-black uppercase tracking-[0.25em] mb-3" style="color: #c19a51;">Legal</p>
-      <h1 class="text-4xl font-black mb-4" style="color: #1a1209; font-family: 'Outfit', sans-serif;">Syarat & Ketentuan</h1>
-      <p class="text-base leading-relaxed max-w-2xl" style="color: #5a5248;">
-        Dengan menggunakan situs ini, Anda setuju mengikuti alur pemesanan, pembayaran, pengiriman, dan kebijakan layanan yang berlaku di Optik Medio.
-      </p>
-    </div>
+  <div class="bg-[var(--ivory)] min-h-screen">
+    <PageHero
+      title="Syarat & Ketentuan"
+      :breadcrumbs="[{ label: 'Syarat & Ketentuan' }]"
+    />
 
-    <div class="space-y-6">
-      <article class="border p-6 rounded-none" style="background: white; border-color: rgba(193,154,81,0.15);">
-        <h2 class="text-xl font-black mb-3" style="color: #1a1209;">Pemesanan</h2>
-        <p style="color: #5a5248;">
-          Pesanan dianggap valid setelah data pembeli lengkap, stok tersedia, dan pembayaran berhasil diverifikasi oleh sistem.
-        </p>
-      </article>
+    <!-- Main Content -->
+    <main class="container-readable relative z-20 pt-24 pb-20 sm:pt-28">
+      <div class="bg-porcelain p-8 md:p-12 border border-outline-variant/15 shadow-card">
+        <div class="mb-12">
+          <p class="text-xs font-black uppercase tracking-[0.2em] mb-3 text-primary">Aturan Penggunaan</p>
+          <p class="text-base leading-relaxed max-w-2xl text-on-surface-variant">
+            Harap baca syarat dan ketentuan ini dengan saksama sebelum menggunakan layanan Optik Medio. Dengan bertransaksi, Anda setuju untuk terikat oleh aturan yang berlaku.
+          </p>
+        </div>
 
-      <article class="border p-6 rounded-none" style="background: white; border-color: rgba(193,154,81,0.15);">
-        <h2 class="text-xl font-black mb-3" style="color: #1a1209;">Pembayaran & Pengiriman</h2>
-        <p style="color: #5a5248;">
-          Waktu proses pengiriman dapat berbeda tergantung kurir, area tujuan, dan verifikasi pembayaran. Nomor resi akan ditampilkan saat pesanan dikirim.
-        </p>
-      </article>
+        <div class="space-y-12">
+          <section>
+            <h2 class="text-xl font-black mb-4 text-on-surface" style="font-family: 'Cormorant Garamond', serif;">1. Ketentuan Pemesanan</h2>
+            <p class="text-on-surface-variant leading-relaxed">
+              Semua pesanan yang dilakukan melalui situs Optik Medio tunduk pada ketersediaan stok. Kami berhak membatalkan pesanan jika data resep kacamata tidak lengkap atau terjadi kesalahan harga yang signifikan pada sistem.
+            </p>
+          </section>
 
-      <article class="border p-6 rounded-none" style="background: white; border-color: rgba(193,154,81,0.15);">
-        <h2 class="text-xl font-black mb-3" style="color: #1a1209;">Pengembalian</h2>
-        <p style="color: #5a5248;">
-          Pengajuan pengembalian dilakukan oleh customer melalui halaman pesanan setelah status barang diterima, lalu akan ditinjau oleh tim kami.
-        </p>
-      </article>
-    </div>
-  </section>
+          <section>
+            <h2 class="text-xl font-black mb-4 text-on-surface" style="font-family: 'Cormorant Garamond', serif;">2. Pembayaran</h2>
+            <p class="text-on-surface-variant leading-relaxed">
+              Pembayaran harus dilakukan secara penuh melalui metode yang tersedia. Pesanan akan mulai diproses (termasuk pemasangan lensa resep) segera setelah verifikasi pembayaran berhasil diterima oleh sistem kami.
+            </p>
+          </section>
+
+          <section>
+            <h2 class="text-xl font-black mb-4 text-on-surface" style="font-family: 'Cormorant Garamond', serif;">3. Pengiriman & Pengembalian</h2>
+            <p class="text-on-surface-variant leading-relaxed mb-4">
+              Risiko kerusakan selama pengiriman menjadi tanggung jawab mitra ekspedisi, namun kami akan membantu proses klaim asuransi jika diperlukan. 
+            </p>
+            <p class="text-on-surface-variant leading-relaxed">
+              Pengembalian atau penukaran barang hanya diperbolehkan jika terdapat cacat produksi atau kesalahan pengiriman dari pihak kami, yang dilaporkan maksimal 7 hari setelah barang diterima.
+            </p>
+          </section>
+        </div>
+
+        <div class="mt-16 pt-8 border-t border-outline-variant/10 text-center">
+          <p class="text-xs text-on-surface-variant italic">Terakhir diperbarui: 8 Mei 2026</p>
+        </div>
+      </div>
+    </main>
+  </div>
 </template>
+
+<script setup lang="ts">
+import { onMounted } from 'vue';
+import PageHero from '../../components/layout/PageHero.vue';
+import { useSeoMeta } from '../../composables/useSeoMeta';
+
+onMounted(() => {
+  // SEO-2 (Phase 6)
+  const { setSeo } = useSeoMeta();
+  setSeo({
+    title: 'Syarat & Ketentuan',
+    description:
+      'Syarat dan ketentuan penggunaan layanan Optik Medio — pembelian, pengiriman, retur, dan kebijakan layanan.',
+    ogType: 'article',
+  });
+});
+</script>

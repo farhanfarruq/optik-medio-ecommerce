@@ -4,6 +4,10 @@ namespace App\Http\Controllers\API;
 
 use App\Enums\UserAffiliatorStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\ResendOtpRequest;
+use App\Http\Requests\Auth\VerifyOtpRequest;
 use App\Mail\OtpMail;
 use App\Models\OtpCode;
 use App\Models\User;
@@ -15,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -23,22 +28,21 @@ class AuthController extends Controller
     /**
      * Register — buat user + kirim OTP ke email
      */
-    public function register(Request $request): JsonResponse
+    public function register(RegisterRequest $request): JsonResponse
     {
-        $request->validate([
-            'name'                   => 'required|string|max:255',
-            'email'                  => 'required|string|email|max:255|unique:users',
-            'phone'                  => 'nullable|string|max:20',
-            'password'               => 'required|string|min:8|confirmed',
-            'register_as_affiliator' => 'nullable|boolean',
-            'referral_code'          => 'nullable|string|max:50|exists:user_affiliators,affiliate_code',
-        ]);
-
         $referringAffiliator = null;
         if ($request->filled('referral_code')) {
+            $referralCode = Str::upper($request->string('referral_code')->trim()->toString());
             $referringAffiliator = UserAffiliator::query()
-                ->where('affiliate_code', $request->string('referral_code')->trim()->toString())
+                ->where('affiliate_code', $referralCode)
+                ->where('status', UserAffiliatorStatus::Approved->value)
                 ->first();
+
+            if (! $referringAffiliator) {
+                throw ValidationException::withMessages([
+                    'referral_code' => 'Kode affiliator tidak valid atau belum aktif.',
+                ]);
+            }
         }
 
         $user = DB::transaction(function () use ($request, $referringAffiliator) {
@@ -74,16 +78,24 @@ class AuthController extends Controller
     /**
      * Verifikasi OTP
      */
-    public function verifyOtp(Request $request): JsonResponse
+    public function verifyOtp(VerifyOtpRequest $request): JsonResponse
     {
-        $request->validate([
-            'email' => 'required|email',
-            'code'  => 'required|string|size:6',
-        ]);
+        $limiterKey = $this->otpAttemptLimiterKey($request);
+
+        if (RateLimiter::tooManyAttempts($limiterKey, 5)) {
+            $seconds = RateLimiter::availableIn($limiterKey);
+
+            return response()->json([
+                'message' => 'Terlalu banyak percobaan OTP. Silakan coba lagi nanti.',
+                'retry_after' => $seconds,
+            ], 429);
+        }
 
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
+            RateLimiter::hit($limiterKey, 600);
+
             return response()->json(['message' => 'Email tidak ditemukan.'], 404);
         }
 
@@ -97,6 +109,8 @@ class AuthController extends Controller
             ->first();
 
         if (!$otp) {
+            RateLimiter::hit($limiterKey, 600);
+
             return response()->json([
                 'message' => 'Kode OTP tidak valid atau sudah kadaluarsa.',
             ], 422);
@@ -108,26 +122,26 @@ class AuthController extends Controller
         // Tandai email user sebagai terverifikasi
         $user->update(['email_verified_at' => now()]);
 
-        // Berikan token (auto-login)
+        RateLimiter::clear($limiterKey);
+
+        Auth::login($user);
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
+
         $user->load('addresses');
-        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'Email berhasil diverifikasi!',
             'user'    => $user,
-            'token'   => $token,
         ]);
     }
 
     /**
      * Kirim ulang OTP
      */
-    public function resendOtp(Request $request): JsonResponse
+    public function resendOtp(ResendOtpRequest $request): JsonResponse
     {
-        $request->validate([
-            'email' => 'required|email',
-        ]);
-
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
@@ -156,14 +170,11 @@ class AuthController extends Controller
     /**
      * Login
      */
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required',
-        ]);
+        $credentials = $request->only('email', 'password');
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        if (!Auth::validate($credentials)) {
             throw ValidationException::withMessages([
                 'email' => ['Kredensial tidak valid.'],
             ]);
@@ -171,22 +182,25 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->firstOrFail();
 
-        // Cek apakah email sudah diverifikasi
+        // Cek apakah email sudah diverifikasi (registrasi pertama kali)
         if (!$user->email_verified_at) {
-            // Kirim ulang OTP otomatis
             $this->generateAndSendOtp($user, 'email');
 
             return response()->json([
-                'message'          => 'Email belum diverifikasi. Kode OTP baru telah dikirim.',
-                'requires_otp'     => true,
-                'email'            => $user->email,
+                'message'      => 'Email belum diverifikasi. Kode OTP telah dikirim.',
+                'requires_otp' => true,
+                'email'        => $user->email,
             ], 403);
         }
 
-        $user->load('addresses');
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // Setiap login selalu wajib verifikasi OTP
+        $this->generateAndSendOtp($user, 'email');
 
-        return response()->json(['user' => $user, 'token' => $token]);
+        return response()->json([
+            'message'      => 'Kode OTP telah dikirim ke email Anda.',
+            'requires_otp' => true,
+            'email'        => $user->email,
+        ], 403);
     }
 
     /**
@@ -194,7 +208,11 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        Auth::guard('web')->logout();
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         return response()->json(['message' => 'Berhasil logout']);
     }
@@ -234,11 +252,28 @@ class AuthController extends Controller
             try {
                 Mail::to($user->email)->send(new OtpMail($code, $user->name));
             } catch (\Exception $e) {
-                Log::error('Failed to send OTP email: ' . $e->getMessage());
-                // Fallback: log OTP ke file log agar tetap bisa diverifikasi saat development
-                Log::info("OTP untuk {$user->email}: {$code}");
+                Log::error('Failed to send OTP email', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'exception' => $e->getMessage(),
+                ]);
+                if (app()->isLocal()) {
+                    Log::warning('OTP email delivery failed in local environment.', [
+                        'email' => $user->email,
+                        'otp_preview' => str_repeat('*', 4) . substr($code, -2),
+                    ]);
+                }
             }
         }
+    }
+
+    private function otpAttemptLimiterKey(Request $request): string
+    {
+        return sprintf(
+            'auth:verify-otp:%s|%s',
+            Str::lower($request->string('email')->trim()->toString()),
+            $request->ip(),
+        );
     }
 
     private function generateAffiliateCode(string $name): string

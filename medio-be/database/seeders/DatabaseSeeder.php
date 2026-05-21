@@ -68,6 +68,8 @@ class DatabaseSeeder extends Seeder
         $this->call(AdminShowcaseSeeder::class);
         $this->call(ProductCatalogSeeder::class);
         $this->call(ProductPhotoSeeder::class);
+        $this->call(ProductExpansionSeeder::class);
+        $this->call(ProductExpansionPhotoSeeder::class);
         $this->call(OpticalConfigurationSeeder::class);
         $this->call(ShippingRateSeeder::class);
         

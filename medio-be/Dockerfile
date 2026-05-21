@@ -1,14 +1,3 @@
-FROM node:22-alpine AS frontend
-
-WORKDIR /app
-
-COPY package.json package-lock.json ./
-RUN npm ci
-
-COPY resources ./resources
-COPY vite.config.js ./
-RUN npm run build
-
 FROM php:8.3-cli-alpine
 
 WORKDIR /var/www/html
@@ -17,7 +6,7 @@ WORKDIR /var/www/html
 RUN apk add --no-cache \
     curl libpng-dev libxml2-dev zip unzip git \
     oniguruma-dev libzip-dev freetype-dev \
-    libjpeg-turbo-dev icu-dev openssl
+    libjpeg-turbo-dev icu-dev openssl nodejs npm
 
 # PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
@@ -29,10 +18,12 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Copy source
 COPY . .
-COPY --from=frontend /app/public/build ./public/build
 
 # Install PHP dependencies (production, no dev)
 RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# Build Filament/Vite assets after Composer creates vendor files
+RUN npm ci && npm run build && rm -rf node_modules
 
 # Permissions
 RUN mkdir -p storage/framework/{cache,sessions,views} \

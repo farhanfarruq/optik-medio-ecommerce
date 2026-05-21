@@ -6,7 +6,7 @@ WORKDIR /var/www/html
 RUN apk add --no-cache \
     curl libpng-dev libxml2-dev zip unzip git \
     oniguruma-dev libzip-dev freetype-dev \
-    libjpeg-turbo-dev icu-dev openssl nodejs npm
+    libjpeg-turbo-dev icu-dev openssl ca-certificates nodejs npm
 
 # PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \

@@ -37,7 +37,16 @@ class SecurityHeaders
 
         // Cross-Origin headers — proteksi tambahan terhadap Spectre-class attacks.
         $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin');
-        $response->headers->set('Cross-Origin-Resource-Policy', 'same-site');
+
+        $isPublicAsset = $request->is('storage/*')
+            || $request->is('images/*')
+            || $request->is('favicon*')
+            || $request->is('build/*');
+
+        $response->headers->set(
+            'Cross-Origin-Resource-Policy',
+            $isPublicAsset ? 'cross-origin' : 'same-site'
+        );
 
         // CSP hanya di production agar tidak memblokir resource local
         // (http://localhost, Filament admin dev, Vite HMR, dsb).

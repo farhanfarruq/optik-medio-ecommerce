@@ -1,3 +1,14 @@
+FROM node:22-alpine AS frontend
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY resources ./resources
+COPY vite.config.js ./
+RUN npm run build
+
 FROM php:8.3-cli-alpine
 
 WORKDIR /var/www/html
@@ -18,6 +29,7 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Copy source
 COPY . .
+COPY --from=frontend /app/public/build ./public/build
 
 # Install PHP dependencies (production, no dev)
 RUN composer install --no-dev --optimize-autoloader --no-interaction
@@ -31,6 +43,6 @@ RUN mkdir -p storage/framework/{cache,sessions,views} \
 COPY docker-entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-EXPOSE 8000
+EXPOSE 8080
 
 CMD ["/entrypoint.sh"]

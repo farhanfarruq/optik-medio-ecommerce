@@ -7,15 +7,8 @@
     />
 
     <!-- Main Content -->
-    <main class="container-premium py-12 pb-20">
+    <main class="container-premium pt-8 pb-20">
       <div>
-        <div class="mb-12">
-          <p class="text-xs font-black uppercase tracking-[0.2em] mb-3 text-primary">Informasi & Edukasi</p>
-          <p class="text-base leading-relaxed max-w-2xl text-on-surface-variant">
-            Temukan tips kesehatan mata, panduan memilih frame kacamata, hingga update terbaru seputar layanan Optik Medio.
-          </p>
-        </div>
-
         <div class="mb-10">
           <label for="article-search" class="sr-only">Cari artikel</label>
           <div class="relative">

@@ -95,7 +95,7 @@ onMounted(() => {
       :breadcrumbs="breadcrumbs"
     />
 
-    <main class="container-commerce py-12">
+    <main class="container-commerce pt-8 pb-12">
 
       <!-- Loading -->
       <div v-if="isLoading" class="flex justify-center py-20">

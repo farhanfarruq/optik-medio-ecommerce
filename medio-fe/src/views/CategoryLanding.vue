@@ -70,7 +70,7 @@ onMounted(loadCategory);
       back-label="Kembali ke Katalog"
     />
 
-    <main class="container-commerce pt-40 pb-12">
+    <main class="container-commerce pt-8 pb-12">
       <div v-if="isLoading" class="flex justify-center py-20">
         <span class="material-symbols-outlined animate-spin text-4xl" style="color: var(--gold);">sync</span>
       </div>

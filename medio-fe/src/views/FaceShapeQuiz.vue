@@ -118,7 +118,7 @@ onMounted(() => {
     back-label="Kembali ke Katalog"
   />
 
-  <main class="min-h-screen bg-[var(--ivory)] pb-24 pt-40">
+  <main class="min-h-screen bg-[var(--ivory)] pb-24 pt-8">
     <section class="container-premium">
       <div class="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-8">
         <aside class="premium-card p-6 h-fit">

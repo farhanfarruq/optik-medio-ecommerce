@@ -247,7 +247,7 @@ watch(searchQuery, (query) => {
   />
 
   <!-- ═══ DESKTOP layout (lg+) ═══════════════════════════════════════════ -->
-  <main class="hidden lg:block min-h-screen bg-[var(--ivory)] pb-24 pt-40">
+  <main class="hidden lg:block min-h-screen bg-[var(--ivory)] pb-24 pt-8">
     <section class="max-w-[1440px] mx-auto px-12">
       <div class="grid grid-cols-[1fr_360px] gap-8">
         <section class="premium-card p-6">

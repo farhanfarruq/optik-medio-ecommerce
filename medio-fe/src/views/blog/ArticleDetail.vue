@@ -12,7 +12,7 @@
     />
 
     <!-- Main Content -->
-    <main class="container-premium max-w-4xl py-10 pb-20">
+    <main class="container-premium max-w-4xl pt-8 pb-20">
       <!-- Loading State -->
       <div v-if="loading" class="premium-card p-12 space-y-8">
         <div class="h-8 bg-surface-container-low w-3/4 animate-pulse"></div>

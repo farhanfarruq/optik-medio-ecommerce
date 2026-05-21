@@ -769,7 +769,7 @@ const deleteAddress = async (id: number) => {
     :breadcrumbs="profileBreadcrumbs"
   />
 
-  <main class="container-commerce pt-40 pb-20 flex-grow">
+  <main class="container-commerce pt-8 pb-20 flex-grow">
     <div class="flex flex-col lg:flex-row gap-8 xl:gap-10">
 
       <aside class="w-full lg:w-64 xl:w-72 shrink-0">
@@ -1522,3 +1522,163 @@ const deleteAddress = async (id: number) => {
     </div>
   </Teleport>
 </template>
+
+<style scoped>
+/* Phase 8 — Profile/Account polish (additive, tidak ganti markup) */
+
+/* Container & spacing responsive */
+main.container-commerce {
+  padding-top: clamp(96px, 12vw, 160px);
+  padding-bottom: clamp(48px, 8vw, 96px);
+}
+
+/* ─── Sidebar nav ─── */
+aside {
+  /* Tetap di top desktop saat scroll, hindari sticky di mobile (terlalu ribet
+     dengan section panjang). */
+}
+
+@media (min-width: 1024px) {
+  aside { position: sticky; top: calc(var(--header-height, 72px) + 24px); }
+}
+
+/* Mobile: ubah sidebar jadi horizontal scroll chips */
+@media (max-width: 1023.98px) {
+  aside nav {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    padding: 8px !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  aside nav button {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 10px 14px !important;
+    min-height: 40px;
+    border-radius: 999px !important;
+  }
+
+  aside nav button .material-symbols-outlined {
+    font-size: 16px;
+  }
+
+  /* Hide divider line + logout button di scroll bar mobile.
+     Logout tetap accessible via TopNavBar hamburger drawer. */
+  aside nav > div[class*="h-px"] { display: none; }
+  aside nav > button:last-child { /* logout */
+    margin-left: 8px;
+    padding-left: 16px !important;
+    border-left: 1px solid var(--mist);
+    border-radius: 999px !important;
+  }
+}
+
+/* Desktop sidebar: refine button styling */
+@media (min-width: 1024px) {
+  aside nav button {
+    min-height: 44px;
+    transition: background-color 200ms ease, color 200ms ease;
+  }
+
+  aside nav button .material-symbols-outlined {
+    flex-shrink: 0;
+  }
+}
+
+/* ─── Main content area ─── */
+main.container-commerce > div.flex {
+  gap: clamp(16px, 2.4vw, 32px);
+}
+
+/* Section card normalize — kebanyakan section dipakai .bg-surface-container-low
+   atau utility class lain. Kasih border, background, radius konsisten. */
+main.container-commerce > div.flex > div.min-w-0 > div {
+  border-radius: 10px;
+}
+
+/* Mobile: section padding lebih ringkas */
+@media (max-width: 767.98px) {
+  main.container-commerce > div.flex > div.min-w-0 > div.p-6,
+  main.container-commerce > div.flex > div.min-w-0 > div.p-8 {
+    padding: 16px !important;
+  }
+
+  main.container-commerce > div.flex > div.min-w-0 h2 {
+    font-size: 1.25rem !important;
+  }
+
+  /* Kompakkan loyalty card */
+  main.container-commerce .relative.overflow-hidden.p-6 {
+    padding: 18px !important;
+  }
+}
+
+/* Tap target minimum untuk semua action button di section */
+main.container-commerce button,
+main.container-commerce a[role="button"],
+main.container-commerce .button {
+  min-height: 36px;
+}
+
+/* Order tab status: scroll horizontal di mobile, tidak wrap */
+main.container-commerce [class*="flex"]:has(> button[class*="orderStatusFilter"]) {
+  overflow-x: auto;
+}
+
+/* Form inputs: konsistenkan dengan design system delta */
+main.container-commerce input[type="text"],
+main.container-commerce input[type="email"],
+main.container-commerce input[type="tel"],
+main.container-commerce input[type="number"],
+main.container-commerce input[type="password"],
+main.container-commerce textarea,
+main.container-commerce select {
+  border-radius: 8px;
+  font-size: 14px;
+  min-height: 44px;
+}
+
+main.container-commerce input[type="text"]:focus,
+main.container-commerce input[type="email"]:focus,
+main.container-commerce input[type="tel"]:focus,
+main.container-commerce input[type="number"]:focus,
+main.container-commerce input[type="password"]:focus,
+main.container-commerce textarea:focus,
+main.container-commerce select:focus {
+  outline: none;
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 3px rgba(184, 138, 68, 0.13);
+}
+
+/* Order/wishlist/prescription card hover */
+main.container-commerce [class*="hover:shadow"]:not(button):not(a) {
+  transition: box-shadow 200ms ease, border-color 200ms ease, transform 200ms ease;
+}
+
+/* ─── Modal global polish (Teleport-ed dialogs di Profile) ─── */
+/* Tidak bisa target via scoped, biarkan markup existing menangani modal style. */
+
+/* Loyalty membership card — pastikan tidak overflow */
+main.container-commerce .relative.overflow-hidden {
+  contain: layout style;
+}
+
+/* Empty state polish: kalau ada empty state inline (Wishlist kosong, dll) */
+main.container-commerce .text-center.py-16,
+main.container-commerce .text-center.py-20,
+main.container-commerce .text-center.py-24 {
+  padding: clamp(40px, 6vw, 80px) 24px;
+}
+
+/* Address card grid responsive */
+@media (max-width: 767.98px) {
+  main.container-commerce [class*="grid-cols-2"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+</style>

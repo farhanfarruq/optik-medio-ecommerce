@@ -9,7 +9,6 @@ const route = useRoute();
 const isScrolled = ref(false);
 const isAuthPage = computed(() => ['Login', 'Register'].includes(route.name as string));
 const isLightBanner = computed(() => isScrolled.value || isAuthPage.value);
-const bannerTextStyle = computed(() => ({ color: isLightBanner.value ? 'var(--ink)' : '#fff' }));
 
 const updateScrollState = () => {
   isScrolled.value = window.scrollY > 50;
@@ -47,31 +46,34 @@ const handleAmbil = () => {
   <Transition name="slide-down">
     <div
       v-if="activePromo"
-      class="fixed top-0 z-[100] flex h-9 w-full items-center border-b px-3 shadow-card backdrop-blur-2xl transition-colors duration-300"
-      :class="isLightBanner ? 'border-mist/80 bg-porcelain/70' : 'border-gold/25 bg-ink/50'"
-      :style="bannerTextStyle"
+      class="promo-banner"
+      :class="{ 'promo-banner--light': isLightBanner }"
+      role="region"
+      aria-label="Promo aktif"
     >
-      <div class="container-premium flex items-center justify-between gap-3 px-0">
-        <div class="flex min-w-0 flex-1 items-center justify-center gap-2 overflow-hidden md:gap-3">
-          <span class="material-symbols-outlined shrink-0 text-[15px]" :style="bannerTextStyle">sell</span>
-          <p class="truncate text-[10px] font-semibold uppercase tracking-[0.14em] md:text-xs">
-            <span :style="bannerTextStyle">{{ activePromo.name }}</span>
-            <span class="mx-2 hidden sm:inline" :style="{ color: isLightBanner ? 'rgba(26,18,9,0.38)' : 'rgba(255,255,255,0.5)' }">/</span>
-            <span class="hidden normal-case tracking-normal sm:inline" :style="{ color: isLightBanner ? 'rgba(26,18,9,0.72)' : 'rgba(255,255,255,0.82)' }">{{ activePromo.description }}</span>
+      <div class="container-premium promo-banner__inner">
+        <div class="promo-banner__content">
+          <span class="material-symbols-outlined promo-banner__icon" aria-hidden="true">sell</span>
+          <p class="promo-banner__text">
+            <span class="promo-banner__name">{{ activePromo.name }}</span>
+            <span class="promo-banner__sep" aria-hidden="true">·</span>
+            <span class="promo-banner__desc">{{ activePromo.description }}</span>
           </p>
           <button
+            type="button"
+            class="promo-banner__cta"
             @click="handleAmbil"
-            class="shrink-0 rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors active:scale-95"
-            :class="isLightBanner ? 'bg-gold text-ink hover:bg-ivory' : 'bg-white/10 text-white ring-1 ring-white/25 hover:bg-white/15'"
           >
-            Ambil
+            Ambil Promo
           </button>
         </div>
-        <button @click="cartStore.dismissPromoBanner()" :class="[
-            'flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors',
-            isLightBanner ? 'hover:bg-ivory' : 'hover:bg-white/10'
-          ]" :style="bannerTextStyle" aria-label="Tutup promo">
-          <span class="material-symbols-outlined text-base">close</span>
+        <button
+          type="button"
+          class="promo-banner__close"
+          aria-label="Tutup banner promo"
+          @click="cartStore.dismissPromoBanner()"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
         </button>
       </div>
     </div>
@@ -79,8 +81,147 @@ const handleAmbil = () => {
 </template>
 
 <style scoped>
+.promo-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 12px;
+  border-bottom: 1px solid rgba(184, 138, 68, 0.25);
+  background: rgba(21, 18, 14, 0.65);
+  color: #fff;
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-card);
+  transition: background-color var(--motion-slow) var(--easing-standard),
+              border-color var(--motion-slow) var(--easing-standard),
+              color var(--motion-slow) var(--easing-standard);
+}
+
+.promo-banner--light {
+  background: rgba(252, 250, 246, 0.78);
+  border-bottom-color: rgba(231, 225, 216, 0.8);
+  color: var(--ink);
+}
+
+.promo-banner__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0;
+}
+
+.promo-banner__content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.promo-banner__icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.promo-banner__text {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.promo-banner__name {
+  flex-shrink: 0;
+}
+
+.promo-banner__sep,
+.promo-banner__desc {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .promo-banner__sep,
+  .promo-banner__desc {
+    display: inline;
+  }
+  .promo-banner__sep {
+    opacity: 0.5;
+    font-weight: 400;
+  }
+  .promo-banner__desc {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 500;
+    opacity: 0.84;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.promo-banner__cta {
+  flex-shrink: 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: var(--gold);
+  color: var(--ink);
+  transition: filter var(--motion-base);
+}
+
+.promo-banner__cta:hover { filter: brightness(0.95); }
+.promo-banner__cta:active { transform: scale(0.96); }
+
+.promo-banner--light .promo-banner__cta {
+  background: var(--ink);
+  color: var(--ivory);
+}
+
+.promo-banner__close {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: inherit;
+  transition: background-color var(--motion-base);
+}
+
+.promo-banner__close:hover { background: rgba(255, 255, 255, 0.10); }
+.promo-banner--light .promo-banner__close:hover { background: var(--ivory); }
+
+.promo-banner__close .material-symbols-outlined {
+  font-size: 16px;
+}
+
 .slide-down-enter-active,
-.slide-down-leave-active { transition: transform 0.28s ease, opacity 0.28s ease; }
+.slide-down-leave-active {
+  transition: transform var(--motion-slow) var(--easing-standard),
+              opacity var(--motion-slow) var(--easing-standard);
+}
+
 .slide-down-enter-from,
-.slide-down-leave-to { transform: translateY(-100%); opacity: 0; }
+.slide-down-leave-to {
+  transform: translateY(-100%);
+  opacity: 0;
+}
 </style>

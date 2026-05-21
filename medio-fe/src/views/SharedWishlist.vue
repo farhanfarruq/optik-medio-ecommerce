@@ -26,7 +26,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="min-h-screen bg-[var(--ivory)] pb-24">
+  <main class="min-h-screen bg-[var(--ivory)] pb-24 pt-8">
     <PageHero
       title="Wishlist Pilihan"
       :breadcrumbs="[{ label: 'Wishlist Dibagikan' }]"
@@ -34,7 +34,7 @@ onMounted(async () => {
       backLabel="Lihat Produk"
     />
 
-    <section class="container-premium py-10">
+    <section class="container-premium pt-8 pb-10">
 
       <div v-if="isLoading" class="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-4">
         <div v-for="item in 4" :key="item" class="animate-pulse bg-white border border-mist">

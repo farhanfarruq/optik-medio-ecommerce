@@ -356,7 +356,7 @@ const submitReview = async (item: any) => {
     back-label="Kembali ke Pesanan"
   />
 
-  <main class="container-commerce pt-40 pb-20 flex-grow">
+  <main class="container-commerce pt-8 pb-20 flex-grow">
     <div v-if="isLoading" class="animate-pulse space-y-6">
       <div class="h-12 rounded-lg w-1/3" style="background: rgba(184,138,68,0.1);"></div>
       <div class="h-64 rounded-lg" style="background: rgba(184,138,68,0.07);"></div>

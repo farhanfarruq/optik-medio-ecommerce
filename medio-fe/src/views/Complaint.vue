@@ -102,7 +102,7 @@ onMounted(async () => {
       :breadcrumbs="[{ label: isShippingProtectionMode ? 'Klaim Proteksi Pengiriman' : 'Komplain' }]"
     />
 
-    <main class="container-premium max-w-4xl pt-24 pb-20">
+    <main class="container-premium max-w-4xl pt-8 pb-20">
       <div class="premium-card mb-6 p-5">
         <div class="grid grid-cols-5 gap-2 text-center">
           <div v-for="(step, index) in complaintSteps" :key="step.label" class="flex flex-col items-center gap-2">

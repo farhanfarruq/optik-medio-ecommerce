@@ -15,6 +15,9 @@ const step = ref<'register' | 'otp'>((route.query.step as any) || 'register');
 const isLoading = ref(false);
 const errorMessage = ref('');
 const registeredEmail = ref((route.query.email as string) || '');
+const registerAsAffiliatorFromQuery = ['1', 'true', 'yes'].includes(
+  String(route.query.affiliator ?? route.query.affiliate ?? route.query.register_as_affiliator ?? '').toLowerCase(),
+);
 
 onMounted(() => {
   if (step.value === 'otp' && registeredEmail.value) {
@@ -29,7 +32,7 @@ const form = ref({
   phone: '',
   password: '',
   password_confirmation: '',
-  register_as_affiliator: false,
+  register_as_affiliator: registerAsAffiliatorFromQuery,
   referral_code: '',
 });
 
@@ -175,6 +178,13 @@ onUnmounted(() => {
         <label class="block"><span class="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-graphite/65">Konfirmasi</span><input v-model="form.password_confirmation" type="password" required class="input-field py-2.5" placeholder="Ulangi password" /></label>
       </div>
       <label class="block"><span class="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-graphite/65">Kode Referral</span><input v-model="form.referral_code" type="text" class="input-field py-2.5" placeholder="Opsional" /></label>
+      <label class="flex items-start gap-3 rounded-lg border border-mist bg-porcelain/70 p-4 text-left transition-colors hover:border-gold/50">
+        <input v-model="form.register_as_affiliator" type="checkbox" class="mt-1 h-4 w-4 rounded border-mist text-gold focus:ring-gold/30" />
+        <span>
+          <span class="block text-sm font-semibold text-ink">Daftar sebagai affiliator</span>
+          <span class="mt-1 block text-xs leading-relaxed text-graphite/70">Pengajuan masuk ke admin dengan status menunggu persetujuan.</span>
+        </span>
+      </label>
       <button type="submit" :disabled="isLoading" class="btn-primary w-full py-2.5"><span v-if="isLoading" class="material-symbols-outlined animate-spin text-base">sync</span><span>{{ isLoading ? 'Memproses...' : 'Daftar & Kirim OTP' }}</span></button>
       <p class="text-center text-sm text-graphite/70">Sudah punya akun? <router-link to="/login" class="font-semibold text-gold transition-colors hover:text-ink">Masuk</router-link></p>
     </form>

@@ -722,7 +722,7 @@ const submitOrder = async () => {
         back-label="Kembali ke Keranjang"
       />
 
-    <main class="container-commerce relative z-10 pt-40 pb-24">
+    <main class="container-commerce relative z-10 pt-8 pb-24">
 
       <!-- Store Close Alert Banner -->
       <div v-if="storeStatus?.is_closed" class="mb-8 p-5 border flex items-start gap-4" style="background: rgba(220,38,38,0.06); border-color: rgba(220,38,38,0.3);">
@@ -1364,6 +1364,29 @@ const submitOrder = async () => {
       </div>
     </Teleport>
 
+    <!-- ╔══════════════════════════════════════════════════╗ -->
+    <!-- ║         STICKY MOBILE CHECKOUT CTA              ║ -->
+    <!-- ╚══════════════════════════════════════════════════╝ -->
+    <div
+      v-if="cartStore.items.length > 0 && !showXenditModal"
+      class="checkout-sticky-cta sticky-cta-mobile"
+    >
+      <div class="checkout-sticky-cta__price">
+        <span class="text-meta">Total</span>
+        <strong>Rp {{ grandTotal.toLocaleString('id-ID') }}</strong>
+      </div>
+      <button
+        type="button"
+        class="btn-primary checkout-sticky-cta__btn"
+        :disabled="isSubmitting || (fulfillmentMethod === 'delivery' && !form.selected_service) || !isAddressComplete || storeStatus?.is_closed"
+        @click="submitOrder"
+      >
+        <span v-if="isSubmitting" class="material-symbols-outlined animate-spin" aria-hidden="true">sync</span>
+        <span v-if="!isSubmitting">{{ fulfillmentMethod === 'store_pickup' ? 'Bayar & Booking' : 'Bayar Sekarang' }}</span>
+        <span v-if="!isSubmitting" class="material-symbols-outlined" aria-hidden="true">{{ fulfillmentMethod === 'store_pickup' ? 'storefront' : 'arrow_forward' }}</span>
+      </button>
+    </div>
+
   </div>
 </template>
 
@@ -1380,5 +1403,97 @@ const submitOrder = async () => {
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #d1d5db;
+}
+
+/* Phase 7 — Checkout polish (additive, tidak ganti markup) */
+.checkout-page { background: var(--ivory); flex-grow: 1; }
+
+/* Mobile padding bottom supaya tidak ketabrak sticky CTA */
+@media (max-width: 767.98px) {
+  .checkout-page main {
+    padding-bottom: 96px !important;
+  }
+}
+
+/* Sticky CTA mobile — pakai class dari design system delta */
+.checkout-sticky-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.checkout-sticky-cta__price {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.checkout-sticky-cta__price .text-meta {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+
+.checkout-sticky-cta__price strong {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.05;
+}
+
+.checkout-sticky-cta__btn {
+  flex: 0 0 auto;
+  width: auto;
+  min-height: 46px;
+  padding: 11px 16px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.checkout-sticky-cta__btn:disabled {
+  background: var(--mist);
+  color: rgba(43, 41, 38, 0.55);
+  box-shadow: none;
+}
+
+.checkout-sticky-cta__btn .material-symbols-outlined {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 359.98px) {
+  .checkout-sticky-cta { gap: 8px; }
+  .checkout-sticky-cta__price strong { font-size: 18px; }
+  .checkout-sticky-cta__btn { padding: 11px 12px; font-size: 10px; }
+}
+
+@media (min-width: 768px) {
+  .checkout-sticky-cta { display: none; }
+}
+
+/* Hide desktop "Bayar Sekarang" CTA on mobile (replaced by sticky) — supaya tidak duplikat */
+@media (max-width: 767.98px) {
+  /* Targetkan tombol bayar di summary card, bukan tombol di sticky.
+     Karena scoped CSS, kita pakai selector yang tidak match sticky CTA. */
+  .premium-card button[class*="bg-[var(--ink)]"],
+  .premium-card button.bg-\[var\(--ink\)\] {
+    /* Disable agar tidak dipencet — tetap visible untuk konteks. Sticky bar
+       menggantikan fungsinya di mobile. */
+    /* Visual hide opsional; kita pertahankan saja agar tetap terlihat sebagai
+       konfirmasi visual di akhir summary. */
+  }
+}
+
+/* Visual polish: tightening label/spacing agar lebih rapi di mobile */
+@media (max-width: 767.98px) {
+  .checkout-page main h2 {
+    font-size: 1.125rem !important;
+  }
 }
 </style>

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 // ─────────────────────────────────────────────────────────────────────────
-// FIXME P1-11 (Phase 3): God component (1.330 LOC) — refactor ke sub-tree.
-// Lihat: medio-fe/src/views/REFACTOR_PLAN.md untuk migration plan lengkap.
-// Composables baru tersedia: useFormatMoney.
+// FIXME P1-11 (Phase 3): God component. Phase 6 redesign — re-layout
+// template, semua state/watch/computed/method dipertahankan persis.
+// Lihat: medio-fe/src/views/REFACTOR_PLAN.md
 // ─────────────────────────────────────────────────────────────────────────
 import { logger } from '../core/utils/logger';
-import { computed, ref, reactive, onMounted, watch } from 'vue';
+import { computed, ref, reactive, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCartStore } from '../stores/cartStore';
 import { useWishlistStore } from '../stores/wishlistStore';
@@ -23,6 +23,7 @@ import { resolveImageUrl } from '../core/utils/image';
 import { useToast } from '../composables/useToast';
 import { useSeoMeta } from '../composables/useSeoMeta';
 import { useAnalytics } from '../composables/useAnalytics';
+import { formatMoney } from '../composables/useFormatMoney';
 
 const { showToast } = useToast();
 
@@ -54,21 +55,18 @@ const formState = reactive({
     os: { sph: '0.00', cyl: '0.00', axis: '', add: '0.00' },
     pdRight: '',
     pdLeft: '',
-    pdSingle: ''
-  }
+    pdSingle: '',
+  },
 });
 
 const isLensModalOpen = ref(false);
 const isLensChoiceModalOpen = ref(false);
 
-// ── Lens Configurator state ──────────────────────────────────────────────────
 const allCoatings = ref<LensCoating[]>([]);
 const isCoatingsLoading = ref(false);
 const selectedLensOption = ref<LensOption | null>(null);
 const selectedCoating = ref<LensCoating | null>(null);
-// Step: 'lens' = pilih lens option, 'coating' = pilih coating
 const configuratorStep = ref<'lens' | 'coating'>('lens');
-// Computed harga total dengan lens + coating
 const configuratorTotalPrice = computed(() => {
   if (!product.value) return 0;
   const base = product.value.price || 0;
@@ -110,6 +108,7 @@ const skipCoating = () => {
 const confirmLensConfiguration = () => {
   executeAddToCart();
 };
+
 const supportsAddInConfigurator = computed(() => selectedLensOption.value?.type === 'progressive');
 const usesOdAxis = computed(() => Number(formState.prescription.od.cyl || 0) !== 0);
 const usesOsAxis = computed(() => Number(formState.prescription.os.cyl || 0) !== 0);
@@ -123,7 +122,6 @@ const productCategoryContext = computed(() => {
 
 const isFrameProduct = computed(() => {
   if (!product.value) return false;
-
   return productCategoryContext.value.includes('frame')
     || Boolean(
       product.value.frame_shape
@@ -139,7 +137,6 @@ const isFrameProduct = computed(() => {
 
 const isStandaloneLensProduct = computed(() => {
   if (!product.value) return false;
-
   return !isFrameProduct.value
     && (
       productCategoryContext.value.includes('lensa')
@@ -165,11 +162,9 @@ const hasRecommendationSection = computed(() => (
 
 const isAppointmentProduct = computed(() => {
   if (!product.value) return false;
-
   const category = (product.value as any)?.category;
   const categoryContext = `${category?.slug ?? ''} ${category?.name ?? ''}`.toLowerCase();
   const productContext = `${product.value.slug} ${product.value.name}`.toLowerCase();
-
   return categoryContext.includes('paket-pemeriksaan')
     || productContext.includes('paket-pemeriksaan')
     || productContext.includes('pemeriksaan-mata')
@@ -182,7 +177,6 @@ onMounted(async () => {
     const data = await productRepository.getProductBySlug(slug);
     product.value = data;
 
-    // Inject SEO meta + JSON-LD
     const resolvedImages = (data as any).resolved_images || [];
     const firstImage = resolvedImages[0]?.url || resolvedImages[0] || null;
     setSeo({
@@ -206,7 +200,6 @@ onMounted(async () => {
       reviewCount: reviewSummary.value.total_reviews || undefined,
     }));
 
-    // Track product view
     trackProductViewed(data.id, data.slug, data.name);
     try {
       const reviews = await reviewRepository.getProductReviews(slug);
@@ -229,7 +222,7 @@ onMounted(async () => {
     }
     if (data.is_prescription_required) {
       fetchLenses();
-      loadPrescriptions(); // muat resep tersimpan user jika login
+      loadPrescriptions();
     }
     fetchRecommendations(slug);
   } catch (error) {
@@ -258,7 +251,6 @@ const fetchRecommendations = async (slug: string) => {
     similarFrames.value = recommendations.similar_frames || [];
     compatibleLenses.value = recommendations.compatible_lenses || [];
     relatedProducts.value = recommendations.related_products || [];
-    // Assign compatible_lens_options ke product agar bisa diakses di template dan modal
     if (product.value && recommendations.compatible_lens_options) {
       (product.value as any).compatible_lens_options = recommendations.compatible_lens_options;
     }
@@ -270,7 +262,6 @@ const fetchRecommendations = async (slug: string) => {
 const handleAddToCartClick = () => {
   if (!product.value) return;
 
-  // 1. Produk appointment → redirect ke halaman appointment
   if (isAppointmentProduct.value) {
     router.push({
       path: '/appointment',
@@ -283,33 +274,26 @@ const handleAddToCartClick = () => {
     return;
   }
 
-  // 2. Softlens / lensa kontak → langsung ke keranjang (dengan resep jika butuh)
   if (productCategoryContext.value.includes('softlens') || productCategoryContext.value.includes('lensa-kontak')) {
     executeAddToCart();
     return;
   }
 
-  // 3. Lensa standalone (bukan softlens, bukan frame) dengan resep
-  //    → tampilkan pilihan: beli lensa saja atau pilih frame dulu
   if (isStandaloneLensProduct.value && product.value.is_prescription_required) {
     isLensChoiceModalOpen.value = true;
     return;
   }
 
-  // 4. Frame yang butuh resep → WAJIB buka lens configurator (pilih lens + coating)
-  //    Ini berlaku meski compatible_lens_options kosong (akan tampil pesan di modal)
   if (isFrameProduct.value && product.value.is_prescription_required) {
     openLensConfigurator();
     return;
   }
 
-  // 5. Frame tanpa resep tapi punya lens options → buka lens configurator
   if (isFrameProduct.value && (product.value as any).compatible_lens_options?.length > 0) {
     openLensConfigurator();
     return;
   }
 
-  // 6. Produk lainnya → langsung ke keranjang
   executeAddToCart();
 };
 
@@ -328,19 +312,17 @@ const executeAddToCart = (selectedLens: any = null) => {
     ...product.value,
     variant: {
       color: formState.color?.name,
-      size: formState.size
+      size: formState.size,
     },
-    // Sertakan lens option & coating yang dipilih dari configurator
     lens_option_id: selectedLensOption.value?.id ?? null,
     lens_coating_id: selectedCoating.value?.id ?? null,
-    // Sertakan prescription profile jika user memilih resep tersimpan
     prescription_profile_id: selectedPrescriptionProfileId.value ?? null,
   };
 
   cartStore.addToCart(
     cartItem as any,
     product.value.is_prescription_required ? formState.prescription : undefined,
-    selectedLens
+    selectedLens,
   );
 
   isLensModalOpen.value = false;
@@ -403,7 +385,6 @@ const isCompared = computed(() => product.value ? compareStore.isCompared(produc
 
 const toggleWishlist = async () => {
   if (!product.value) return;
-
   const added = await wishlistStore.toggleWishlist(product.value);
   showToast(
     added ? 'Produk ditambahkan ke wishlist.' : 'Produk dihapus dari wishlist.',
@@ -413,19 +394,16 @@ const toggleWishlist = async () => {
 
 const toggleCompare = () => {
   if (!product.value) return;
-
   const result = compareStore.toggle(product.value);
   if (result === 'full') {
     showToast('Maksimal 4 produk untuk dibandingkan.', 'error');
     return;
   }
-
   showToast(result === 'added' ? 'Produk ditambahkan ke compare.' : 'Produk dihapus dari compare.', 'success');
 };
 
 const sphOptions = ['-2.00', '-1.75', '-1.50', '-1.25', '-1.00', '-0.75', '-0.50', '-0.25', '0.00', '+0.25', '+0.50', '+0.75', '+1.00', '+1.25', '+1.50', '+1.75', '+2.00'];
 
-// Format nilai numerik dari DB agar cocok dengan format sphOptions ('+0.50', '-1.25', '0.00')
 const formatSphValue = (val: number | string | null | undefined): string => {
   if (val == null || val === '') return '0.00';
   const num = parseFloat(String(val));
@@ -435,7 +413,7 @@ const formatSphValue = (val: number | string | null | undefined): string => {
   return num > 0 ? `+${formatted}` : `-${formatted}`;
 };
 
-// ── Prescription Profile (resep tersimpan dari profil user) ──────────────────
+// Saved prescription profiles
 const prescriptions = ref<PrescriptionProfile[]>([]);
 const selectedPrescriptionProfileId = ref<number | null>(null);
 
@@ -443,19 +421,17 @@ const loadPrescriptions = async () => {
   if (!authStore.user) return;
   try {
     prescriptions.value = await prescriptionRepository.list();
-  } catch (e) {
+  } catch {
     // silent — user mungkin belum login atau belum punya resep
   }
 };
 
 const applyPrescriptionProfile = (profile: PrescriptionProfile) => {
-  // Toggle: klik lagi untuk deselect
   if (selectedPrescriptionProfileId.value === profile.id) {
     selectedPrescriptionProfileId.value = null;
     return;
   }
   selectedPrescriptionProfileId.value = profile.id;
-  // Isi form resep dari data profil — format nilai agar cocok dengan sphOptions
   formState.prescription.od.sph = formatSphValue(profile.right_sphere);
   formState.prescription.od.cyl = formatSphValue(profile.right_cylinder);
   formState.prescription.od.axis = profile.right_axis != null ? String(profile.right_axis) : '';
@@ -474,60 +450,66 @@ const applyPrescriptionProfile = (profile: PrescriptionProfile) => {
   }
 };
 
-watch(
-  () => formState.prescription.od.cyl,
-  (cylinder) => {
-    if (Number(cylinder || 0) === 0) {
-      formState.prescription.od.axis = '';
-    }
-  },
-);
+watch(() => formState.prescription.od.cyl, (cylinder) => {
+  if (Number(cylinder || 0) === 0) formState.prescription.od.axis = '';
+});
 
-watch(
-  () => formState.prescription.os.cyl,
-  (cylinder) => {
-    if (Number(cylinder || 0) === 0) {
-      formState.prescription.os.axis = '';
-    }
-  },
-);
+watch(() => formState.prescription.os.cyl, (cylinder) => {
+  if (Number(cylinder || 0) === 0) formState.prescription.os.axis = '';
+});
 
-watch(
-  () => supportsAddInConfigurator.value,
-  (supportsAdd) => {
-    if (!supportsAdd) {
-      formState.prescription.od.add = '0.00';
-      formState.prescription.os.add = '0.00';
-    }
-  },
-);
+watch(() => supportsAddInConfigurator.value, (supportsAdd) => {
+  if (!supportsAdd) {
+    formState.prescription.od.add = '0.00';
+    formState.prescription.os.add = '0.00';
+  }
+});
 
-watch(
-  () => formState.pdType,
-  (pdType) => {
-    if (pdType === 'single') {
-      formState.prescription.pdRight = '';
-      formState.prescription.pdLeft = '';
-      return;
-    }
+watch(() => formState.pdType, (pdType) => {
+  if (pdType === 'single') {
+    formState.prescription.pdRight = '';
+    formState.prescription.pdLeft = '';
+    return;
+  }
+  formState.prescription.pdSingle = '';
+});
 
-    formState.prescription.pdSingle = '';
-  },
-);
+// Lock body scroll when modal open
+watch([isLensModalOpen, isLensChoiceModalOpen], ([a, b]) => {
+  if (a || b) {
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = '';
+  }
+});
+
+// Esc key handler
+const handleKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Escape') {
+    if (isLensModalOpen.value) isLensModalOpen.value = false;
+    else if (isLensChoiceModalOpen.value) isLensChoiceModalOpen.value = false;
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown);
+  document.body.style.overflow = '';
+});
 
 const getProductPromos = (p: Product | null) => {
   if (!p) return { buyPromos: [], discountPromos: [] };
-  
+
   const buyPromos = [...(p.buy_promos || []), ...(p.buy_promos_many || [])];
   const discountPromos = [...(p.discount_promos || []), ...(p.discount_promos_many || [])];
 
-  // Add brand-based promos from store
   if (p.brand && cartStore.activePromos.length > 0) {
     cartStore.activePromos.forEach(promo => {
-      // Check if already in list to avoid duplicates
       const isDuplicate = [...buyPromos, ...discountPromos].some(item => item.id === promo.id);
       if (isDuplicate) return;
-
       if (promo.type === 'buy_x_get_y' && promo.buy_brands?.includes(p.brand)) {
         buyPromos.push(promo);
       } else if (promo.type === 'product_discount' && promo.discount_brands?.includes(p.brand)) {
@@ -541,7 +523,6 @@ const getProductPromos = (p: Product | null) => {
 
 const formatPromoDescription = (desc: string) => {
   if (!desc) return '';
-  // Match patterns like "15.00%" and turn them into "15%"
   return desc.replace(/(\d+)\.00%/g, '$1%');
 };
 
@@ -568,7 +549,6 @@ const formatProductLabel = (value: string | number | null | undefined) => {
 const frameSizeRows = computed(() => {
   const p = product.value;
   if (!p) return [];
-
   return [
     { label: 'Lebar Lensa', value: p.lens_width },
     { label: 'Bridge', value: p.bridge_width },
@@ -580,7 +560,6 @@ const frameSizeRows = computed(() => {
 const frameProfileRows = computed(() => {
   const p = product.value;
   if (!p) return [];
-
   return [
     { label: 'Bentuk', value: p.frame_shape },
     { label: 'Material', value: p.frame_material },
@@ -591,561 +570,652 @@ const frameProfileRows = computed(() => {
 });
 
 const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProfileRows.value.length > 0);
+
+// Promo display helpers (memoised — avoid 3x getProductPromos in template)
+const productPromos = computed(() => getProductPromos(product.value));
+const primaryBuyPromo = computed(() => productPromos.value.buyPromos[0]);
+const primaryDiscountPromo = computed(() => productPromos.value.discountPromos[0]);
+
+// Accordion state
+const openSpec = ref(true);
+const openShipping = ref(false);
+const openWarranty = ref(false);
+
+// Add to cart label
+const addToCartLabel = computed(() => {
+  if (addedToCart.value) return 'Ditambahkan!';
+  if (isAppointmentProduct.value) return 'Booking Jadwal Konsultasi';
+  if (!product.value || product.value.stock <= 0) return 'Stok Habis';
+  if (isStandaloneLensProduct.value) return 'Lanjutkan Pembelian Lensa';
+  if (isFrameProduct.value && (product.value as any).compatible_lens_options?.length > 0) {
+    return selectedLensOption.value ? 'Tambah ke Keranjang' : 'Pilih Lensa & Coating';
+  }
+  return 'Tambah ke Keranjang';
+});
+
+// Mobile-friendly shorter label untuk sticky CTA bar
+const addToCartLabelMobile = computed(() => {
+  if (addedToCart.value) return 'Ditambahkan!';
+  if (isAppointmentProduct.value) return 'Booking Konsultasi';
+  if (!product.value || product.value.stock <= 0) return 'Stok Habis';
+  if (isStandaloneLensProduct.value) return 'Beli Lensa';
+  if (isFrameProduct.value && (product.value as any).compatible_lens_options?.length > 0) {
+    return selectedLensOption.value ? 'Tambah ke Cart' : 'Pilih Lensa';
+  }
+  return 'Tambah ke Cart';
+});
+
+const addToCartIcon = computed(() => {
+  if (addedToCart.value) return 'check_circle';
+  if (isAppointmentProduct.value) return 'calendar_today';
+  if (!product.value || product.value.stock <= 0) return 'block';
+  return 'shopping_bag';
+});
+
+const canAddToCart = computed(() => {
+  if (!product.value) return false;
+  if (product.value.is_not_for_sale && !isAppointmentProduct.value) return false;
+  return isAppointmentProduct.value || product.value.stock > 0;
+});
+
+const goPrevImage = () => {
+  if (activeImage.value > 0) activeImage.value--;
+};
+
+const goNextImage = () => {
+  if (product.value && product.value.images && activeImage.value < product.value.images.length - 1) {
+    activeImage.value++;
+  }
+};
 </script>
 
 <template>
-  <!-- Loading State -->
-  <main v-if="isLoading" class="flex-grow flex items-center justify-center bg-ivory py-32">
-    <div class="flex flex-col items-center gap-4">
-      <div class="w-14 h-14 rounded-lg border-4 border-t-transparent animate-spin" style="border-color: rgba(184,138,68,0.25); border-top-color: var(--gold);"></div>
-      <p class="text-sm font-medium text-graphite/65">Memuat produk...</p>
-    </div>
+  <!-- Loading -->
+  <main v-if="isLoading" class="pdp-loading">
+    <div class="pdp-spinner"></div>
+    <p>Memuat produk...</p>
   </main>
 
-  <main v-else-if="product" class="flex-grow w-full bg-ivory">
+  <main v-else-if="product" class="pdp">
     <PageHero
       :title="product.name"
-      :subtitle="product.brand ? (product.brand + ' - Detail produk dan pilihan lensa.') : 'Detail produk dan pilihan lensa.'"
+      :subtitle="product.brand ? (product.brand + ' — Detail produk dan pilihan lensa.') : 'Detail produk dan pilihan lensa.'"
       :breadcrumbs="[{ label: 'Katalog Produk', to: '/products' }, { label: product.brand || 'Produk' }]"
       back-to="/products"
       back-label="Kembali ke Koleksi"
     />
 
-    <div class="container-premium pt-32 pb-8 md:pt-36 md:pb-10">
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
-
-        <!-- ── Left: Image Gallery ── -->
-        <div class="flex flex-col gap-3 lg:col-span-6 lg:self-start">
-          <!-- Main Image -->
-          <div
-            class="relative mx-auto flex aspect-square w-full max-w-[560px] items-center justify-center overflow-hidden rounded-lg border border-mist bg-porcelain shadow-card"
-            style="background: linear-gradient(145deg, var(--ivory), var(--mist)); border-color: rgba(184,138,68,0.15);"
-          >
+    <div class="container-premium pdp__main">
+      <div class="pdp__layout">
+        <!-- ──────────────── LEFT: Gallery ──────────────── -->
+        <section class="pdp__gallery" aria-label="Galeri produk">
+          <div class="pdp-gallery__main">
             <img
               :src="resolveImageUrl(product.images?.[activeImage])"
-              class="h-full w-full object-contain p-3 mix-blend-multiply sm:p-4 md:p-5"
-              alt="Product" loading="lazy" decoding="async" />
-            <!-- Image Nav Arrows (if multiple) -->
+              :alt="product.name"
+              class="pdp-gallery__image"
+              loading="eager"
+              decoding="async"
+            />
+
             <button
-              v-if="product.images?.length > 1 && activeImage > 0"
-              @click="activeImage--"
-              class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-lg flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
-              style="background: rgba(255,255,255,0.9); box-shadow: 0 2px 12px rgba(0,0,0,0.1);"
+              v-if="product.images?.length > 1"
+              type="button"
+              class="pdp-gallery__nav pdp-gallery__nav--prev"
+              :class="{ 'pdp-gallery__nav--disabled': activeImage === 0 }"
+              :disabled="activeImage === 0"
+              aria-label="Gambar sebelumnya"
+              @click="goPrevImage"
             >
-              <span class="material-symbols-outlined text-lg" style="color: var(--ink);">chevron_left</span>
+              <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
             </button>
             <button
-              v-if="product.images?.length > 1 && activeImage < product.images.length - 1"
-              @click="activeImage++"
-              class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-lg flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
-              style="background: rgba(255,255,255,0.9); box-shadow: 0 2px 12px rgba(0,0,0,0.1);"
+              v-if="product.images?.length > 1"
+              type="button"
+              class="pdp-gallery__nav pdp-gallery__nav--next"
+              :class="{ 'pdp-gallery__nav--disabled': activeImage >= (product.images?.length ?? 1) - 1 }"
+              :disabled="activeImage >= (product.images?.length ?? 1) - 1"
+              aria-label="Gambar berikutnya"
+              @click="goNextImage"
             >
-              <span class="material-symbols-outlined text-lg" style="color: var(--ink);">chevron_right</span>
+              <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
             </button>
+
+            <div v-if="product.images?.length > 1" class="pdp-gallery__counter" aria-live="polite">
+              {{ activeImage + 1 }} / {{ product.images.length }}
+            </div>
           </div>
 
-          <!-- Thumbnails -->
-          <div v-if="product.images?.length > 1" class="mx-auto grid w-full max-w-[560px] grid-cols-5 gap-2 sm:gap-3">
+          <div v-if="product.images?.length > 1" class="pdp-gallery__thumbs">
             <button
               v-for="(img, index) in product.images"
               :key="index"
+              type="button"
+              class="pdp-gallery__thumb"
+              :class="{ 'pdp-gallery__thumb--active': activeImage === index }"
+              :aria-label="`Lihat gambar ${index + 1}`"
               @click="activeImage = index"
-              class="aspect-square overflow-hidden rounded-lg border-2 p-1.5 transition-all sm:p-2"
-              :style="activeImage === index
-                ? 'border-color: var(--gold); opacity: 1; background: linear-gradient(145deg, var(--ivory), var(--mist));'
-                : 'border-color: transparent; opacity: 0.6; background: linear-gradient(145deg, var(--ivory), var(--mist));'"
-              :class="{ 'hover:opacity-100': activeImage !== index }"
             >
-              <img alt="" :src="resolveImageUrl(img)" class="w-full h-full object-contain mix-blend-multiply" loading="lazy" decoding="async" />
+              <img
+                :src="resolveImageUrl(img)"
+                alt=""
+                class="pdp-gallery__thumb-img"
+                loading="lazy"
+                decoding="async"
+              />
             </button>
           </div>
-        </div>
+        </section>
 
-        <!-- ── Right: Product Info ── -->
-        <div class="flex flex-col gap-3 lg:col-span-6 lg:self-start">
-
-          <!-- Category + Badges -->
-          <div class="flex flex-col gap-2">
-            <div class="flex items-center justify-between">
-              <p class="text-[10px] font-black uppercase tracking-[0.3em]" style="color: #6F4E1D;">
-                Koleksi {{ (product as any).category?.name || 'Optik' }}
-              </p>
-              <div
-                v-if="product.is_best_seller"
-                class="flex items-center gap-1.5 px-3 py-1 rounded-md text-[9px] font-bold uppercase tracking-[0.1em] text-white"
-                style="background: rgba(26,18,9,0.8); backdrop-filter: blur(4px); border: 1px solid rgba(184,138,68,0.3);"
-              >
-                <span class="material-symbols-outlined text-[10px]" style="color: var(--gold);">trending_up</span>
-                Terlaris
-              </div>
-            </div>
-
-            <div class="flex flex-col gap-3">
-              <!-- Promo Badge (Buy X Get Y) -->
-              <div
-                v-if="getProductPromos(product).buyPromos.length > 0"
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-[0.1em] text-white shadow-card"
-                style="background: var(--gold); border: 1px solid rgba(255,255,255,0.2);"
-              >
-                <span class="material-symbols-outlined text-[10px]">redeem</span>
-                {{ 
-                  getProductPromos(product).buyPromos[0]
-                    ? `Beli ${getProductPromos(product).buyPromos[0].buy_quantity} Gratis ${getProductPromos(product).buyPromos[0].get_quantity}` 
-                    : 'Promo Spesial' 
-                }}
-                <div v-if="getProductPromos(product).buyPromos[0]?.description" class="mt-1 normal-case font-medium opacity-90">
-                  {{ formatPromoDescription(getProductPromos(product).buyPromos[0]?.description) }}
-                </div>
-              </div>
-
-              <!-- Promo Badge (Product Discount) -->
-              <div
-                v-if="getProductPromos(product).discountPromos.length > 0"
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-[0.1em] text-white shadow-card"
-                style="background: #ef4444; border: 1px solid rgba(255,255,255,0.2);"
-              >
-                <span class="material-symbols-outlined text-[10px]">percent</span>
-                {{ 
-                  getProductPromos(product).discountPromos[0] 
-                    ? `Diskon ${getProductPromos(product).discountPromos[0].discount_type === 'percentage' ? Math.round(Number(getProductPromos(product).discountPromos[0].discount_value)) + '%' : 'Rp ' + Number(getProductPromos(product).discountPromos[0].discount_value).toLocaleString('id-ID')}` 
-                    : 'Diskon Spesial' 
-                }}
-                <div v-if="getProductPromos(product).discountPromos[0]?.description" class="mt-1 normal-case font-medium opacity-90">
-                  {{ formatPromoDescription(getProductPromos(product).discountPromos[0]?.description) }}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Name + Price -->
-          <div class="flex flex-col gap-1.5">
-            <p class="text-xs font-black uppercase tracking-[0.2em]" style="color: var(--graphite);">
-              {{ product.name }}
+        <!-- ──────────────── RIGHT: Product Info ──────────────── -->
+        <section class="pdp__info" aria-label="Detail produk">
+          <header class="pdp__heading">
+            <p class="eyebrow">
+              Koleksi {{ (product as any).category?.name || 'Optik' }}
             </p>
-            <h1 class="text-2xl font-bold leading-tight tracking-normal md:text-3xl" style="color: var(--ink); font-family: 'Cormorant Garamond', serif; letter-spacing: -0.02em;">
-              {{ product.brand || 'Optik Medio' }}
-            </h1>
-            <div class="flex flex-wrap items-center gap-2 text-xs" style="color: var(--graphite);">
-              <span class="flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-base" style="color: var(--gold);">star</span>
-                {{ Number(reviewSummary.avg_rating || product.avg_rating || 0).toFixed(1) }} dari {{ reviewSummary.total_reviews || product.review_count || 0 }} ulasan
+
+            <div class="pdp__badges-row">
+              <span v-if="product.is_best_seller" class="pdp-badge pdp-badge--ink">
+                <span class="material-symbols-outlined" aria-hidden="true">trending_up</span>
+                Terlaris
               </span>
-              <span class="flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-base" style="color: var(--gold);">shopping_bag</span>
+              <span v-if="primaryBuyPromo" class="pdp-badge pdp-badge--gold">
+                <span class="material-symbols-outlined" aria-hidden="true">redeem</span>
+                {{ primaryBuyPromo.buy_quantity && primaryBuyPromo.get_quantity
+                  ? `Beli ${primaryBuyPromo.buy_quantity} Gratis ${primaryBuyPromo.get_quantity}`
+                  : 'Promo Spesial' }}
+              </span>
+              <span v-if="primaryDiscountPromo" class="pdp-badge pdp-badge--red">
+                <span class="material-symbols-outlined" aria-hidden="true">percent</span>
+                {{ primaryDiscountPromo.discount_type === 'percentage'
+                  ? `Diskon ${Math.round(Number(primaryDiscountPromo.discount_value))}%`
+                  : `Diskon ${formatMoney(Number(primaryDiscountPromo.discount_value))}` }}
+              </span>
+            </div>
+
+            <h1 class="pdp__title editorial-display">{{ product.brand || 'Optik Medio' }}</h1>
+            <p class="pdp__subtitle">{{ product.name }}</p>
+
+            <ul class="pdp__meta">
+              <li>
+                <span class="material-symbols-outlined" aria-hidden="true">star</span>
+                {{ Number(reviewSummary.avg_rating || product.avg_rating || 0).toFixed(1) }}
+                · {{ reviewSummary.total_reviews || product.review_count || 0 }} ulasan
+              </li>
+              <li>
+                <span class="material-symbols-outlined" aria-hidden="true">shopping_bag</span>
                 {{ Number(product.purchase_count || 0) }} terjual
+              </li>
+            </ul>
+
+            <div class="pdp__price-row">
+              <p v-if="!product.is_not_for_sale" class="pdp__price price-display">
+                {{ formatMoney(product.price) }}
+              </p>
+              <p v-else class="pdp__price-info">Katalog Informasi</p>
+
+              <span v-if="!product.is_not_for_sale" class="pdp__stock"
+                :class="product.stock > 0 ? 'pdp__stock--available' : 'pdp__stock--out'">
+                <span class="pdp__stock-dot" aria-hidden="true"></span>
+                {{ product.stock > 0 ? `Stok: ${product.stock}` : 'Stok Habis' }}
               </span>
             </div>
-            <div class="flex items-center justify-between">
-              <p v-if="!product.is_not_for_sale" class="text-xl font-black" style="color: #6F4E1D;">
-                Rp {{ product.price.toLocaleString('id-ID') }}
-              </p>
-              <p v-else class="text-base font-bold uppercase tracking-widest" style="color: #6F4E1D;">
-                Katalog Informasi
-              </p>
-              <div v-if="!product.is_not_for_sale" class="flex items-center gap-2">
-                <span
-                  class="w-2.5 h-2.5 rounded-lg"
-                  :style="product.stock > 0 ? 'background: #16a34a; box-shadow: 0 0 8px rgba(22,163,74,0.5);' : 'background: #dc2626;'"
-                ></span>
-                <p class="text-xs font-bold" :style="product.stock > 0 ? 'color: #15803d;' : 'color: #dc2626;'">
-                  {{ product.stock > 0 ? `Stok: ${product.stock}` : 'Stok Habis' }}
-                </p>
-              </div>
-            </div>
+
+            <p v-if="primaryBuyPromo?.description || primaryDiscountPromo?.description"
+               class="pdp__promo-desc">
+              {{ formatPromoDescription(primaryBuyPromo?.description || primaryDiscountPromo?.description || '') }}
+            </p>
+          </header>
+
+          <!-- Wishlist + Compare row -->
+          <div class="pdp__quick-row">
+            <button
+              type="button"
+              class="pdp-quick-btn"
+              :class="{ 'pdp-quick-btn--active': isWishlisted }"
+              :aria-pressed="isWishlisted"
+              @click="toggleWishlist"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">
+                {{ isWishlisted ? 'favorite' : 'favorite_border' }}
+              </span>
+              <span>{{ isWishlisted ? 'Tersimpan di Wishlist' : 'Wishlist' }}</span>
+            </button>
+            <button
+              type="button"
+              class="pdp-quick-btn"
+              :class="{ 'pdp-quick-btn--active pdp-quick-btn--compared': isCompared }"
+              :aria-pressed="isCompared"
+              @click="toggleCompare"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">compare_arrows</span>
+              <span>{{ isCompared ? 'Ada di Compare' : 'Bandingkan' }}</span>
+            </button>
           </div>
-
-          <button
-            @click="toggleWishlist"
-            class="btn-outline w-full py-2 text-xs uppercase tracking-[0.1em]"
-            :style="isWishlisted
-              ? 'background: rgba(184,138,68,0.12); color: #6F4E1D; border-color: rgba(184,138,68,0.3);'
-              : 'background: white; color: var(--graphite); border-color: rgba(184,138,68,0.18);'"
-          >
-            <span class="material-symbols-outlined text-lg">{{ isWishlisted ? 'favorite' : 'favorite_border' }}</span>
-            {{ isWishlisted ? 'Tersimpan di Wishlist' : 'Tambah ke Wishlist' }}
-          </button>
-
-          <button
-            @click="toggleCompare"
-            class="w-full rounded-lg border px-4 py-2.5 flex items-center justify-center gap-2 text-sm font-black uppercase tracking-[0.14em] transition-all"
-            :style="isCompared
-              ? 'background: rgba(63,111,143,0.12); color: var(--optical-blue); border-color: rgba(63,111,143,0.28);'
-              : 'background: white; color: var(--graphite); border-color: rgba(184,138,68,0.18);'"
-          >
-            <span class="material-symbols-outlined text-lg">compare_arrows</span>
-            {{ isCompared ? 'Ada di Compare' : 'Bandingkan' }}
-          </button>
-
-          <!-- Divider -->
-          <div class="h-px" style="background: linear-gradient(90deg, rgba(184,138,68,0.3), transparent);"></div>
 
           <!-- Description -->
-          <p v-if="product.description" class="text-xs leading-6" style="color: var(--graphite);">
+          <p v-if="product.description" class="pdp__description">
             {{ product.description }}
           </p>
 
-          <!-- Frame Size Guide -->
-          <div
-            v-if="hasFrameGuide"
-            class="border rounded-lg overflow-hidden"
-            style="background: rgba(255,255,255,0.78); border-color: rgba(184,138,68,0.22);"
-          >
-            <div class="px-3 py-2.5 border-b flex items-center justify-between gap-2" style="border-color: rgba(184,138,68,0.14);">
-              <div>
-                <p class="text-xs font-black uppercase tracking-[0.16em]" style="color: #6F4E1D;">Panduan Ukuran Frame</p>
-                <p class="mt-0.5 text-[11px]" style="color: var(--graphite);">Gunakan data ini untuk membandingkan kenyamanan fit.</p>
-              </div>
-              <span class="material-symbols-outlined text-lg" style="color: var(--gold);">straighten</span>
-            </div>
-
-            <div v-if="frameSizeRows.length > 0" class="grid grid-cols-2 sm:grid-cols-4 border-b" style="border-color: rgba(184,138,68,0.14);">
-              <div
-                v-for="row in frameSizeRows"
-                :key="row.label"
-                class="px-3 py-2 border-r last:border-r-0"
-                style="border-color: rgba(184,138,68,0.14);"
-              >
-                <p class="text-[10px] font-black uppercase tracking-widest" style="color: var(--graphite);">{{ row.label }}</p>
-                <p class="mt-0.5 text-lg font-black" style="color: var(--ink);">{{ row.value }} <span class="text-xs font-bold text-graphite/70">mm</span></p>
-              </div>
-            </div>
-
-            <div v-if="frameProfileRows.length > 0" class="grid grid-cols-2 sm:grid-cols-3 gap-px" style="background: rgba(184,138,68,0.12);">
-              <div
-                v-for="row in frameProfileRows"
-                :key="row.label"
-                class="px-3 py-2"
-                style="background: white;"
-              >
-                <p class="text-[10px] font-black uppercase tracking-widest" style="color: var(--graphite);">{{ row.label }}</p>
-                <p class="mt-0.5 text-sm font-bold" style="color: var(--ink);">{{ formatProductLabel(row.value) }}</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Prescription Notice -->
-          <div
-            v-if="product.is_prescription_required && !product.is_not_for_sale"
-            class="flex items-start gap-2 rounded-lg border p-2.5"
-            style="background: rgba(255,255,255,0.72); border-color: rgba(184,138,68,0.28);"
-          >
-            <span class="material-symbols-outlined mt-0.5" style="color: var(--gold);">info</span>
-            <div>
-              <p class="text-xs font-bold" style="color: #6F4E1D;">Membutuhkan Resep Optik</p>
-              <p class="mt-0.5 text-xs leading-5" style="color: var(--graphite);">Produk ini memerlukan resep optik yang valid untuk diproses.</p>
-            </div>
-          </div>
-
-          <!-- Info Only Notice -->
-          <div
-            v-if="product.is_not_for_sale"
-            class="flex flex-col gap-3 rounded-lg border p-4"
-            style="background: rgba(26,18,9,0.03); border-color: rgba(184,138,68,0.2); border-left: 4px solid var(--gold);"
-          >
-            <div class="flex items-center gap-2 text-ink">
-              <span class="material-symbols-outlined text-lg" style="color: var(--gold);">menu_book</span>
-              <p class="text-sm font-bold">Katalog Brand Lensa</p>
-            </div>
-            <p class="text-xs leading-6 text-graphite">
-              Informasi produk ini merupakan bagian dari katalog brand lensa yang kami gunakan di Optik Medio. 
-              Produk ini tidak dijual secara terpisah. Untuk konsultasi lebih lanjut mengenai lensa terbaik untuk kebutuhan mata Anda, silakan hubungi tim ahli kami.
+          <!-- Color variants -->
+          <div v-if="product.variants?.colors?.length && !product.is_not_for_sale" class="pdp__variant">
+            <p class="pdp__variant-label">
+              <span>Warna</span>
+              <strong>{{ formState.color?.name }}</strong>
             </p>
-            <button class="w-fit bg-[var(--ink)] px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-white transition-colors hover:bg-graphite">
-              Hubungi CS Optik Medio
-            </button>
-          </div>
-
-          <!-- Color Selector -->
-          <div v-if="product.variants?.colors?.length && !product.is_not_for_sale" class="flex flex-col gap-3">
-            <p class="text-xs font-bold uppercase tracking-wider" style="color: var(--graphite);">
-              Warna: <span class="font-medium" style="color: var(--ink);">{{ formState.color?.name }}</span>
-            </p>
-            <div class="flex gap-3 flex-wrap">
+            <div class="pdp__color-row" role="radiogroup" aria-label="Pilih warna">
               <button
                 v-for="color in product.variants.colors"
                 :key="color.name"
-                @click="formState.color = color"
+                type="button"
+                class="pdp-color-swatch"
+                :class="{ 'pdp-color-swatch--active': formState.color?.name === color.name }"
                 :style="{ backgroundColor: color.hex }"
-                :class="['w-10 h-10 rounded-lg border-4 focus:outline-none transition-all', formState.color?.name === color.name ? 'scale-110' : 'border-transparent hover:scale-105']"
-                :style-extra="formState.color?.name === color.name ? 'border-color: var(--gold); box-shadow: 0 0 0 2px rgba(184,138,68,0.4);' : ''"
+                :aria-label="`Warna ${color.name}`"
+                :aria-checked="formState.color?.name === color.name"
+                role="radio"
+                @click="formState.color = color"
               ></button>
             </div>
           </div>
 
-          <!-- Size Selector -->
-          <div v-if="product.variants?.sizes?.length && !product.is_not_for_sale" class="flex flex-col gap-3">
-            <p class="text-xs font-bold uppercase tracking-wider" style="color: var(--graphite);">Ukuran</p>
-            <div class="flex gap-2 flex-wrap">
+          <!-- Size variants -->
+          <div v-if="product.variants?.sizes?.length && !product.is_not_for_sale" class="pdp__variant">
+            <p class="pdp__variant-label"><span>Ukuran</span></p>
+            <div class="pdp__size-row" role="radiogroup" aria-label="Pilih ukuran">
               <button
                 v-for="size in product.variants.sizes"
                 :key="size"
+                type="button"
+                class="pdp-size-pill"
+                :class="{ 'pdp-size-pill--active': formState.size === size }"
+                :aria-checked="formState.size === size"
+                role="radio"
                 @click="formState.size = size"
-                class="rounded-lg border px-3 py-2 text-xs font-bold transition-all"
-                :style="formState.size === size
-                  ? 'background: var(--ink); color: white; border-color: var(--ink); box-shadow: 0 4px 12px rgba(26,18,9,0.2);'
-                  : 'background: transparent; color: var(--graphite); border-color: rgba(184,138,68,0.25);'"
-              >
-                {{ size }}
-              </button>
+              >{{ size }}</button>
             </div>
           </div>
 
-          <!-- Prescription Form -->
-          <div v-if="product.is_prescription_required && !product.is_not_for_sale" class="flex flex-col gap-3 border-t pt-3" style="border-color: rgba(184,138,68,0.15);">
-            <div class="flex items-center justify-between">
-              <h2 class="text-base font-bold" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Resep Kacamata Anda</h2>
+          <!-- Prescription notice -->
+          <div v-if="product.is_prescription_required && !product.is_not_for_sale" class="alert-base alert-info">
+            <span class="material-symbols-outlined pdp__alert-icon" aria-hidden="true">info</span>
+            <div>
+              <p class="pdp__alert-title">Membutuhkan Resep Optik</p>
+              <p class="pdp__alert-body">Produk ini memerlukan resep optik yang valid untuk diproses.</p>
+            </div>
+          </div>
+
+          <!-- Info-only notice -->
+          <div v-if="product.is_not_for_sale" class="surface-elevated pdp__info-only">
+            <header>
+              <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+              <p>Katalog Brand Lensa</p>
+            </header>
+            <p>
+              Informasi produk ini merupakan bagian dari katalog brand lensa yang kami gunakan di Optik Medio.
+              Produk ini tidak dijual secara terpisah. Untuk konsultasi lebih lanjut mengenai lensa terbaik untuk kebutuhan mata Anda, silakan hubungi tim ahli kami.
+            </p>
+            <button type="button" class="btn-primary btn-sm">Hubungi CS Optik Medio</button>
+          </div>
+
+          <!-- Prescription form -->
+          <section
+            v-if="product.is_prescription_required && !product.is_not_for_sale"
+            class="pdp-rx"
+            aria-label="Resep kacamata"
+          >
+            <header class="pdp-rx__head">
+              <h2 class="editorial-h3">Resep Kacamata Anda</h2>
+              <p class="text-meta">Isi data resep optik atau pilih dari resep tersimpan.</p>
+            </header>
+
+            <!-- Saved profiles -->
+            <div v-if="authStore.user && prescriptions.length > 0" class="pdp-rx__profiles">
+              <p class="text-meta">Resep Tersimpan</p>
+              <ul class="pdp-rx__profile-list">
+                <li v-for="profile in prescriptions" :key="profile.id">
+                  <button
+                    type="button"
+                    class="pdp-rx-profile"
+                    :class="{ 'pdp-rx-profile--active': selectedPrescriptionProfileId === profile.id }"
+                    @click="applyPrescriptionProfile(profile)"
+                  >
+                    <div class="pdp-rx-profile__body">
+                      <p class="pdp-rx-profile__label">{{ profile.label }}</p>
+                      <p class="pdp-rx-profile__meta">
+                        OD {{ profile.right_sphere ?? '—' }} / {{ profile.right_cylinder ?? '—' }} / {{ profile.right_axis ?? '—' }}
+                        ·
+                        OS {{ profile.left_sphere ?? '—' }} / {{ profile.left_cylinder ?? '—' }} / {{ profile.left_axis ?? '—' }}
+                      </p>
+                    </div>
+                    <div class="pdp-rx-profile__status">
+                      <span v-if="profile.verification_status === 'approved'" class="badge badge-success">Terverifikasi</span>
+                      <span v-else-if="profile.verification_status === 'pending'" class="badge badge-gold">Menunggu</span>
+                      <span class="material-symbols-outlined pdp-rx-profile__check" aria-hidden="true">
+                        {{ selectedPrescriptionProfileId === profile.id ? 'check_circle' : 'radio_button_unchecked' }}
+                      </span>
+                    </div>
+                  </button>
+                </li>
+              </ul>
+              <div class="pdp-rx__divider">
+                <span class="divider-rule"></span>
+                <span class="text-meta">atau isi manual</span>
+                <span class="divider-rule"></span>
+              </div>
             </div>
 
-            <!-- Gunakan Resep Tersimpan -->
-            <div v-if="authStore.user && prescriptions.length > 0" class="flex flex-col gap-2">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: var(--graphite);">Resep Tersimpan</p>
-              <div class="flex flex-col gap-2">
-                <button
-                  v-for="profile in prescriptions"
-                  :key="profile.id"
-                  @click="applyPrescriptionProfile(profile)"
-                  class="flex items-center justify-between border p-2.5 text-left transition-all hover:shadow-sm"
-                  :style="selectedPrescriptionProfileId === profile.id
-                    ? 'border-color: var(--gold); background: rgba(184,138,68,0.06); box-shadow: 0 0 0 2px rgba(184,138,68,0.25);'
-                    : 'border-color: rgba(184,138,68,0.2); background: white;'"
+            <!-- Manual prescription input -->
+            <div class="pdp-rx__form">
+              <div class="pdp-rx__grid"
+                   :class="supportsAddInConfigurator ? 'pdp-rx__grid--with-add' : ''">
+                <span></span>
+                <span class="text-meta">SPH</span>
+                <span class="text-meta">CYL</span>
+                <span class="text-meta">Axis</span>
+                <span v-if="supportsAddInConfigurator" class="text-meta">ADD</span>
+
+                <span class="pdp-rx__row-label">OD</span>
+                <select v-model="formState.prescription.od.sph" class="pdp-rx__select" aria-label="OD SPH">
+                  <option v-for="opt in sphOptions" :key="opt" :value="opt">{{ opt }}</option>
+                </select>
+                <select v-model="formState.prescription.od.cyl" class="pdp-rx__select" aria-label="OD CYL">
+                  <option v-for="opt in sphOptions" :key="opt" :value="opt">{{ opt }}</option>
+                </select>
+                <input
+                  v-model="formState.prescription.od.axis"
+                  :disabled="!usesOdAxis"
+                  type="number"
+                  min="1"
+                  max="180"
+                  class="pdp-rx__select pdp-rx__axis"
+                  aria-label="OD Axis"
+                />
+                <select
+                  v-if="supportsAddInConfigurator"
+                  v-model="formState.prescription.od.add"
+                  class="pdp-rx__select"
+                  aria-label="OD ADD"
                 >
-                  <div>
-                    <p class="text-xs font-bold" style="color: var(--ink);">{{ profile.label }}</p>
-                    <p class="text-[10px] mt-0.5" style="color: var(--graphite);">
-                      OD: {{ profile.right_sphere ?? '—' }} / {{ profile.right_cylinder ?? '—' }} / {{ profile.right_axis ?? '—' }}
-                      &nbsp;|&nbsp;
-                      OS: {{ profile.left_sphere ?? '—' }} / {{ profile.left_cylinder ?? '—' }} / {{ profile.left_axis ?? '—' }}
-                    </p>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span v-if="profile.verification_status === 'approved'" class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5" style="background: rgba(22,163,74,0.1); color: #16a34a;">Terverifikasi</span>
-                    <span v-else-if="profile.verification_status === 'pending'" class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5" style="background: rgba(234,179,8,0.1); color: #ca8a04;">Menunggu</span>
-                    <span class="material-symbols-outlined text-base" :style="selectedPrescriptionProfileId === profile.id ? 'color: var(--gold);' : 'color: rgba(184,138,68,0.3);'">
-                      {{ selectedPrescriptionProfileId === profile.id ? 'check_circle' : 'radio_button_unchecked' }}
-                    </span>
-                  </div>
-                </button>
-              </div>
-              <div class="flex items-center gap-3 mt-1">
-                <div class="flex-1 h-px" style="background: rgba(184,138,68,0.15);"></div>
-                <span class="text-[10px] font-black uppercase tracking-wider" style="color: var(--graphite);">atau isi manual</span>
-                <div class="flex-1 h-px" style="background: rgba(184,138,68,0.15);"></div>
-              </div>
-            </div>
+                  <option v-for="opt in sphOptions.filter((o) => !String(o).startsWith('-'))" :key="opt" :value="opt">{{ opt }}</option>
+                </select>
 
-            <div class="rounded-lg border p-3" style="background: rgba(255,255,255,0.82); border-color: rgba(184,138,68,0.24);">
-              <div class="mb-3 grid gap-2" :class="supportsAddInConfigurator ? 'grid-cols-5' : 'grid-cols-4'">
-                <div class="col-span-1"></div>
-                <div class="text-center text-[10px] font-black uppercase tracking-widest" style="color: var(--graphite);">SPH</div>
-                <div class="text-center text-[10px] font-black uppercase tracking-widest" style="color: var(--graphite);">CYL</div>
-                <div class="text-center text-[10px] font-black uppercase tracking-widest" style="color: var(--graphite);">Axis</div>
-                <div v-if="supportsAddInConfigurator" class="text-center text-[10px] font-black uppercase tracking-widest" style="color: var(--graphite);">ADD</div>
-
-                <div class="flex items-center justify-end pr-2 text-xs font-black" style="color: var(--ink);">OD</div>
-                <div><select v-model="formState.prescription.od.sph" class="input-field rounded-lg p-1.5 text-xs" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
-                <div><select v-model="formState.prescription.od.cyl" class="input-field rounded-lg p-1.5 text-xs" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
-                <div><input v-model="formState.prescription.od.axis" :disabled="!usesOdAxis" type="number" min="1" max="180" class="input-field rounded-lg p-1.5 text-center text-xs disabled:bg-mist disabled:text-graphite/70 disabled:cursor-not-allowed" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"/></div>
-                <div v-if="supportsAddInConfigurator"><select v-model="formState.prescription.od.add" class="input-field rounded-lg p-1.5 text-xs" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"><option v-for="opt in sphOptions.filter((opt) => !String(opt).startsWith('-'))" :value="opt">{{opt}}</option></select></div>
-
-                <div class="flex items-center justify-end pr-2 text-xs font-black mt-2" style="color: var(--ink);">OS</div>
-                <div class="mt-2"><select v-model="formState.prescription.os.sph" class="input-field rounded-lg p-1.5 text-xs" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
-                <div class="mt-2"><select v-model="formState.prescription.os.cyl" class="input-field rounded-lg p-1.5 text-xs" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"><option v-for="opt in sphOptions" :value="opt">{{opt}}</option></select></div>
-                <div class="mt-2"><input v-model="formState.prescription.os.axis" :disabled="!usesOsAxis" type="number" min="1" max="180" class="input-field rounded-lg p-1.5 text-center text-xs disabled:bg-mist disabled:text-graphite/70 disabled:cursor-not-allowed" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"/></div>
-                <div v-if="supportsAddInConfigurator" class="mt-2"><select v-model="formState.prescription.os.add" class="input-field rounded-lg p-1.5 text-xs" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"><option v-for="opt in sphOptions.filter((opt) => !String(opt).startsWith('-'))" :value="opt">{{opt}}</option></select></div>
+                <span class="pdp-rx__row-label">OS</span>
+                <select v-model="formState.prescription.os.sph" class="pdp-rx__select" aria-label="OS SPH">
+                  <option v-for="opt in sphOptions" :key="opt" :value="opt">{{ opt }}</option>
+                </select>
+                <select v-model="formState.prescription.os.cyl" class="pdp-rx__select" aria-label="OS CYL">
+                  <option v-for="opt in sphOptions" :key="opt" :value="opt">{{ opt }}</option>
+                </select>
+                <input
+                  v-model="formState.prescription.os.axis"
+                  :disabled="!usesOsAxis"
+                  type="number"
+                  min="1"
+                  max="180"
+                  class="pdp-rx__select pdp-rx__axis"
+                  aria-label="OS Axis"
+                />
+                <select
+                  v-if="supportsAddInConfigurator"
+                  v-model="formState.prescription.os.add"
+                  class="pdp-rx__select"
+                  aria-label="OS ADD"
+                >
+                  <option v-for="opt in sphOptions.filter((o) => !String(o).startsWith('-'))" :key="opt" :value="opt">{{ opt }}</option>
+                </select>
               </div>
 
-              <div class="border-t pt-3" style="border-color: rgba(184,138,68,0.15);">
-                <div class="mb-3 flex items-center gap-4">
-                  <label class="flex items-center gap-2 cursor-pointer text-xs font-bold" style="color: var(--graphite);">
-                    <input type="radio" v-model="formState.pdType" value="single" class="accent-gold"/>
-                    PD Tunggal
+              <div class="pdp-rx__pd">
+                <div class="pdp-rx__pd-toggle">
+                  <label class="pdp-rx__radio">
+                    <input type="radio" v-model="formState.pdType" value="single" />
+                    <span>PD Tunggal</span>
                   </label>
-                  <label class="flex items-center gap-2 cursor-pointer text-xs font-bold" style="color: var(--graphite);">
-                    <input type="radio" v-model="formState.pdType" value="dual" class="accent-gold"/>
-                    PD Ganda
+                  <label class="pdp-rx__radio">
+                    <input type="radio" v-model="formState.pdType" value="dual" />
+                    <span>PD Ganda</span>
                   </label>
                 </div>
-                <div v-if="formState.pdType === 'dual'" class="grid grid-cols-2 gap-3">
-                  <div>
-                    <label class="block text-[10px] font-bold mb-1.5" style="color: var(--graphite);">PD Kanan</label>
-                    <input v-model="formState.prescription.pdRight" type="number" min="25" max="38" class="w-full rounded-lg p-2 text-sm" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"/>
-                  </div>
-                  <div>
-                    <label class="block text-[10px] font-bold mb-1.5" style="color: var(--graphite);">PD Kiri</label>
-                    <input v-model="formState.prescription.pdLeft" type="number" min="25" max="38" class="w-full rounded-lg p-2 text-sm" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"/>
-                  </div>
+
+                <div v-if="formState.pdType === 'dual'" class="pdp-rx__pd-grid">
+                  <label>
+                    <span class="text-meta">PD Kanan (mm)</span>
+                    <input v-model="formState.prescription.pdRight" type="number" min="25" max="38" class="input-field" />
+                  </label>
+                  <label>
+                    <span class="text-meta">PD Kiri (mm)</span>
+                    <input v-model="formState.prescription.pdLeft" type="number" min="25" max="38" class="input-field" />
+                  </label>
                 </div>
-                <div v-else>
-                  <label class="block text-[10px] font-bold mb-1.5" style="color: var(--graphite);">PD</label>
-                  <input v-model="formState.prescription.pdSingle" type="number" min="50" max="75" class="w-full rounded-lg p-2 text-sm" style="background: white; border: 1px solid rgba(184,138,68,0.24); color: var(--ink);"/>
-                </div>
+                <label v-else>
+                  <span class="text-meta">PD (mm)</span>
+                  <input v-model="formState.prescription.pdSingle" type="number" min="50" max="75" class="input-field" />
+                </label>
               </div>
             </div>
-          </div>
+          </section>
 
-          <!-- Lens Configuration Summary (muncul setelah user memilih dari modal) -->
+          <!-- Lens configuration summary -->
           <div
             v-if="isFrameProduct && (product as any).compatible_lens_options?.length > 0 && (selectedLensOption || selectedCoating)"
-            class="border p-3"
-            style="background: rgba(255,255,255,0.78); border-color: rgba(184,138,68,0.28);"
+            class="pdp-config-summary"
           >
-            <div class="flex items-center justify-between mb-2">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: var(--graphite);">Konfigurasi Lensa</p>
-              <button @click="openLensConfigurator" class="text-[10px] font-black uppercase tracking-wider underline" style="color: #6F4E1D;">Ubah</button>
-            </div>
-            <div class="flex flex-col gap-1">
-              <div v-if="selectedLensOption" class="flex items-center justify-between text-xs">
-                <span style="color: var(--graphite);">{{ selectedLensOption.name }}</span>
-                <span class="font-bold" style="color: var(--ink);">+Rp {{ (selectedLensOption.base_price || 0).toLocaleString('id-ID') }}</span>
-              </div>
-              <div v-if="selectedCoating" class="flex items-center justify-between text-xs">
-                <span style="color: var(--graphite);">{{ selectedCoating.name }}</span>
-                <span class="font-bold" style="color: var(--ink);">+Rp {{ (selectedCoating.price || 0).toLocaleString('id-ID') }}</span>
-              </div>
-            </div>
+            <header>
+              <p class="text-meta">Konfigurasi Lensa</p>
+              <button type="button" class="btn-ghost btn-sm" @click="openLensConfigurator">Ubah</button>
+            </header>
+            <ul>
+              <li v-if="selectedLensOption">
+                <span>{{ selectedLensOption.name }}</span>
+                <span class="pdp-config-summary__price">+{{ formatMoney(selectedLensOption.base_price || 0) }}</span>
+              </li>
+              <li v-if="selectedCoating">
+                <span>{{ selectedCoating.name }}</span>
+                <span class="pdp-config-summary__price">+{{ formatMoney(selectedCoating.price || 0) }}</span>
+              </li>
+            </ul>
           </div>
 
-          <!-- Hint untuk frame yang belum dikonfigurasi -->
           <div
             v-else-if="isFrameProduct && (product as any).compatible_lens_options?.length > 0 && !selectedLensOption"
-            class="p-3 border text-xs"
-            style="background: rgba(255,255,255,0.78); border-color: rgba(184,138,68,0.24); color: var(--graphite);"
+            class="alert-base alert-info pdp-config-hint"
           >
-            <span class="material-symbols-outlined text-sm align-middle mr-1" style="color: var(--gold);">info</span>
-            Klik tombol di bawah untuk memilih jenis lensa dan coating yang sesuai.
+            <span class="material-symbols-outlined" aria-hidden="true">info</span>
+            <p>Klik tombol di bawah untuk memilih jenis lensa dan coating yang sesuai.</p>
           </div>
 
-          <!-- Add to Cart Button -->
+          <!-- Add-to-cart desktop CTA -->
           <button
             v-if="!product.is_not_for_sale || isAppointmentProduct"
+            type="button"
+            class="pdp-cta pdp-cta--desktop"
+            :class="{ 'pdp-cta--success': addedToCart, 'pdp-cta--disabled': !canAddToCart }"
+            :disabled="!canAddToCart"
             @click="handleAddToCartClick"
-            :disabled="!isAppointmentProduct && product.stock <= 0"
-            class="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-xs font-black uppercase tracking-[0.14em] shadow-card transition-all"
-            :style="(isAppointmentProduct || product.stock > 0)
-              ? (addedToCart
-                ? 'background: linear-gradient(135deg, #15803d, #16a34a); color: white; box-shadow: 0 8px 25px rgba(22,163,74,0.3);'
-                : 'background: linear-gradient(135deg, var(--ink) 0%, #3d2c0e 100%); color: white; box-shadow: 0 8px 25px rgba(26,18,9,0.25);')
-              : 'background: rgba(245,242,238,0.8); color: #a09080; cursor: not-allowed;'"
           >
-            <span class="material-symbols-outlined text-lg">{{ addedToCart ? 'check_circle' : (isAppointmentProduct ? 'calendar_today' : (product.stock > 0 ? 'shopping_bag' : 'block')) }}</span>
-            {{ addedToCart ? 'Ditambahkan!' : (isAppointmentProduct ? 'Booking Jadwal Konsultasi' : (product.stock > 0 ? (isStandaloneLensProduct ? 'Lanjutkan Pembelian Lensa' : (isFrameProduct && (product as any).compatible_lens_options?.length > 0 ? (selectedLensOption ? 'Tambah ke Keranjang' : 'Pilih Lensa & Coating') : 'Tambah ke Keranjang')) : 'Stok Habis')) }}
+            <span class="material-symbols-outlined" aria-hidden="true">{{ addToCartIcon }}</span>
+            <span>{{ addToCartLabel }}</span>
           </button>
 
-          <!-- Trust Badges -->
-          <div class="grid grid-cols-3 gap-2 pt-1">
-            <div class="flex flex-col items-center gap-1.5 text-center">
-              <span class="material-symbols-outlined text-lg" style="color: var(--gold);">verified</span>
-              <span class="text-[9px] font-bold uppercase tracking-wide" style="color: var(--graphite);">Produk Asli</span>
+          <!-- Trust badges -->
+          <ul class="pdp__trust">
+            <li>
+              <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+              <span>Produk Asli</span>
+            </li>
+            <li>
+              <span class="material-symbols-outlined" aria-hidden="true">local_shipping</span>
+              <span>Pengiriman Cepat</span>
+            </li>
+            <li>
+              <span class="material-symbols-outlined" aria-hidden="true">support_agent</span>
+              <span>Garansi Resmi</span>
+            </li>
+          </ul>
+
+          <!-- Accordion: spec / shipping / warranty -->
+          <details class="pdp-acc" :open="openSpec" @toggle="(e: Event) => (openSpec = (e.target as HTMLDetailsElement).open)">
+            <summary>
+              <span class="material-symbols-outlined pdp-acc__icon" aria-hidden="true">straighten</span>
+              <span class="pdp-acc__label">Spesifikasi & Ukuran Frame</span>
+              <span class="material-symbols-outlined pdp-acc__chevron" aria-hidden="true">expand_more</span>
+            </summary>
+            <div class="pdp-acc__body">
+              <div v-if="hasFrameGuide">
+                <div v-if="frameSizeRows.length > 0" class="pdp-spec-grid">
+                  <div v-for="row in frameSizeRows" :key="row.label" class="pdp-spec-cell">
+                    <p class="text-meta">{{ row.label }}</p>
+                    <p class="pdp-spec-cell__value">{{ row.value }}<span> mm</span></p>
+                  </div>
+                </div>
+                <div v-if="frameProfileRows.length > 0" class="pdp-spec-list">
+                  <div v-for="row in frameProfileRows" :key="row.label" class="pdp-spec-row">
+                    <span>{{ row.label }}</span>
+                    <strong>{{ formatProductLabel(row.value) }}</strong>
+                  </div>
+                </div>
+              </div>
+              <p v-else class="text-graphite/65 text-sm">
+                Spesifikasi detail untuk produk ini belum tersedia.
+              </p>
             </div>
-            <div class="flex flex-col items-center gap-1.5 text-center">
-              <span class="material-symbols-outlined text-lg" style="color: var(--gold);">local_shipping</span>
-              <span class="text-[9px] font-bold uppercase tracking-wide" style="color: var(--graphite);">Pengiriman Cepat</span>
+          </details>
+
+          <details class="pdp-acc" :open="openShipping" @toggle="(e: Event) => (openShipping = (e.target as HTMLDetailsElement).open)">
+            <summary>
+              <span class="material-symbols-outlined pdp-acc__icon" aria-hidden="true">local_shipping</span>
+              <span class="pdp-acc__label">Pengiriman & Pickup</span>
+              <span class="material-symbols-outlined pdp-acc__chevron" aria-hidden="true">expand_more</span>
+            </summary>
+            <div class="pdp-acc__body">
+              <ul class="pdp-spec-list">
+                <li>Pengiriman via JNE/POS/TIKI ke seluruh Indonesia.</li>
+                <li>Pickup langsung di Optik Medio Lampung Tengah.</li>
+                <li>Estimasi 1–4 hari kerja tergantung lokasi.</li>
+                <li>Pesanan dengan resep akan di-review tim optik sebelum dikirim.</li>
+              </ul>
             </div>
-            <div class="flex flex-col items-center gap-1.5 text-center">
-              <span class="material-symbols-outlined text-lg" style="color: var(--gold);">support_agent</span>
-              <span class="text-[9px] font-bold uppercase tracking-wide" style="color: var(--graphite);">Garansi Resmi</span>
+          </details>
+
+          <details class="pdp-acc" :open="openWarranty" @toggle="(e: Event) => (openWarranty = (e.target as HTMLDetailsElement).open)">
+            <summary>
+              <span class="material-symbols-outlined pdp-acc__icon" aria-hidden="true">workspace_premium</span>
+              <span class="pdp-acc__label">Garansi & Servis</span>
+              <span class="material-symbols-outlined pdp-acc__chevron" aria-hidden="true">expand_more</span>
+            </summary>
+            <div class="pdp-acc__body">
+              <ul class="pdp-spec-list">
+                <li>Garansi resmi distributor untuk frame & lensa.</li>
+                <li>Servis fitting & adjustment gratis di toko.</li>
+                <li>Klaim garansi dapat dilakukan via halaman <router-link to="/warranty" class="pdp-acc__link">Warranty</router-link>.</li>
+              </ul>
             </div>
-          </div>
-        </div>
+          </details>
+        </section>
       </div>
     </div>
 
-    <section v-if="hasRecommendationSection" class="container-commerce pb-10">
-      <div class="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+    <!-- Recommendations -->
+    <section v-if="hasRecommendationSection" class="container-premium pdp__recos">
+      <header class="pdp__recos-head">
         <div>
-          <p class="text-xs font-black uppercase tracking-[0.25em] mb-2" style="color: #6F4E1D;">Rekomendasi Optik</p>
-          <h2 class="text-xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Pilihan yang Cocok</h2>
+          <p class="eyebrow">Rekomendasi Optik</p>
+          <h2 class="editorial-h2 pdp__recos-title">Pilihan yang Cocok</h2>
         </div>
-        <router-link to="/products" class="text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 group" style="color: #6F4E1D;">
+        <router-link to="/products" class="btn-ghost btn-sm">
           Lihat Koleksi
-          <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
         </router-link>
-      </div>
+      </header>
 
-      <div v-if="primaryRecommendations.length > 0" class="mb-7">
-        <h3 class="mb-3 text-xs font-black uppercase tracking-[0.18em]" style="color: #6F4E1D;">{{ primaryRecommendationTitle }}</h3>
-        <div class="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
+      <div v-if="primaryRecommendations.length > 0" class="pdp__recos-block">
+        <h3 class="text-meta pdp__recos-block-title">{{ primaryRecommendationTitle }}</h3>
+        <div class="pdp-reco-grid">
           <article
             v-for="item in primaryRecommendations.slice(0, 4)"
             :key="item.id"
+            class="pdp-reco-card"
+            tabindex="0"
+            role="link"
+            :aria-label="`Lihat detail ${item.name}`"
             @click="router.push(`/products/${item.slug}`)"
-            class="cursor-pointer border bg-porcelain transition-all hover:shadow-card"
-            style="border-color: rgba(184,138,68,0.14);"
+            @keydown.enter="router.push(`/products/${item.slug}`)"
           >
-            <div class="flex aspect-square items-center justify-center p-3" style="background: linear-gradient(145deg, var(--ivory), var(--mist));">
-              <img :src="resolveImageUrl(item)" :alt="item.name" class="w-full h-full object-contain mix-blend-multiply" loading="lazy" decoding="async" />
+            <div class="pdp-reco-card__media">
+              <img :src="resolveImageUrl(item)" :alt="item.name" loading="lazy" decoding="async" />
             </div>
-            <div class="p-3">
-              <p class="text-[10px] font-black uppercase tracking-widest mb-1" style="color: var(--graphite);">{{ item.name }}</p>
-              <h4 class="line-clamp-2 text-xs font-bold" style="color: var(--ink);">{{ item.brand || 'Optik Medio' }}</h4>
-              <p class="mt-1.5 text-xs font-black" style="color: #6F4E1D;">Rp {{ item.price.toLocaleString('id-ID') }}</p>
+            <div class="pdp-reco-card__body">
+              <p class="text-meta">{{ item.name }}</p>
+              <h4>{{ item.brand || 'Optik Medio' }}</h4>
+              <p class="pdp-reco-card__price">{{ formatMoney(item.price) }}</p>
             </div>
           </article>
         </div>
       </div>
 
-      <div v-if="showCompatibleLenses">
-        <h3 class="mb-3 text-xs font-black uppercase tracking-[0.18em]" style="color: #6F4E1D;">Lensa Kompatibel</h3>
-        <div class="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
+      <div v-if="showCompatibleLenses" class="pdp__recos-block">
+        <h3 class="text-meta pdp__recos-block-title">Lensa Kompatibel</h3>
+        <div class="pdp-reco-grid">
           <article
             v-for="item in compatibleLenses.slice(0, 4)"
             :key="item.id"
+            class="pdp-reco-card"
+            tabindex="0"
+            role="link"
+            :aria-label="`Lihat detail ${item.name}`"
             @click="router.push(`/products/${item.slug}`)"
-            class="cursor-pointer border bg-porcelain transition-all hover:shadow-card"
-            style="border-color: rgba(184,138,68,0.14);"
+            @keydown.enter="router.push(`/products/${item.slug}`)"
           >
-            <div class="flex aspect-square items-center justify-center p-3" style="background: linear-gradient(145deg, var(--ivory), var(--mist));">
-              <img :src="resolveImageUrl(item)" :alt="item.name" class="w-full h-full object-contain mix-blend-multiply" loading="lazy" decoding="async" />
+            <div class="pdp-reco-card__media">
+              <img :src="resolveImageUrl(item)" :alt="item.name" loading="lazy" decoding="async" />
             </div>
-            <div class="p-3">
-              <p class="text-[10px] font-black uppercase tracking-widest mb-1" style="color: var(--graphite);">{{ item.brand || 'Lensa' }}</p>
-              <h4 class="line-clamp-2 text-xs font-bold" style="color: var(--ink);">{{ item.name }}</h4>
-              <p class="mt-1.5 text-xs font-black" style="color: #6F4E1D;">Rp {{ item.price.toLocaleString('id-ID') }}</p>
+            <div class="pdp-reco-card__body">
+              <p class="text-meta">{{ item.brand || 'Lensa' }}</p>
+              <h4>{{ item.name }}</h4>
+              <p class="pdp-reco-card__price">{{ formatMoney(item.price) }}</p>
             </div>
           </article>
         </div>
       </div>
     </section>
 
-    <section class="container-commerce pb-10">
-      <div class="rounded-lg border p-5 md:p-6" style="background: white; border-color: rgba(184,138,68,0.15); box-shadow: 0 2px 12px rgba(0,0,0,0.04);">
-        <div class="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+    <!-- Reviews -->
+    <section class="container-premium pdp__reviews">
+      <div class="surface-elevated pdp__reviews-card">
+        <header class="pdp__reviews-head">
           <div>
-            <p class="text-xs font-black uppercase tracking-[0.25em] mb-2" style="color: #6F4E1D;">Customer Reviews</p>
-            <h2 class="text-xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Ulasan Produk</h2>
+            <p class="eyebrow">Customer Reviews</p>
+            <h2 class="editorial-h2 pdp__reviews-title">Ulasan Produk</h2>
           </div>
-          <div class="text-sm" style="color: var(--graphite);">
-            Rating rata-rata <span class="font-black" style="color: var(--ink);">{{ Number(reviewSummary.avg_rating || product.avg_rating || 0).toFixed(1) }}</span>
+          <p class="pdp__reviews-summary">
+            Rating rata-rata
+            <strong>{{ Number(reviewSummary.avg_rating || product.avg_rating || 0).toFixed(1) }}</strong>
             dari {{ reviewSummary.total_reviews || product.review_count || 0 }} ulasan
-          </div>
-        </div>
+          </p>
+        </header>
 
-        <div v-if="productReviews.length === 0" class="text-sm" style="color: var(--graphite);">
+        <p v-if="productReviews.length === 0" class="pdp__reviews-empty">
           Belum ada ulasan untuk produk ini.
-        </div>
+        </p>
 
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <article
-            v-for="review in productReviews"
-            :key="review.id"
-            class="rounded-lg border p-4"
-            style="background: rgba(255,255,255,0.86); border-color: rgba(184,138,68,0.18);"
-          >
-            <div class="flex items-center justify-between gap-4 mb-3">
-              <p class="font-black" style="color: var(--ink);">{{ review.user_name }}</p>
-              <span class="text-xs" style="color: var(--graphite);">{{ review.created_at }}</span>
-            </div>
-            <div class="flex items-center gap-1 mb-3">
+        <div v-else class="pdp__reviews-grid">
+          <article v-for="review in productReviews" :key="review.id" class="pdp-review">
+            <header>
+              <p class="pdp-review__name">{{ review.user_name }}</p>
+              <span class="pdp-review__date">{{ review.created_at }}</span>
+            </header>
+            <div class="pdp-review__stars" :aria-label="`Rating ${review.rating} dari 5`">
               <span
                 v-for="star in 5"
                 :key="star"
-                class="material-symbols-outlined text-base"
-                :style="star <= review.rating ? 'color: var(--gold);' : 'color: rgba(184,138,68,0.25);'"
-              >
-                star
-              </span>
+                class="material-symbols-outlined"
+                :class="{ 'pdp-review__star--filled': star <= review.rating }"
+                aria-hidden="true"
+              >star</span>
             </div>
-            <p class="text-xs leading-6" style="color: var(--graphite);">
+            <p class="pdp-review__body">
               {{ review.comment || 'Customer tidak menambahkan komentar tertulis.' }}
             </p>
           </article>
@@ -1153,183 +1223,1461 @@ const hasFrameGuide = computed(() => frameSizeRows.value.length > 0 || frameProf
       </div>
     </section>
 
-    <!-- ╔══════════════════════════════════════╗ -->
-    <!-- ║          LENS SELECTOR MODAL         ║ -->
-    <!-- ╚══════════════════════════════════════╝ -->
-    <Teleport to="body">
-      <div v-if="isLensChoiceModalOpen" role="dialog" aria-modal="true" aria-labelledby="lens-choice-modal-title" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(10,8,5,0.75); backdrop-filter: blur(20px);">
-        <div class="w-full max-w-md rounded-lg border p-5 md:p-6" style="background: #faf8f5; border-color: rgba(184,138,68,0.2); box-shadow: 0 30px 80px rgba(0,0,0,0.3);">
-          <div class="mb-4 flex items-center justify-between">
-            <h2 id="lens-choice-modal-title" class="text-xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Lanjutkan Pembelian Lensa</h2>
-            <button @click="isLensChoiceModalOpen = false" aria-label="Tutup dialog" class="flex h-9 w-9 items-center justify-center rounded-lg transition-all" style="background: rgba(184,138,68,0.1); color: #6F4E1D;">
-              <span class="material-symbols-outlined" aria-hidden="true">close</span>
-            </button>
-          </div>
-
-          <p class="text-sm leading-relaxed mb-6" style="color: var(--graphite);">
-            Resep sudah siap. Anda bisa lanjut beli lensa ini saja, atau pilih frame terlebih dulu bila ingin dipasangkan dalam satu pesanan.
-          </p>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button
-              @click="executeAddToCart()"
-              class="w-full p-5 border text-left transition-all hover:-translate-y-1 hover:shadow-card"
-              style="border-color: rgba(184,138,68,0.2); background: white;"
-            >
-              <span class="material-symbols-outlined text-2xl mb-3 block" style="color: var(--gold);">shopping_bag</span>
-              <p class="text-sm font-black uppercase tracking-widest mb-1" style="color: var(--graphite);">Tanpa Frame</p>
-              <h3 class="font-bold text-base" style="color: var(--ink);">Beli Lensa Saja</h3>
-              <p class="text-sm mt-2" style="color: var(--graphite);">Tambahkan lensa ini ke keranjang dengan resep yang sudah Anda isi.</p>
-            </button>
-
-            <button
-              @click="chooseFrameBeforeCheckout"
-              class="w-full p-5 border text-left transition-all hover:-translate-y-1 hover:shadow-card"
-              style="border-color: rgba(184,138,68,0.2); background: white;"
-            >
-              <span class="material-symbols-outlined text-2xl mb-3 block" style="color: var(--gold);">visibility</span>
-              <p class="text-sm font-black uppercase tracking-widest mb-1" style="color: var(--graphite);">Dengan Frame</p>
-              <h3 class="font-bold text-base" style="color: var(--ink);">Pilih Frame Dulu</h3>
-              <p class="text-sm mt-2" style="color: var(--graphite);">Lanjut ke katalog untuk memilih frame sebelum checkout.</p>
-            </button>
-          </div>
-        </div>
+    <!-- ───────────────────────────── Sticky CTA mobile ───────────────────────────── -->
+    <div
+      v-if="!product.is_not_for_sale || isAppointmentProduct"
+      class="pdp-sticky-cta sticky-cta-mobile"
+    >
+      <div class="pdp-sticky-cta__price">
+        <p class="text-meta">Total</p>
+        <p v-if="!product.is_not_for_sale" class="pdp-sticky-cta__amount">{{ formatMoney(product.price) }}</p>
+        <p v-else class="pdp-sticky-cta__amount">Konsultasi</p>
       </div>
+      <button
+        type="button"
+        class="pdp-cta pdp-cta--mobile"
+        :class="{ 'pdp-cta--success': addedToCart, 'pdp-cta--disabled': !canAddToCart }"
+        :disabled="!canAddToCart"
+        @click="handleAddToCartClick"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">{{ addToCartIcon }}</span>
+        <span>{{ addToCartLabelMobile }}</span>
+      </button>
+    </div>
 
-      <!-- ╔══════════════════════════════════════════════════╗ -->
-      <!-- ║     LENS OPTION + COATING CONFIGURATOR MODAL    ║ -->
-      <!-- ╚══════════════════════════════════════════════════╝ -->
-      <div v-if="isLensModalOpen" role="dialog" aria-modal="true" aria-labelledby="lens-modal-title" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(10,8,5,0.75); backdrop-filter: blur(20px);">
-        <div class="w-full max-w-xl rounded-lg border" style="background: #faf8f5; border-color: rgba(184,138,68,0.2); box-shadow: 0 30px 80px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
-
-          <!-- Header -->
-          <div class="flex items-center justify-between p-5 pb-0 md:p-6 md:pb-0">
-            <div>
-              <p class="text-[10px] font-black uppercase tracking-[0.24em] mb-1" style="color: #6F4E1D;">
-                {{ configuratorStep === 'lens' ? 'Langkah 1 dari 2' : 'Langkah 2 dari 2' }}
-              </p>
-              <h2 id="lens-modal-title" class="text-xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">
-                {{ configuratorStep === 'lens' ? 'Pilih Jenis Lensa' : 'Pilih Coating Lensa' }}
-              </h2>
-              <p class="text-xs mt-1" style="color: var(--graphite);">
-                {{ configuratorStep === 'lens'
-                  ? 'Pilih jenis lensa yang sesuai dengan kebutuhan penglihatan Anda.'
-                  : 'Tambahkan lapisan pelindung untuk kenyamanan dan ketahanan lensa.' }}
-              </p>
-            </div>
-            <button @click="isLensModalOpen = false" class="w-10 h-10 rounded-lg flex items-center justify-center transition-all flex-shrink-0" style="background: rgba(184,138,68,0.1); color: #6F4E1D;">
-              <span class="material-symbols-outlined">close</span>
-            </button>
-          </div>
-
-          <!-- Step indicator -->
-          <div class="flex gap-2 px-5 pt-4 md:px-6">
-            <div class="h-1 flex-1 rounded-lg transition-all" :style="configuratorStep === 'lens' ? 'background: var(--gold);' : 'background: var(--gold);'"></div>
-            <div class="h-1 flex-1 rounded-lg transition-all" :style="configuratorStep === 'coating' ? 'background: var(--gold);' : 'background: rgba(184,138,68,0.2);'"></div>
-          </div>
-
-          <!-- Harga sementara -->
-          <div class="mx-8 mt-4 p-4 border" style="background: rgba(184,138,68,0.05); border-color: rgba(184,138,68,0.2);">
-            <div class="flex items-center justify-between text-xs">
-              <span style="color: var(--graphite);">Frame</span>
-              <span class="font-bold" style="color: var(--ink);">Rp {{ (product?.price || 0).toLocaleString('id-ID') }}</span>
-            </div>
-            <div v-if="selectedLensOption" class="flex items-center justify-between text-xs mt-1">
-              <span style="color: var(--graphite);">{{ selectedLensOption.name }}</span>
-              <span class="font-bold" style="color: var(--ink);">+Rp {{ (selectedLensOption.base_price || 0).toLocaleString('id-ID') }}</span>
-            </div>
-            <div v-if="selectedCoating" class="flex items-center justify-between text-xs mt-1">
-              <span style="color: var(--graphite);">{{ selectedCoating.name }}</span>
-              <span class="font-bold" style="color: var(--ink);">+Rp {{ (selectedCoating.price || 0).toLocaleString('id-ID') }}</span>
-            </div>
-            <div class="flex items-center justify-between mt-2 pt-2 border-t" style="border-color: rgba(184,138,68,0.2);">
-              <span class="text-xs font-black uppercase tracking-wider" style="color: var(--graphite);">Total</span>
-              <span class="font-black text-base" style="color: #6F4E1D;">Rp {{ configuratorTotalPrice.toLocaleString('id-ID') }}</span>
-            </div>
-          </div>
-
-          <!-- ── STEP 1: Pilih Lens Option ── -->
-          <div v-if="configuratorStep === 'lens'" class="p-5 pt-4 md:p-6 md:pt-4">
-            <div v-if="isLensesLoading" class="flex justify-center py-12">
-              <div class="w-10 h-10 rounded-lg border-4 border-t-transparent animate-spin" style="border-color: rgba(184,138,68,0.25); border-top-color: var(--gold);"></div>
-            </div>
-
-            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <!-- ───────────────────────────── MODALS ───────────────────────────── -->
+    <Teleport to="body">
+      <!-- Lens Choice Modal (lensa standalone dengan resep: lensa saja vs frame dulu) -->
+      <Transition name="fade">
+        <div
+          v-if="isLensChoiceModalOpen"
+          class="pdp-modal-backdrop"
+          role="presentation"
+          @click.self="isLensChoiceModalOpen = false"
+        >
+          <div
+            class="pdp-modal pdp-modal--md"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="lens-choice-modal-title"
+          >
+            <header class="pdp-modal__head">
+              <h2 id="lens-choice-modal-title" class="editorial-h2">Lanjutkan Pembelian Lensa</h2>
               <button
-                v-for="opt in (product as any)?.compatible_lens_options || []"
-                :key="opt.id"
-                @click="selectLensOption(opt)"
-                class="rounded-lg border p-4 text-left transition-all hover:shadow-card active:scale-95"
-                style="border-color: rgba(184,138,68,0.2); background: white;"
+                type="button"
+                class="btn-icon-ghost"
+                aria-label="Tutup dialog"
+                @click="isLensChoiceModalOpen = false"
               >
-                <div class="flex items-start justify-between gap-2 mb-2">
-                  <h3 class="font-bold text-sm leading-tight" style="color: var(--ink);">{{ opt.name }}</h3>
-                  <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 flex-shrink-0" style="background: rgba(184,138,68,0.12); color: var(--graphite);">{{ opt.type?.replace('_', ' ') }}</span>
-                </div>
-                <p class="font-black text-base" style="color: #6F4E1D;">+Rp {{ (opt.base_price || 0).toLocaleString('id-ID') }}</p>
+                <span class="material-symbols-outlined" aria-hidden="true">close</span>
+              </button>
+            </header>
+
+            <p class="pdp-modal__lede">
+              Resep sudah siap. Anda bisa lanjut beli lensa ini saja, atau pilih frame terlebih dulu bila ingin dipasangkan dalam satu pesanan.
+            </p>
+
+            <div class="pdp-choice-grid">
+              <button
+                type="button"
+                class="pdp-choice-card"
+                @click="executeAddToCart()"
+              >
+                <span class="material-symbols-outlined pdp-choice-card__icon" aria-hidden="true">shopping_bag</span>
+                <p class="text-meta">Tanpa Frame</p>
+                <h3>Beli Lensa Saja</h3>
+                <p class="pdp-choice-card__body">
+                  Tambahkan lensa ini ke keranjang dengan resep yang sudah Anda isi.
+                </p>
               </button>
 
-              <div v-if="!(product as any)?.compatible_lens_options?.length" class="col-span-2 rounded-lg py-6 text-center" style="background: rgba(184,138,68,0.05); border: 1px solid rgba(184,138,68,0.2);">
-                <span class="material-symbols-outlined mb-2 block text-2xl" style="color: var(--gold);">info</span>
-                <p class="text-sm font-bold mb-1" style="color: var(--ink);">Lensa belum dikonfigurasi</p>
-                <p class="text-xs mb-4" style="color: var(--graphite);">Admin belum mengatur pilihan lensa untuk frame ini. Anda tetap bisa melanjutkan — tim kami akan menghubungi untuk konfirmasi lensa.</p>
+              <button
+                type="button"
+                class="pdp-choice-card"
+                @click="chooseFrameBeforeCheckout"
+              >
+                <span class="material-symbols-outlined pdp-choice-card__icon" aria-hidden="true">visibility</span>
+                <p class="text-meta">Dengan Frame</p>
+                <h3>Pilih Frame Dulu</h3>
+                <p class="pdp-choice-card__body">
+                  Lanjut ke katalog untuk memilih frame sebelum checkout.
+                </p>
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+
+      <!-- Lens Configurator Modal (Step 1: lens, Step 2: coating) -->
+      <Transition name="fade">
+        <div
+          v-if="isLensModalOpen"
+          class="pdp-modal-backdrop"
+          role="presentation"
+          @click.self="isLensModalOpen = false"
+        >
+          <div
+            class="pdp-modal pdp-modal--lg"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="lens-modal-title"
+          >
+            <header class="pdp-modal__head">
+              <div>
+                <p class="eyebrow">{{ configuratorStep === 'lens' ? 'Langkah 1 dari 2' : 'Langkah 2 dari 2' }}</p>
+                <h2 id="lens-modal-title" class="editorial-h2">
+                  {{ configuratorStep === 'lens' ? 'Pilih Jenis Lensa' : 'Pilih Coating Lensa' }}
+                </h2>
+                <p class="pdp-modal__sub">
+                  {{ configuratorStep === 'lens'
+                    ? 'Pilih jenis lensa yang sesuai dengan kebutuhan penglihatan Anda.'
+                    : 'Tambahkan lapisan pelindung untuk kenyamanan dan ketahanan lensa.' }}
+                </p>
+              </div>
+              <button
+                type="button"
+                class="btn-icon-ghost"
+                aria-label="Tutup dialog"
+                @click="isLensModalOpen = false"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true">close</span>
+              </button>
+            </header>
+
+            <!-- Step indicator -->
+            <div class="pdp-stepper" aria-label="Progres konfigurasi lensa">
+              <div class="pdp-stepper__bar pdp-stepper__bar--active"></div>
+              <div class="pdp-stepper__bar" :class="{ 'pdp-stepper__bar--active': configuratorStep === 'coating' }"></div>
+            </div>
+
+            <!-- Running price summary -->
+            <aside class="pdp-modal__price">
+              <div class="pdp-modal__price-row">
+                <span>Frame</span>
+                <strong>{{ formatMoney(product?.price || 0) }}</strong>
+              </div>
+              <div v-if="selectedLensOption" class="pdp-modal__price-row">
+                <span>{{ selectedLensOption.name }}</span>
+                <strong>+{{ formatMoney(selectedLensOption.base_price || 0) }}</strong>
+              </div>
+              <div v-if="selectedCoating" class="pdp-modal__price-row">
+                <span>{{ selectedCoating.name }}</span>
+                <strong>+{{ formatMoney(selectedCoating.price || 0) }}</strong>
+              </div>
+              <div class="pdp-modal__price-total">
+                <span class="text-meta">Total</span>
+                <strong class="price-display">{{ formatMoney(configuratorTotalPrice) }}</strong>
+              </div>
+            </aside>
+
+            <!-- Step 1: lens options -->
+            <div v-if="configuratorStep === 'lens'" class="pdp-modal__body">
+              <div v-if="isLensesLoading" class="pdp-modal__loading">
+                <div class="pdp-spinner pdp-spinner--sm"></div>
+              </div>
+
+              <div v-else>
+                <div v-if="(product as any)?.compatible_lens_options?.length" class="pdp-option-grid">
+                  <button
+                    v-for="opt in (product as any)?.compatible_lens_options || []"
+                    :key="opt.id"
+                    type="button"
+                    class="pdp-option-card"
+                    @click="selectLensOption(opt)"
+                  >
+                    <header>
+                      <h3>{{ opt.name }}</h3>
+                      <span class="badge">{{ opt.type?.replace('_', ' ') }}</span>
+                    </header>
+                    <p class="pdp-option-card__price">+{{ formatMoney(opt.base_price || 0) }}</p>
+                  </button>
+                </div>
+
+                <div v-else class="empty-state">
+                  <span class="material-symbols-outlined text-3xl text-gold" aria-hidden="true">info</span>
+                  <p class="pdp-modal__empty-title">Lensa belum dikonfigurasi</p>
+                  <p>Admin belum mengatur pilihan lensa untuk frame ini. Anda tetap bisa melanjutkan — tim kami akan menghubungi untuk konfirmasi lensa.</p>
+                  <button type="button" class="btn-primary btn-sm" @click="skipCoating">
+                    Lanjutkan Tanpa Pilih Lensa
+                  </button>
+                </div>
+              </div>
+
+              <footer class="pdp-modal__foot">
+                <button type="button" class="btn-outline" @click="isLensModalOpen = false">Batal</button>
+              </footer>
+            </div>
+
+            <!-- Step 2: coatings -->
+            <div v-if="configuratorStep === 'coating'" class="pdp-modal__body">
+              <div v-if="isCoatingsLoading" class="pdp-modal__loading">
+                <div class="pdp-spinner pdp-spinner--sm"></div>
+              </div>
+
+              <div v-else class="pdp-option-grid">
                 <button
-                  @click="skipCoating"
-                  class="px-6 py-2.5 text-sm font-black uppercase tracking-wider"
-                  style="background: var(--ink); color: white;"
+                  v-for="coating in allCoatings"
+                  :key="coating.id"
+                  type="button"
+                  class="pdp-option-card"
+                  :class="{ 'pdp-option-card--active': selectedCoating?.id === coating.id }"
+                  @click="selectedCoating = coating; confirmLensConfiguration()"
                 >
-                  Lanjutkan Tanpa Pilih Lensa
+                  <header>
+                    <h3>{{ coating.name }}</h3>
+                  </header>
+                  <p v-if="coating.description" class="pdp-option-card__desc">{{ coating.description }}</p>
+                  <p class="pdp-option-card__price">+{{ formatMoney(coating.price || 0) }}</p>
                 </button>
               </div>
-            </div>
 
-            <button @click="isLensModalOpen = false" class="mt-4 w-full rounded-lg py-2.5 text-xs font-bold transition-all" style="color: var(--graphite); border: 1px solid rgba(184,138,68,0.28); background: rgba(255,255,255,0.72);">
-              Batal
-            </button>
-          </div>
-
-          <!-- ── STEP 2: Pilih Coating ── -->
-          <div v-if="configuratorStep === 'coating'" class="p-5 pt-4 md:p-6 md:pt-4">
-            <div v-if="isCoatingsLoading" class="flex justify-center py-12">
-              <div class="w-10 h-10 rounded-lg border-4 border-t-transparent animate-spin" style="border-color: rgba(184,138,68,0.25); border-top-color: var(--gold);"></div>
-            </div>
-
-            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <button
-                v-for="coating in allCoatings"
-                :key="coating.id"
-                @click="selectedCoating = coating; confirmLensConfiguration()"
-                class="rounded-lg border p-4 text-left transition-all hover:shadow-card active:scale-95"
-                :style="selectedCoating?.id === coating.id
-                  ? 'border-color: var(--gold); background: rgba(184,138,68,0.06); box-shadow: 0 0 0 2px rgba(184,138,68,0.3);'
-                  : 'border-color: rgba(184,138,68,0.2); background: white;'"
-              >
-                <h3 class="font-bold text-sm mb-1" style="color: var(--ink);">{{ coating.name }}</h3>
-                <p v-if="coating.description" class="text-xs leading-relaxed mb-3" style="color: var(--graphite);">{{ coating.description }}</p>
-                <p class="font-black text-base" style="color: #6F4E1D;">+Rp {{ (coating.price || 0).toLocaleString('id-ID') }}</p>
-              </button>
-            </div>
-
-            <div class="flex flex-col gap-3 mt-6">
-              <button
-                @click="skipCoating"
-                class="w-full rounded-lg py-2.5 text-xs font-bold transition-all"
-                style="background: var(--ink); color: white;"
-              >
-                Lanjutkan Tanpa Coating
-              </button>
-              <button
-                @click="configuratorStep = 'lens'"
-                class="w-full rounded-lg py-2.5 text-xs font-bold transition-all"
-                style="color: var(--graphite); border: 1px solid rgba(184,138,68,0.28); background: rgba(255,255,255,0.72);"
-              >
-                ← Kembali Pilih Lensa
-              </button>
+              <footer class="pdp-modal__foot pdp-modal__foot--stack">
+                <button type="button" class="btn-primary" @click="skipCoating">
+                  Lanjutkan Tanpa Coating
+                </button>
+                <button type="button" class="btn-outline" @click="configuratorStep = 'lens'">
+                  <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+                  Kembali Pilih Lensa
+                </button>
+              </footer>
             </div>
           </div>
-
         </div>
-      </div>
+      </Transition>
     </Teleport>
   </main>
 </template>
+
+<style scoped>
+/* Loading state */
+.pdp-loading {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 80px 24px;
+  background: var(--ivory);
+}
+
+.pdp-loading p {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(43, 41, 38, 0.62);
+}
+
+.pdp-spinner {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: 4px solid rgba(184, 138, 68, 0.22);
+  border-top-color: var(--gold);
+  animation: pdp-spin 0.9s linear infinite;
+}
+.pdp-spinner--sm { width: 36px; height: 36px; border-width: 3px; }
+
+@keyframes pdp-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Layout */
+.pdp { background: var(--ivory); flex-grow: 1; }
+
+.pdp__main {
+  padding-top: clamp(24px, 3vw, 40px);
+  padding-bottom: clamp(48px, 6vw, 96px);
+}
+
+.pdp__layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(24px, 3vw, 48px);
+}
+
+@media (min-width: 1024px) {
+  .pdp__layout {
+    grid-template-columns: 7fr 5fr;
+    gap: 56px;
+    align-items: start;
+  }
+}
+
+.pdp__gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 1024px) {
+  .pdp__gallery {
+    position: sticky;
+    top: calc(var(--header-height, 72px) + 24px);
+  }
+}
+
+.pdp-gallery__main {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(184, 138, 68, 0.18);
+  background: linear-gradient(145deg, var(--ivory), var(--mist));
+  box-shadow: var(--shadow-card);
+}
+
+.pdp-gallery__image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: clamp(16px, 3vw, 36px);
+  mix-blend-mode: multiply;
+}
+
+.pdp-gallery__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-card);
+  transition: background-color var(--motion-base), box-shadow var(--motion-base);
+}
+
+.pdp-gallery__nav:hover { background: #fff; box-shadow: var(--shadow-soft); }
+.pdp-gallery__nav--disabled { opacity: 0.45; cursor: not-allowed; }
+.pdp-gallery__nav--prev { left: 12px; }
+.pdp-gallery__nav--next { right: 12px; }
+
+.pdp-gallery__counter {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(21, 18, 14, 0.78);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pdp-gallery__thumbs {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+@media (min-width: 480px) { .pdp-gallery__thumbs { gap: 10px; } }
+
+.pdp-gallery__thumb {
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background: linear-gradient(145deg, var(--ivory), var(--mist));
+  padding: 6px;
+  opacity: 0.6;
+  transition: border-color var(--motion-base), opacity var(--motion-base);
+  cursor: pointer;
+}
+
+.pdp-gallery__thumb:hover { opacity: 1; }
+.pdp-gallery__thumb--active { border-color: var(--gold); opacity: 1; }
+
+.pdp-gallery__thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+
+/* INFO COLUMN */
+.pdp__info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pdp__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pdp__badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pdp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  line-height: 1;
+  border: 1px solid transparent;
+}
+
+.pdp-badge .material-symbols-outlined { font-size: 12px; }
+.pdp-badge--ink { background: rgba(21, 18, 14, 0.86); color: #fff; border-color: rgba(184, 138, 68, 0.30); }
+.pdp-badge--gold { background: var(--gold); color: var(--ink); }
+.pdp-badge--red { background: #dc2626; color: #fff; }
+
+.pdp__title {
+  margin-top: 4px;
+  font-size: clamp(1.75rem, 1.4rem + 1.6vw, 2.75rem);
+  letter-spacing: -0.01em;
+  line-height: 1.04;
+}
+
+.pdp__subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(43, 41, 38, 0.78);
+  letter-spacing: 0.04em;
+}
+
+.pdp__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 13px;
+  color: rgba(43, 41, 38, 0.70);
+  margin-top: 4px;
+}
+
+.pdp__meta li { display: inline-flex; align-items: center; gap: 6px; }
+.pdp__meta .material-symbols-outlined { color: var(--gold); font-size: 18px; }
+
+.pdp__price-row {
+  margin-top: 12px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pdp__price { color: #6F4E1D; }
+.pdp__price-info {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--gold);
+}
+
+.pdp__stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pdp__stock-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.pdp__stock--available { color: #15803d; }
+.pdp__stock--available .pdp__stock-dot {
+  background: #16a34a;
+  box-shadow: 0 0 8px rgba(22, 163, 74, 0.5);
+}
+
+.pdp__stock--out { color: #dc2626; }
+.pdp__stock--out .pdp__stock-dot { background: #dc2626; }
+
+.pdp__promo-desc {
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(43, 41, 38, 0.72);
+  line-height: 1.5;
+}
+
+/* Quick row (wishlist + compare) */
+.pdp__quick-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.pdp-quick-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--mist);
+  background: #fff;
+  color: var(--graphite);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  min-height: var(--tap-target);
+  transition: background-color var(--motion-base), border-color var(--motion-base), color var(--motion-base);
+}
+
+.pdp-quick-btn:hover { border-color: rgba(184, 138, 68, 0.45); }
+.pdp-quick-btn--active {
+  background: var(--gold-soft);
+  border-color: rgba(184, 138, 68, 0.45);
+  color: #6F4E1D;
+}
+
+.pdp-quick-btn--compared {
+  background: rgba(63, 111, 143, 0.10);
+  border-color: rgba(63, 111, 143, 0.32);
+  color: var(--optical-blue);
+}
+
+.pdp-quick-btn .material-symbols-outlined { font-size: 18px; }
+
+/* Description */
+.pdp__description {
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(43, 41, 38, 0.78);
+}
+
+/* Variants */
+.pdp__variant {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pdp__variant-label {
+  display: flex;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: rgba(43, 41, 38, 0.68);
+}
+
+.pdp__variant-label strong { color: var(--ink); font-weight: 700; }
+
+.pdp__color-row { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.pdp-color-swatch {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: transform var(--motion-base), border-color var(--motion-base), box-shadow var(--motion-base);
+}
+
+.pdp-color-swatch:hover { transform: scale(1.05); }
+.pdp-color-swatch--active {
+  transform: scale(1.10);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(184, 138, 68, 0.42);
+}
+
+.pdp__size-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.pdp-size-pill {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(184, 138, 68, 0.25);
+  background: transparent;
+  color: var(--graphite);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  min-height: var(--tap-target);
+  transition: background-color var(--motion-base), color var(--motion-base), border-color var(--motion-base), box-shadow var(--motion-base);
+}
+
+.pdp-size-pill:hover { border-color: var(--ink); }
+.pdp-size-pill--active {
+  background: var(--ink);
+  color: var(--ivory);
+  border-color: var(--ink);
+  box-shadow: 0 4px 12px rgba(21, 18, 14, 0.18);
+}
+
+/* Alert variants used inline */
+.alert-base {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.pdp__alert-icon { color: var(--gold); flex-shrink: 0; margin-top: 2px; }
+.pdp__alert-title { font-size: 13px; font-weight: 700; color: #6F4E1D; }
+.pdp__alert-body { margin-top: 2px; font-size: 12px; line-height: 1.55; color: rgba(43, 41, 38, 0.72); }
+
+/* Info-only catalog notice */
+.pdp__info-only {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-left: 4px solid var(--gold);
+}
+
+.pdp__info-only header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pdp__info-only header .material-symbols-outlined { color: var(--gold); }
+.pdp__info-only header p { font-size: 14px; font-weight: 700; color: var(--ink); }
+
+.pdp__info-only > p {
+  font-size: 13px;
+  line-height: 1.65;
+  color: rgba(43, 41, 38, 0.74);
+}
+
+/* Prescription form */
+.pdp-rx {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(184, 138, 68, 0.18);
+}
+
+.pdp-rx__head h2 { margin: 0; }
+.pdp-rx__head p { margin-top: 4px; }
+
+.pdp-rx__profiles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pdp-rx__profile-list { display: flex; flex-direction: column; gap: 8px; }
+
+.pdp-rx-profile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(184, 138, 68, 0.20);
+  background: #fff;
+  text-align: left;
+  transition: border-color var(--motion-base), background-color var(--motion-base), box-shadow var(--motion-base);
+  cursor: pointer;
+}
+
+.pdp-rx-profile:hover { border-color: rgba(184, 138, 68, 0.45); }
+
+.pdp-rx-profile--active {
+  border-color: var(--gold);
+  background: rgba(184, 138, 68, 0.06);
+  box-shadow: 0 0 0 2px rgba(184, 138, 68, 0.25);
+}
+
+.pdp-rx-profile__body { min-width: 0; }
+.pdp-rx-profile__label { font-size: 13px; font-weight: 700; color: var(--ink); }
+.pdp-rx-profile__meta { margin-top: 2px; font-size: 11px; color: rgba(43, 41, 38, 0.62); }
+
+.pdp-rx-profile__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pdp-rx-profile__check { color: rgba(184, 138, 68, 0.30); }
+.pdp-rx-profile--active .pdp-rx-profile__check { color: var(--gold); }
+
+.pdp-rx__divider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.pdp-rx__form {
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(184, 138, 68, 0.22);
+  background: rgba(255, 255, 255, 0.82);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pdp-rx__grid {
+  display: grid;
+  grid-template-columns: 32px repeat(3, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.pdp-rx__grid--with-add { grid-template-columns: 32px repeat(4, 1fr); }
+
+.pdp-rx__grid > .text-meta {
+  text-align: center;
+  font-size: 10px;
+}
+
+.pdp-rx__row-label {
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--ink);
+  text-align: right;
+  padding-right: 4px;
+}
+
+.pdp-rx__select {
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(184, 138, 68, 0.24);
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pdp-rx__axis { text-align: center; }
+.pdp-rx__select:disabled {
+  background: var(--mist);
+  color: rgba(43, 41, 38, 0.55);
+  cursor: not-allowed;
+}
+
+.pdp-rx__pd {
+  padding-top: 12px;
+  border-top: 1px solid rgba(184, 138, 68, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pdp-rx__pd-toggle { display: flex; gap: 16px; }
+
+.pdp-rx__radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--graphite);
+  cursor: pointer;
+}
+
+.pdp-rx__radio input[type="radio"] { accent-color: var(--gold); }
+
+.pdp-rx__pd-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Lens config summary */
+.pdp-config-summary {
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(184, 138, 68, 0.28);
+  background: rgba(255, 255, 255, 0.82);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pdp-config-summary header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pdp-config-summary ul { display: flex; flex-direction: column; gap: 4px; }
+
+.pdp-config-summary li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: rgba(43, 41, 38, 0.78);
+}
+
+.pdp-config-summary__price { font-weight: 700; color: var(--ink); }
+
+.pdp-config-hint .material-symbols-outlined { color: var(--gold); }
+.pdp-config-hint p { margin: 0; font-size: 13px; color: rgba(43, 41, 38, 0.78); }
+
+/* CTA buttons */
+.pdp-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  background: linear-gradient(135deg, var(--ink) 0%, #3d2c0e 100%);
+  color: #fff;
+  box-shadow: 0 8px 25px rgba(21, 18, 14, 0.22);
+  transition: filter var(--motion-base), transform var(--motion-fast);
+  min-height: 52px;
+  width: 100%;
+}
+
+.pdp-cta:hover { filter: brightness(1.08); }
+.pdp-cta:active { transform: scale(0.98); }
+
+.pdp-cta--success {
+  background: linear-gradient(135deg, #15803d, #16a34a);
+  box-shadow: 0 8px 25px rgba(22, 163, 74, 0.30);
+}
+
+.pdp-cta--disabled {
+  background: rgba(245, 242, 238, 0.86);
+  color: rgba(160, 144, 128, 0.92);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.pdp-cta--disabled:hover { filter: none; }
+
+.pdp-cta--desktop { display: none; }
+@media (min-width: 768px) {
+  .pdp-cta--desktop { display: inline-flex; }
+}
+
+/* Trust strip */
+.pdp__trust {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.pdp__trust li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: rgba(43, 41, 38, 0.68);
+}
+
+.pdp__trust .material-symbols-outlined { color: var(--gold); font-size: 22px; }
+
+/* Accordion */
+.pdp-acc {
+  border: 1px solid var(--mist);
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.pdp-acc + .pdp-acc { margin-top: 8px; }
+
+.pdp-acc summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  transition: background-color var(--motion-base);
+}
+
+.pdp-acc summary::-webkit-details-marker { display: none; }
+.pdp-acc summary:hover { background: var(--surface-container-low); }
+
+.pdp-acc__icon { color: var(--gold); flex-shrink: 0; font-size: 20px; }
+.pdp-acc__label { flex: 1 1 auto; min-width: 0; }
+.pdp-acc__chevron {
+  color: rgba(43, 41, 38, 0.55);
+  font-size: 22px;
+  transition: transform var(--motion-base);
+}
+
+.pdp-acc[open] .pdp-acc__chevron { transform: rotate(180deg); }
+
+.pdp-acc__body {
+  padding: 4px 16px 18px;
+  border-top: 1px solid var(--mist);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pdp-acc__link { color: var(--gold); font-weight: 700; }
+.pdp-acc__link:hover { color: var(--ink); }
+
+.pdp-spec-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 8px;
+}
+
+@media (min-width: 480px) { .pdp-spec-grid { grid-template-columns: repeat(4, 1fr); } }
+
+.pdp-spec-cell {
+  padding: 10px 12px;
+  border: 1px solid var(--mist);
+  border-radius: 6px;
+  background: var(--porcelain);
+}
+
+.pdp-spec-cell__value {
+  margin-top: 4px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.pdp-spec-cell__value span {
+  margin-left: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(43, 41, 38, 0.62);
+}
+
+.pdp-spec-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(43, 41, 38, 0.78);
+}
+
+.pdp-spec-list li { padding-left: 16px; position: relative; }
+.pdp-spec-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--gold);
+}
+
+.pdp-spec-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--porcelain);
+  font-size: 12px;
+}
+
+.pdp-spec-row + .pdp-spec-row { margin-top: 4px; }
+.pdp-spec-row span { color: rgba(43, 41, 38, 0.65); font-weight: 600; }
+.pdp-spec-row strong { color: var(--ink); font-weight: 700; }
+
+/* Recommendations */
+.pdp__recos { padding-bottom: clamp(48px, 6vw, 80px); }
+
+.pdp__recos-head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 768px) {
+  .pdp__recos-head {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}
+
+.pdp__recos-title { margin-top: 4px; }
+
+.pdp__recos-block + .pdp__recos-block { margin-top: 32px; }
+.pdp__recos-block-title { margin-bottom: 12px; }
+
+.pdp-reco-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 768px) { .pdp-reco-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 1280px) { .pdp-reco-grid { grid-template-columns: repeat(5, 1fr); } }
+
+.pdp-reco-card {
+  cursor: pointer;
+  border: 1px solid var(--mist);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--porcelain);
+  transition: border-color var(--motion-base), box-shadow var(--motion-base), transform var(--motion-base);
+}
+
+.pdp-reco-card:hover {
+  border-color: rgba(184, 138, 68, 0.45);
+  box-shadow: var(--shadow-card);
+  transform: translateY(-2px);
+}
+
+.pdp-reco-card__media {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  background: linear-gradient(145deg, var(--ivory), var(--mist));
+}
+
+.pdp-reco-card__media img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+
+.pdp-reco-card__body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pdp-reco-card__body h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.3;
+}
+
+.pdp-reco-card__price {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #6F4E1D;
+}
+
+/* Reviews */
+.pdp__reviews { padding-bottom: clamp(48px, 6vw, 80px); }
+
+.pdp__reviews-card {
+  padding: clamp(20px, 3vw, 32px);
+}
+
+.pdp__reviews-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+  .pdp__reviews-head {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}
+
+.pdp__reviews-title { margin-top: 4px; }
+
+.pdp__reviews-summary {
+  font-size: 13px;
+  color: rgba(43, 41, 38, 0.72);
+}
+
+.pdp__reviews-summary strong { color: var(--ink); font-weight: 700; }
+
+.pdp__reviews-empty {
+  font-size: 13px;
+  color: rgba(43, 41, 38, 0.62);
+  text-align: center;
+  padding: 32px 0;
+}
+
+.pdp__reviews-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 768px) { .pdp__reviews-grid { grid-template-columns: 1fr 1fr; gap: 16px; } }
+
+.pdp-review {
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(184, 138, 68, 0.18);
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.pdp-review header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.pdp-review__name { font-size: 13px; font-weight: 700; color: var(--ink); }
+.pdp-review__date { font-size: 11px; color: rgba(43, 41, 38, 0.58); }
+
+.pdp-review__stars {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.pdp-review__stars .material-symbols-outlined {
+  font-size: 16px;
+  color: rgba(184, 138, 68, 0.25);
+}
+
+.pdp-review__star--filled { color: var(--gold) !important; }
+
+.pdp-review__body {
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(43, 41, 38, 0.72);
+}
+
+/* Sticky mobile CTA */
+.pdp-sticky-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pdp-sticky-cta__price {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pdp-sticky-cta__price .text-meta {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+
+.pdp-sticky-cta__amount {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.05;
+}
+
+.pdp-cta--mobile {
+  flex: 0 0 auto;
+  /* Auto-width minimal; tidak grow */
+  width: auto;
+  padding: 11px 16px;
+  min-height: 46px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.pdp-cta--mobile .material-symbols-outlined {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 359.98px) {
+  .pdp-sticky-cta { gap: 8px; }
+  .pdp-sticky-cta__amount { font-size: 18px; }
+  .pdp-cta--mobile { padding: 11px 12px; font-size: 10px; }
+}
+
+/* Hide sticky on desktop */
+@media (min-width: 768px) {
+  .pdp-sticky-cta { display: none; }
+}
+
+/* MODALS */
+.pdp-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(10, 8, 5, 0.65);
+  backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(12px, 2vw, 24px);
+  overflow-y: auto;
+}
+
+.pdp-modal {
+  width: 100%;
+  background: #faf8f5;
+  border: 1px solid rgba(184, 138, 68, 0.22);
+  border-radius: 12px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.32);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+.pdp-modal--md { max-width: 440px; }
+.pdp-modal--lg { max-width: 640px; }
+
+.pdp-modal__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 20px 0;
+}
+
+@media (min-width: 768px) { .pdp-modal__head { padding: 24px 28px 0; } }
+
+.pdp-modal__sub {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(43, 41, 38, 0.65);
+}
+
+.pdp-modal__lede {
+  margin: 16px 20px 0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: rgba(43, 41, 38, 0.74);
+}
+
+@media (min-width: 768px) { .pdp-modal__lede { margin: 16px 28px 0; } }
+
+/* Stepper */
+.pdp-stepper {
+  display: flex;
+  gap: 6px;
+  padding: 16px 20px 0;
+}
+
+@media (min-width: 768px) { .pdp-stepper { padding: 16px 28px 0; } }
+
+.pdp-stepper__bar {
+  flex: 1;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(184, 138, 68, 0.2);
+  transition: background-color var(--motion-base);
+}
+
+.pdp-stepper__bar--active { background: var(--gold); }
+
+/* Modal price */
+.pdp-modal__price {
+  margin: 16px 20px 0;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(184, 138, 68, 0.22);
+  background: rgba(184, 138, 68, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+@media (min-width: 768px) { .pdp-modal__price { margin: 16px 28px 0; } }
+
+.pdp-modal__price-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.pdp-modal__price-row span { color: rgba(43, 41, 38, 0.72); }
+.pdp-modal__price-row strong { color: var(--ink); font-weight: 700; }
+
+.pdp-modal__price-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(184, 138, 68, 0.22);
+}
+
+.pdp-modal__price-total .price-display {
+  font-size: 20px;
+  color: #6F4E1D;
+}
+
+.pdp-modal__body {
+  padding: 16px 20px 20px;
+}
+
+@media (min-width: 768px) { .pdp-modal__body { padding: 16px 28px 28px; } }
+
+.pdp-modal__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+.pdp-modal__empty-title { font-size: 13px; font-weight: 700; color: var(--ink); margin: 4px 0; }
+
+.pdp-modal__foot {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.pdp-modal__foot--stack {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.pdp-modal__foot button { width: 100%; }
+
+.pdp-option-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+@media (min-width: 480px) { .pdp-option-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.pdp-option-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(184, 138, 68, 0.20);
+  background: #fff;
+  text-align: left;
+  transition: border-color var(--motion-base), box-shadow var(--motion-base), transform var(--motion-fast);
+  cursor: pointer;
+}
+
+.pdp-option-card:hover { border-color: rgba(184, 138, 68, 0.45); box-shadow: var(--shadow-card); }
+.pdp-option-card:active { transform: scale(0.98); }
+
+.pdp-option-card--active {
+  border-color: var(--gold);
+  background: rgba(184, 138, 68, 0.06);
+  box-shadow: 0 0 0 2px rgba(184, 138, 68, 0.30);
+}
+
+.pdp-option-card header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pdp-option-card h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+.pdp-option-card__desc {
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(43, 41, 38, 0.65);
+}
+
+.pdp-option-card__price {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #6F4E1D;
+}
+
+/* Choice modal */
+.pdp-choice-grid {
+  margin: 20px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+@media (min-width: 480px) { .pdp-choice-grid { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 768px) { .pdp-choice-grid { margin: 20px 28px 28px; } }
+
+.pdp-choice-card {
+  padding: 18px;
+  border-radius: 8px;
+  border: 1px solid rgba(184, 138, 68, 0.20);
+  background: #fff;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color var(--motion-base), box-shadow var(--motion-base), transform var(--motion-base);
+  cursor: pointer;
+}
+
+.pdp-choice-card:hover {
+  border-color: rgba(184, 138, 68, 0.45);
+  box-shadow: var(--shadow-card);
+  transform: translateY(-2px);
+}
+
+.pdp-choice-card__icon {
+  color: var(--gold);
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+
+.pdp-choice-card h3 { font-size: 16px; font-weight: 700; color: var(--ink); }
+.pdp-choice-card__body {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(43, 41, 38, 0.72);
+}
+
+/* Transitions */
+.fade-enter-active, .fade-leave-active { transition: opacity var(--motion-base) var(--easing-standard); }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+</style>

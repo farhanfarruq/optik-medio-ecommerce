@@ -126,7 +126,7 @@ onMounted(loadTracking);
         titleClass="text-2xl font-black tracking-normal text-white sm:text-3xl"
       />
 
-      <main class="container-commerce pt-32 pb-12 sm:pt-40 md:pb-10">
+      <main class="container-commerce pt-8 pb-10">
 
         <!-- Progress Bar Status -->
         <div v-if="!['cancelled','refunded'].includes(normalizedStatus)" class="premium-card mb-6 overflow-x-auto p-4 sm:p-6">

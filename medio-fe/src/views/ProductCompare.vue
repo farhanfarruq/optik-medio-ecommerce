@@ -86,7 +86,7 @@ watch(() => compareStore.items.map(item => item.id).join(','), loadCompare);
     back-label="Kembali ke Katalog"
   />
 
-  <main class="min-h-screen bg-ivory pb-24 pt-40">
+  <main class="min-h-screen bg-ivory pb-24 pt-8">
     <section class="container-premium">
       <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-5 mb-8">
         <div>

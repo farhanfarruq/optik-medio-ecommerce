@@ -1,14 +1,16 @@
 <script setup lang="ts">
 // ─────────────────────────────────────────────────────────────────────────
-// FIXME P1-12 (Phase 3): God component (1.189 LOC) — refactor ke sub-tree.
-// Lihat: medio-fe/src/views/REFACTOR_PLAN.md untuk migration plan lengkap.
-// Composables baru tersedia: useFormatMoney.
+// FIXME P1-12 (Phase 3): God component — refactor ke sub-tree masih
+// belum dilakukan. Phase 4+5 redesign hanya re-layout template, semua
+// state/watch/computed/fetch logic dipertahankan persis. Lihat:
+// medio-fe/src/views/REFACTOR_PLAN.md
 // ─────────────────────────────────────────────────────────────────────────
 import { logger } from '../core/utils/logger';
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { productRepository, type Category, type ProductFilters } from '../repositories/ProductRepository';
 import { useSeoMeta } from '../composables/useSeoMeta';
+import { formatMoney } from '../composables/useFormatMoney';
 import type { Product } from '../types';
 import { resolveImageUrl } from '../core/utils/image';
 import { settingRepository, type Testimonial } from '../repositories/SettingRepository';
@@ -29,16 +31,13 @@ const products = ref<Product[]>([]);
 const lensShowcaseProducts = ref<Product[]>([]);
 const categories = ref<Category[]>([]);
 
-// State untuk toggle kategori tersembunyi
+// Toggle kategori tersembunyi (Home page)
 const showAllCategories = ref(false);
-const isMobileView = ref(window.innerWidth < 768);
+const isMobileView = ref(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+const handleResize = () => {
+  isMobileView.value = window.innerWidth < 768;
+};
 
-// Update isMobileView saat resize
-if (typeof window !== 'undefined') {
-  window.addEventListener('resize', () => {
-    isMobileView.value = window.innerWidth < 768;
-  });
-}
 const brands = ref<string[]>([]);
 const productFilters = ref<ProductFilters | null>(null);
 const isLoading = ref(true);
@@ -70,17 +69,16 @@ const testimonials = ref<Testimonial[]>([]);
 const banners = ref<BannerItem[]>([]);
 const currentBannerIndex = ref(0);
 const activeBanner = computed(() => banners.value[currentBannerIndex.value] || null);
-const isHomePage = computed(() => route.name === "Home");
-const isCatalogPage = computed(() => route.name === "Products" || route.name === "ProductsByCategory");
-const catalogHeroTitle = computed(() => (route.name === "Products" ? "Katalog Produk" : categoryTitle.value));
-const catalogHeroSubtitle = computed(() => (route.name === "Products"
-  ? "Jelajahi frame, lensa, dan koleksi optik yang siap difilter sesuai kebutuhan."
-  : "Temukan produk pilihan dari kategori ini dengan filter katalog yang lebih rapi."));
-const catalogHeroBreadcrumbs = computed(() => route.name === "Products"
-  ? [{ label: "Katalog Produk" }]
-  : [{ label: "Katalog Produk", to: "/products" }, { label: categoryTitle.value }]);
+const isHomePage = computed(() => route.name === 'Home');
+const isCatalogPage = computed(() => route.name === 'Products' || route.name === 'ProductsByCategory');
+const catalogHeroTitle = computed(() => (route.name === 'Products' ? 'Katalog Produk' : categoryTitle.value));
+const catalogHeroSubtitle = computed(() => (route.name === 'Products'
+  ? 'Jelajahi frame, lensa, dan koleksi optik yang siap difilter sesuai kebutuhan.'
+  : 'Temukan produk pilihan dari kategori ini dengan filter katalog yang lebih rapi.'));
+const catalogHeroBreadcrumbs = computed(() => route.name === 'Products'
+  ? [{ label: 'Katalog Produk' }]
+  : [{ label: 'Katalog Produk', to: '/products' }, { label: categoryTitle.value }]);
 
-// Resolve category image URL from relative storage path
 const resolveCategoryImage = (category?: Pick<Category, 'name' | 'slug' | 'image'> | null): string | null => {
   if (!category?.image) return null;
   const img = category.image;
@@ -89,15 +87,6 @@ const resolveCategoryImage = (category?: Pick<Category, 'name' | 'slug' | 'image
   return `${apiUrl}/storage/${img}`;
 };
 
-
-const categoryTileClass = (active = false, promo = false) => [
-  "group flex min-h-[60px] flex-col items-center justify-center gap-1 rounded-lg border px-2 py-1.5 text-center transition-all duration-200 hover:shadow-card active:scale-95",
-  active
-    ? "border-gold bg-amber-50/80 text-[#7a5c2e] shadow-card ring-1 ring-gold/40"
-    : promo
-      ? "border-red-500/30 bg-red-50 text-red-700 hover:border-red-500/50 hover:bg-red-100"
-      : "border-gold/25 bg-white/60 text-[#6F4E1D] hover:border-gold/50 hover:bg-amber-50/60"
-].join(" ");
 let bannerTimer: ReturnType<typeof setInterval> | null = null;
 
 const categoryTitle = computed(() => {
@@ -113,7 +102,7 @@ const categoryTitle = computed(() => {
 });
 
 const categoryDescription = computed(() => {
-  if (searchQuery.value) return `Menampilkan produk yang cocok dengan pencarian Anda.`;
+  if (searchQuery.value) return 'Menampilkan produk yang cocok dengan pencarian Anda.';
   if (hasPromo.value) return 'Temukan semua produk dengan penawaran dan promo terbaik yang sedang berlaku.';
   if (!categorySlug.value) return 'Temukan koleksi kacamata premium kami, dibuat untuk kenyamanan dan gaya terbaik Anda.';
   const found = categories.value.find(c => c.slug === categorySlug.value);
@@ -149,7 +138,6 @@ const formatFilterLabel = (value: string) => {
     rating: 'Rating',
     popular: 'Populer',
   };
-
   return labels[value] || value
     .split(/[-_]/)
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -158,7 +146,6 @@ const formatFilterLabel = (value: string) => {
 
 const activeFilterChips = computed(() => {
   const chips: Array<{ key: string; label: string; value: string }> = [];
-
   if (selectedBrand.value) chips.push({ key: 'brand', label: 'Merek', value: selectedBrand.value });
   if (selectedGender.value) chips.push({ key: 'gender', label: 'Gender', value: formatFilterLabel(selectedGender.value) });
   if (selectedFrameShape.value) chips.push({ key: 'frame_shape', label: 'Bentuk', value: formatFilterLabel(selectedFrameShape.value) });
@@ -172,13 +159,8 @@ const activeFilterChips = computed(() => {
     chips.push({ key: 'sort', label: 'Urutkan', value: formatFilterLabel(selectedSort.value) });
   }
   if (minPrice.value || maxPrice.value) {
-    chips.push({
-      key: 'price',
-      label: 'Harga',
-      value: `${minPrice.value || '0'} - ${maxPrice.value || 'maks'}`,
-    });
+    chips.push({ key: 'price', label: 'Harga', value: `${minPrice.value || '0'} - ${maxPrice.value || 'maks'}` });
   }
-
   return chips;
 });
 
@@ -190,67 +172,36 @@ const fetchProducts = async (isLoadMore = false) => {
       isLoading.value = true;
       currentPage.value = 1;
     }
-    
     hasError.value = false;
-    const params: any = {
+    const params: Record<string, string | number> = {
       page: currentPage.value,
       exclude_not_for_sale: 'true',
       prioritize_glasses: 'true',
     };
-    if (categorySlug.value) {
-      params.category = categorySlug.value;
-    }
-    if (selectedBrand.value) {
-      params.brand = selectedBrand.value;
-    }
-    if (selectedGender.value) {
-      params.gender = selectedGender.value;
-    }
-    if (selectedFrameShape.value) {
-      params.frame_shape = selectedFrameShape.value;
-    }
-    if (selectedFrameMaterial.value) {
-      params.frame_material = selectedFrameMaterial.value;
-    }
-    if (selectedFrameColor.value) {
-      params.frame_color = selectedFrameColor.value;
-    }
-    if (selectedFaceSizeFit.value) {
-      params.face_size_fit = selectedFaceSizeFit.value;
-    }
-    if (inStockOnly.value) {
-      params.in_stock_only = 'true';
-    }
-    if (prescriptionSupported.value) {
-      params.prescription_supported = 'true';
-    }
-    if (minPrice.value) {
-      params.min_price = minPrice.value;
-    }
-    if (maxPrice.value) {
-      params.max_price = maxPrice.value;
-    }
-    if (selectedSort.value) {
-      params.sort = selectedSort.value;
-    }
-    if (searchQuery.value) {
-      params.search = searchQuery.value;
-    }
-    if (hasPromo.value) {
-      params.has_promo = 'true';
-    }
-    if (promoId.value) {
-      params.promo_id = promoId.value;
-    }
-    
+    if (categorySlug.value) params.category = categorySlug.value;
+    if (selectedBrand.value) params.brand = selectedBrand.value;
+    if (selectedGender.value) params.gender = selectedGender.value;
+    if (selectedFrameShape.value) params.frame_shape = selectedFrameShape.value;
+    if (selectedFrameMaterial.value) params.frame_material = selectedFrameMaterial.value;
+    if (selectedFrameColor.value) params.frame_color = selectedFrameColor.value;
+    if (selectedFaceSizeFit.value) params.face_size_fit = selectedFaceSizeFit.value;
+    if (inStockOnly.value) params.in_stock_only = 'true';
+    if (prescriptionSupported.value) params.prescription_supported = 'true';
+    if (minPrice.value) params.min_price = minPrice.value;
+    if (maxPrice.value) params.max_price = maxPrice.value;
+    if (selectedSort.value) params.sort = selectedSort.value;
+    if (searchQuery.value) params.search = searchQuery.value;
+    if (hasPromo.value) params.has_promo = 'true';
+    if (promoId.value) params.promo_id = promoId.value;
+
     const response = await productRepository.getProducts(params);
-    
+
     if (isLoadMore) {
       products.value = [...products.value, ...(response.data || response)];
     } else {
       products.value = response.data || response;
     }
-    
+
     if (response.last_page) {
       lastPage.value = response.last_page;
       totalProducts.value = response.total || products.value.length;
@@ -261,9 +212,7 @@ const fetchProducts = async (isLoadMore = false) => {
   } catch (error) {
     logger.error('Failed to fetch products', error);
     hasError.value = true;
-    if (!isLoadMore) {
-      products.value = [];
-    }
+    if (!isLoadMore) products.value = [];
   } finally {
     isLoading.value = false;
     isLoadingMore.value = false;
@@ -279,7 +228,6 @@ const fetchLensShowcaseProducts = async () => {
       per_page: 12,
       sort: 'popular',
     });
-
     lensShowcaseProducts.value = response.data || response;
   } catch (error) {
     logger.warn('Could not load lens showcase products', error);
@@ -297,11 +245,8 @@ const handleLoadMore = () => {
 };
 
 const fetchBrands = async () => {
-  try {
-    brands.value = await productRepository.getBrands();
-  } catch (e) {
-    logger.warn('Could not load brands', e);
-  }
+  try { brands.value = await productRepository.getBrands(); }
+  catch (e) { logger.warn('Could not load brands', e); }
 };
 
 const fetchFilterMetadata = async () => {
@@ -315,15 +260,11 @@ const fetchFilterMetadata = async () => {
 };
 
 const fetchCategories = async () => {
-  try {
-    categories.value = await productRepository.getCategories();
-  } catch (e) {
-    logger.warn('Could not load categories', e);
-  }
+  try { categories.value = await productRepository.getCategories(); }
+  catch (e) { logger.warn('Could not load categories', e); }
 };
 
 onMounted(() => {
-  // SEO-2 (Phase 6): set meta tags untuk Home/Products page.
   const { setSeo } = useSeoMeta();
   setSeo({
     title: 'Belanja Kacamata & Lensa Premium',
@@ -336,18 +277,22 @@ onMounted(() => {
   fetchCategories();
   fetchFilterMetadata();
   fetchLensShowcaseProducts();
-  
-  if (cartStore.activePromos.length === 0) {
-    cartStore.fetchPromos();
-  }
-  
-  // Fetch testimonials from settings
-  bannerRepository.getBanners().then(data => { banners.value = data; if (data.length > 1) { bannerTimer = setInterval(() => { currentBannerIndex.value = (currentBannerIndex.value + 1) % banners.value.length; }, 4000); } });
-  settingRepository.getSettings().then(data => {
-    if (data.store_testimonials) {
-      testimonials.value = data.store_testimonials;
+
+  if (cartStore.activePromos.length === 0) cartStore.fetchPromos();
+
+  bannerRepository.getBanners().then(data => {
+    banners.value = data;
+    if (data.length > 1) {
+      bannerTimer = setInterval(() => {
+        currentBannerIndex.value = (currentBannerIndex.value + 1) % banners.value.length;
+      }, 4000);
     }
   });
+  settingRepository.getSettings().then(data => {
+    if (data.store_testimonials) testimonials.value = data.store_testimonials;
+  });
+
+  window.addEventListener('resize', handleResize);
 });
 
 watch(() => route.params.slug, (newSlug) => {
@@ -359,13 +304,10 @@ const getProductPromos = (product: Product) => {
   const buyPromos = [...(product.buy_promos || []), ...(product.buy_promos_many || [])];
   const discountPromos = [...(product.discount_promos || []), ...(product.discount_promos_many || [])];
 
-  // Add brand-based promos from store
   if (product.brand && cartStore.activePromos.length > 0) {
     cartStore.activePromos.forEach(promo => {
-      // Check if already in list to avoid duplicates
       const isDuplicate = [...buyPromos, ...discountPromos].some(p => p.id === promo.id);
       if (isDuplicate) return;
-
       if (promo.type === 'buy_x_get_y' && promo.buy_brands?.includes(product.brand)) {
         buyPromos.push(promo);
       } else if (promo.type === 'product_discount' && promo.discount_brands?.includes(product.brand)) {
@@ -373,7 +315,6 @@ const getProductPromos = (product: Product) => {
       }
     });
   }
-
   return { buyPromos, discountPromos };
 };
 
@@ -392,11 +333,8 @@ watch(() => route.query.promo_id, async (val) => {
   if (promoId.value) {
     try {
       await productRepository.getProducts({ promo_id: promoId.value, per_page: 1 });
-      // Usually the backend response for a specific promo_id filter might not give the promo object directly in the current getAll setup
-      // So we might need to fetch promos separately or just show "Promo Aktif"
-      // For now, let's keep it simple since we already have the ID
       activePromoName.value = 'Promo Spesial';
-    } catch (e) {}
+    } catch (e) { logger.warn('Failed to fetch promo data', e); }
   } else {
     activePromoName.value = '';
   }
@@ -404,20 +342,10 @@ watch(() => route.query.promo_id, async (val) => {
 });
 
 watch([
-  selectedBrand,
-  selectedGender,
-  selectedFrameShape,
-  selectedFrameMaterial,
-  selectedFrameColor,
-  selectedFaceSizeFit,
-  inStockOnly,
-  prescriptionSupported,
-  minPrice,
-  maxPrice,
-  selectedSort,
-], () => {
-  fetchProducts(false);
-});
+  selectedBrand, selectedGender, selectedFrameShape, selectedFrameMaterial,
+  selectedFrameColor, selectedFaceSizeFit, inStockOnly, prescriptionSupported,
+  minPrice, maxPrice, selectedSort,
+], () => { fetchProducts(false); });
 
 const clearFilter = (key: string) => {
   if (key === 'brand') selectedBrand.value = '';
@@ -428,10 +356,7 @@ const clearFilter = (key: string) => {
   if (key === 'face_size_fit') selectedFaceSizeFit.value = '';
   if (key === 'in_stock_only') inStockOnly.value = false;
   if (key === 'prescription_supported') prescriptionSupported.value = false;
-  if (key === 'price') {
-    minPrice.value = '';
-    maxPrice.value = '';
-  }
+  if (key === 'price') { minPrice.value = ''; maxPrice.value = ''; }
   if (key === 'sort') selectedSort.value = 'latest';
   if (key === 'promo') {
     router.push({ query: { ...route.query, has_promo: undefined, promo_id: undefined } });
@@ -450,7 +375,6 @@ const clearAllFilters = () => {
   minPrice.value = '';
   maxPrice.value = '';
   selectedSort.value = 'latest';
-
   if (hasPromo.value || promoId.value) {
     router.push({ query: { ...route.query, has_promo: undefined, promo_id: undefined } });
   }
@@ -458,11 +382,8 @@ const clearAllFilters = () => {
 
 const goToCategory = (slug: string | null) => {
   showFilterPanel.value = false;
-  if (!slug) {
-    router.push('/products');
-  } else {
-    router.push(`/products/category/${slug}`);
-  }
+  if (!slug) router.push('/products');
+  else router.push(`/products/category/${slug}`);
 };
 
 const goToDetail = (slug: string) => {
@@ -477,13 +398,9 @@ const togglePromoFilter = () => {
   }
 };
 
-
 const toggleWishlist = async (product: Product) => {
   const added = await wishlistStore.toggleWishlist(product);
-  showToast(
-    added ? 'Produk ditambahkan ke wishlist.' : 'Produk dihapus dari wishlist.',
-    'success',
-  );
+  showToast(added ? 'Produk ditambahkan ke wishlist.' : 'Produk dihapus dari wishlist.', 'success');
 };
 
 const toggleCompare = (product: Product) => {
@@ -495,718 +412,2008 @@ const toggleCompare = (product: Product) => {
   showToast(result === 'added' ? 'Produk ditambahkan ke compare.' : 'Produk dihapus dari compare.', 'success');
 };
 
+// Visible categories on storefront chip rail (Home).
+const visibleCategoriesCount = computed(() => isMobileView.value ? 6 : 9);
+const visibleCategories = computed(() => {
+  if (showAllCategories.value) return categories.value;
+  return categories.value.slice(0, visibleCategoriesCount.value);
+});
+const hiddenCategoryCount = computed(() => Math.max(0, categories.value.length - visibleCategoriesCount.value));
+
+const productPromoBuyLabel = (product: Product): string | null => {
+  const { buyPromos } = getProductPromos(product);
+  if (!buyPromos.length) return null;
+  const p = buyPromos[0];
+  if (p.buy_quantity && p.get_quantity) return `Beli ${p.buy_quantity} Gratis ${p.get_quantity}`;
+  return 'Promo Spesial';
+};
+
+const productPromoDiscountLabel = (product: Product): string | null => {
+  const { discountPromos } = getProductPromos(product);
+  if (!discountPromos.length) return null;
+  const p = discountPromos[0];
+  if (p.discount_type === 'percentage') return `Diskon ${Math.round(Number(p.discount_value || 0))}%`;
+  return `Diskon ${formatMoney(Number(p.discount_value || 0))}`;
+};
+
 onUnmounted(() => {
   if (bannerTimer) clearInterval(bannerTimer);
+  window.removeEventListener('resize', handleResize);
 });
 </script>
 
 <template>
-  <div v-if="isHomePage" class="relative w-full" style="margin-bottom: -80px;">
-    <section class="relative w-full overflow-hidden" style="height: 520px;">
-      <img
-        src="/gambar/hero-bg.jpeg"
-        alt="Optik Medio hero"
-        class="absolute inset-0 w-full h-full object-cover object-center"
-        style="transform: scale(1.04); object-position: center 40%;" loading="lazy" decoding="async" />
-      <div class="absolute inset-0" style="background: linear-gradient(160deg, rgba(10,8,5,0.45) 0%, rgba(30,20,10,0.25) 60%, transparent 100%);"></div>
-      <div class="absolute bottom-0 left-0 right-0" style="height: 180px; background: linear-gradient(to bottom, transparent 0%, var(--ivory) 100%);"></div>
-      <div class="absolute" style="bottom: 180px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,138,68,0.5), transparent);"></div>
-
-      <div class="relative z-10 h-full container-premium flex flex-col justify-end pb-20 pt-32">
-        <p v-if="categorySlug || searchQuery" class="text-xs font-bold uppercase tracking-[0.3em] mb-3" style="color: rgba(184,138,68,0.95);">
-          {{ searchQuery ? 'Pencarian' : categoryTitle }}
-        </p>
-        <h1 class="text-4xl md:text-6xl font-black tracking-normal leading-tight text-white mb-4" style="font-family: 'Cormorant Garamond', serif; text-shadow: 0 4px 24px rgba(0,0,0,0.3);">
-          {{ categoryTitle }}
-        </h1>
-        <p class="text-sm md:text-base max-w-xl leading-relaxed" style="color: rgba(255,255,255,0.72);">
-          {{ categoryDescription }}
-        </p>
-      </div>
-    </section>
-  </div>
-
-  <PageHero
-    v-else
-    :title="catalogHeroTitle"
-    :subtitle="catalogHeroSubtitle"
-    :breadcrumbs="catalogHeroBreadcrumbs"
-    back-to="/products"
-    back-label="Kembali ke Katalog"
-  />
-
-  <main class="container-premium pt-4 pb-16 w-full flex-grow relative z-10">
-
-    <!-- Banner Carousel Dinamis -->
-    <div v-if="isHomePage && activeBanner" class="relative mb-8 w-full overflow-hidden" style="border-radius: 0; margin-top: 72px;">
-      <div class="relative flex aspect-[16/9] w-full justify-center overflow-hidden bg-graphite shadow-soft sm:aspect-[16/7] md:aspect-auto md:justify-end">
+  <div>
+    <!-- ════════════════════════════════════════════════════════════════
+         HOMEPAGE — editorial commerce storefront
+         ════════════════════════════════════════════════════════════════ -->
+    <header v-if="isHomePage" class="storefront-hero">
+      <div class="storefront-hero__media">
         <img
-          v-if="activeBanner.image_path"
-          :src="resolveImageUrl(activeBanner.image_path)"
-          :alt="activeBanner.title || 'Banner Optik Medio'"
-          class="block h-full w-full object-contain object-bottom md:ml-auto md:h-auto md:w-auto md:max-w-full md:max-h-[380px] md:object-right xl:max-h-[420px] 2xl:max-h-[440px]" loading="lazy" decoding="async" />
-        <div v-else class="h-full w-full bg-graphite md:aspect-[16/6] md:max-h-[420px]"></div>
-        <!-- Subtle gradient for text readability without cropping the image -->
-        <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(90deg, rgba(0,0,0,0.58) 0%, rgba(0,0,0,0.22) 42%, rgba(0,0,0,0.04) 100%);"></div>
-        <div class="absolute inset-y-0 left-0 z-10 flex max-w-[82%] items-center px-5 py-5 sm:max-w-2xl md:px-12">
-          <div>
-            <p class="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.22em] sm:tracking-[0.3em] mb-1 sm:mb-2" style="color: var(--gold);">Penawaran Spesial</p>
-            <h3 class="text-sm leading-tight sm:text-2xl md:text-3xl font-black text-white mb-1.5 sm:mb-2" style="font-family: Outfit, sans-serif;">{{ activeBanner.title }}</h3>
-            <p v-if="activeBanner.subtitle" class="text-[10px] leading-snug sm:text-sm text-white mb-2 sm:mb-4 line-clamp-2">{{ activeBanner.subtitle }}</p>
-            <a
-              v-if="activeBanner.cta_label"
-              :href="activeBanner.external_url || (activeBanner.product ? `/products/${activeBanner.product.slug}` : activeBanner.category ? `/products/category/${activeBanner.category.slug}` : '#')"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] sm:gap-2 sm:px-6 sm:py-2 sm:text-xs font-black uppercase tracking-wider text-white border border-white/30 hover:bg-porcelain/10 transition-all"
-            >{{ activeBanner.cta_label }}</a>
+          src="/gambar/hero-bg.jpeg"
+          alt=""
+          class="storefront-hero__image"
+          loading="eager"
+          decoding="async"
+        />
+        <div class="storefront-hero__scrim" aria-hidden="true"></div>
+        <div class="storefront-hero__rule" aria-hidden="true"></div>
+        <div class="storefront-hero__fade" aria-hidden="true"></div>
+      </div>
+
+      <div class="container-premium storefront-hero__inner">
+        <div class="storefront-hero__copy">
+          <p class="eyebrow text-gold">Optik Medio · Curated Eyewear</p>
+          <h1 class="storefront-hero__title editorial-display">
+            Frame premium, lensa presisi,<br class="hidden sm:inline" /> dipilih bersama optometri.
+          </h1>
+          <p class="storefront-hero__lede">
+            Belanja eyewear yang dirancang nyaman dipakai harian — dengan opsi konsultasi resep, garansi, dan pickup di toko.
+          </p>
+          <div class="storefront-hero__cta-row">
+            <router-link to="/products" class="btn-gold btn-lg">
+              <span>Belanja Sekarang</span>
+              <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_forward</span>
+            </router-link>
+            <router-link to="/face-shape-quiz" class="btn-outline btn-lg storefront-hero__cta-secondary">
+              <span class="material-symbols-outlined text-base" aria-hidden="true">quiz</span>
+              <span>Quiz Bentuk Wajah</span>
+            </router-link>
           </div>
         </div>
       </div>
-      <!-- Dots navigation -->
-      <div v-if="banners.length > 1" class="absolute bottom-3 right-4 z-20 flex gap-2">
-        <button v-for="(_, idx) in banners" :key="idx" @click="currentBannerIndex = idx"
-          class="w-2 h-2 rounded-full transition-all"
-          :style="idx === currentBannerIndex ? 'background: var(--gold); width: 20px;' : 'background: rgba(255,255,255,0.5);'"
-        ></button>
-      </div>
-    </div>
+    </header>
 
-    <section v-if="isCatalogPage" class="mb-8 mt-16 rounded-lg border border-mist bg-white/75 px-5 py-5 shadow-soft backdrop-blur-xl md:mt-24 md:px-7 md:py-6">
-      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p class="text-[10px] font-black uppercase tracking-[0.3em] text-gold">Katalog Produk</p>
-          <h2 class="mt-2 text-xl font-black tracking-normal md:text-2xl" style="font-family: Cormorant Garamond, serif; color: var(--ink);">{{ categoryTitle }}</h2>
-          <p class="mt-2 max-w-2xl text-sm leading-relaxed text-graphite/65">Pilih kategori, filter detail frame, dan urutkan koleksi tanpa konten promo halaman awal.</p>
-        </div>
-        <div class="grid grid-cols-3 gap-3 text-center md:min-w-[300px]">
-          <div class="rounded-lg border border-mist bg-ivory px-3 py-3">
-            <p class="text-xl font-black text-ink">{{ totalProducts }}</p>
-            <p class="text-[9px] font-black uppercase tracking-[0.2em] text-graphite/45">Produk</p>
-          </div>
-          <div class="rounded-lg border border-mist bg-ivory px-3 py-3">
-            <p class="text-xl font-black text-ink">{{ categories.length }}</p>
-            <p class="text-[9px] font-black uppercase tracking-[0.2em] text-graphite/45">Kategori</p>
-          </div>
-          <div class="rounded-lg border border-mist bg-ivory px-3 py-3">
-            <p class="text-xl font-black text-ink">{{ activeFilterChips.length }}</p>
-            <p class="text-[9px] font-black uppercase tracking-[0.2em] text-graphite/45">Filter</p>
-          </div>
-        </div>
-      </div>
-    </section>
+    <!-- ════════════════════════════════════════════════════════════════
+         CATALOG — PageHero
+         ════════════════════════════════════════════════════════════════ -->
+    <PageHero
+      v-else-if="isCatalogPage"
+      :title="catalogHeroTitle"
+      :subtitle="catalogHeroSubtitle"
+      :breadcrumbs="catalogHeroBreadcrumbs"
+      back-to="/products"
+      back-label="Kembali ke Katalog"
+    />
 
-    <div class="mb-6 pt-5 md:pt-8">
-      <div class="mb-3 flex items-end justify-between gap-4">
-        <div>
-          <p class="text-[10px] font-black uppercase tracking-[0.3em] text-gold">Kategori</p>
-          <h2 class="mt-2 text-xl font-black tracking-normal md:text-2xl" style="font-family: Cormorant Garamond, serif; color: var(--ink);">Pilih Koleksi</h2>
-        </div>
-      </div>
+    <!-- ════════════════════════════════════════════════════════════════
+         MAIN — shared sections (Home: full layout, Catalog: toolbar+grid)
+         ════════════════════════════════════════════════════════════════ -->
+    <main class="container-premium" :class="isHomePage ? 'storefront-main' : 'catalog-main'">
 
-      <div class="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9">
-        <button
-          @click="goToCategory(null)"
-          :class="categoryTileClass(categorySlug ? false : hasPromo === false)"
-        >
-          <!-- "Semua" tile: always uses grid icon -->
-          <span class="material-symbols-outlined text-2xl">apps</span>
-          <span class="text-[10px] font-black uppercase leading-tight tracking-[0.14em]">Semua</span>
-        </button>
-
-        <button
-          @click="togglePromoFilter"
-          :class="categoryTileClass(hasPromo, true)"
-        >
-          <!-- "Promo" tile: always uses tag icon -->
-          <span class="material-symbols-outlined text-2xl">local_offer</span>
-          <span class="text-[10px] font-black uppercase leading-tight tracking-[0.14em]">Promo</span>
-        </button>
-
-        <template v-for="(cat, idx) in categories" :key="cat.id">
-          <button
-            v-if="categorySlug === cat.slug || (showAllCategories ? true : idx < (isMobileView ? 2 : 7))"
-            @click="goToCategory(cat.slug)"
-            :class="categoryTileClass(categorySlug === cat.slug)"
-          >
-            <!-- Category image from backend: mix-blend-multiply hides white PNG bg -->
-            <img
-              v-if="resolveCategoryImage(cat)"
-              :src="resolveCategoryImage(cat)!"
-              :alt="cat.name"
-              class="h-9 w-9 object-contain mix-blend-multiply transition-transform duration-200 group-hover:scale-110"
-              loading="lazy" decoding="async" />
-            <!-- Fallback icon when no image -->
-            <span v-else class="material-symbols-outlined text-2xl">category</span>
-              <span class="line-clamp-2 text-[10px] font-black uppercase leading-tight tracking-[0.12em]">{{ cat.name }}</span>
-          </button>
-        </template>
-
-        <button
-          v-if="categories.length > (isMobileView ? 2 : 7)"
-          @click="showAllCategories = showAllCategories ? false : true"
-          class="group flex min-h-[76px] flex-col items-center justify-center gap-1.5 rounded-lg border border-gold/25 bg-gold/10 px-2 py-2 text-center text-[#6F4E1D] transition-all duration-200 hover:border-gold/50 hover:bg-white hover:shadow-card active:scale-95"
-        >
-          <span class="material-symbols-outlined text-xl transition-transform">expand_more</span>
-          <span class="text-[10px] font-black uppercase leading-tight tracking-[0.14em]">{{ showAllCategories ? "Tutup" : "+" + (categories.length - (isMobileView ? 2 : 7)) }}</span>
-        </button>
-      </div>
-    </div>
-
-    <div class="-mx-4 mb-6 flex flex-col gap-4 border-y border-mist bg-ivory px-4 py-4 md:mx-0 md:flex-row md:items-center md:justify-between md:rounded-lg md:border">
-      <p class="text-sm font-medium" style="color: #5c4a3a;">
-        <span v-if="!isLoading && !hasError">
-          Menampilkan <strong style="color: var(--ink);">{{ totalProducts }}</strong> produk
-        </span>
-        <span v-else-if="isLoading">Memuat produk...</span>
-      </p>
-
-      <div class="flex flex-wrap items-center gap-3">
-        <button
-          @click="showFilterPanel = !showFilterPanel"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider border transition-all active:scale-95"
-          :style="showFilterPanel || activeFilterChips.length > 0
-            ? 'background: var(--ink); color: white; border-color: var(--ink);'
-            : 'background: white; color: var(--ink); border-color: #d6cbbb;'"
-        >
-          <span class="material-symbols-outlined text-sm">tune</span>
-          Filter
-          <span
-            v-if="activeFilterChips.length > 0"
-            class="min-w-5 h-5 px-1.5 inline-flex items-center justify-center text-[10px] font-black"
-            style="background: var(--gold); color: white;"
-          >
-            {{ activeFilterChips.length }}
-          </span>
-        </button>
-
-        <span class="text-xs font-bold uppercase tracking-widest text-graphite/65">Merek:</span>
-        <div class="relative">
-          <select 
-            v-model="selectedBrand" 
-            class="appearance-none bg-porcelain border border-mist px-4 py-2 pr-10 rounded-lg text-sm font-medium focus:outline-none focus:border-gold cursor-pointer shadow-sm"
-            style="color: var(--ink);"
-          >
-            <option value="">Semua Merek</option>
-            <option v-for="brand in availableBrands" :key="brand" :value="brand">{{ brand }}</option>
-          </select>
-          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-graphite/45 pointer-events-none text-sm">
-            expand_more
-          </span>
-        </div>
-
-        <span class="text-xs font-bold uppercase tracking-widest text-graphite/65">Urut:</span>
-        <div class="relative">
-          <select
-            v-model="selectedSort"
-            class="appearance-none bg-porcelain border border-mist px-4 py-2 pr-10 rounded-lg text-sm font-medium focus:outline-none focus:border-gold cursor-pointer shadow-sm"
-            style="color: var(--ink);"
-          >
-            <option value="latest">Terbaru</option>
-            <option value="price_low">Harga Terendah</option>
-            <option value="price_high">Harga Tertinggi</option>
-            <option value="best_seller">Terlaris</option>
-            <option value="rating">Rating</option>
-            <option value="popular">Populer</option>
-          </select>
-          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-graphite/45 pointer-events-none text-sm">
-            expand_more
-          </span>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="activeFilterChips.length > 0" class="flex flex-wrap items-center gap-2 mb-5">
-      <button
-        v-for="chip in activeFilterChips"
-        :key="chip.key"
-        @click="clearFilter(chip.key)"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all hover:border-ink"
-        style="background: #f8f5ef; color: var(--ink); border-color: #e4d8c8;"
-      >
-        <span class="uppercase tracking-wider text-graphite/65">{{ chip.label }}</span>
-        <span>{{ chip.value }}</span>
-        <span class="material-symbols-outlined text-sm">close</span>
-      </button>
-      <button
-        @click="clearAllFilters"
-        class="px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-graphite/65 hover:text-ink"
-      >
-        Reset
-      </button>
-    </div>
-
-    <div
-      v-if="showFilterPanel"
-      class="mb-7 border border-mist bg-porcelain shadow-sm"
-    >
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 p-5">
-        <label class="block">
-          <span class="block text-[10px] font-black uppercase tracking-widest text-graphite/65 mb-2">Gender</span>
-          <select v-model="selectedGender" class="input-field py-2 text-sm">
-            <option value="">Semua</option>
-            <option v-for="item in availableGenders" :key="item" :value="item">{{ formatFilterLabel(item) }}</option>
-          </select>
-        </label>
-
-        <label class="block">
-          <span class="block text-[10px] font-black uppercase tracking-widest text-graphite/65 mb-2">Bentuk Frame</span>
-          <select v-model="selectedFrameShape" class="input-field py-2 text-sm">
-            <option value="">Semua</option>
-            <option v-for="item in availableFrameShapes" :key="item" :value="item">{{ formatFilterLabel(item) }}</option>
-          </select>
-        </label>
-
-        <label class="block">
-          <span class="block text-[10px] font-black uppercase tracking-widest text-graphite/65 mb-2">Material</span>
-          <select v-model="selectedFrameMaterial" class="input-field py-2 text-sm">
-            <option value="">Semua</option>
-            <option v-for="item in availableFrameMaterials" :key="item" :value="item">{{ formatFilterLabel(item) }}</option>
-          </select>
-        </label>
-
-        <label class="block">
-          <span class="block text-[10px] font-black uppercase tracking-widest text-graphite/65 mb-2">Warna</span>
-          <select v-model="selectedFrameColor" class="input-field py-2 text-sm">
-            <option value="">Semua</option>
-            <option v-for="item in availableFrameColors" :key="item" :value="item">{{ formatFilterLabel(item) }}</option>
-          </select>
-        </label>
-
-        <label class="block">
-          <span class="block text-[10px] font-black uppercase tracking-widest text-graphite/65 mb-2">Fit Wajah</span>
-          <select v-model="selectedFaceSizeFit" class="input-field py-2 text-sm">
-            <option value="">Semua</option>
-            <option v-for="item in availableFaceSizeFits" :key="item" :value="item">{{ formatFilterLabel(item) }}</option>
-          </select>
-        </label>
-
-        <div class="grid grid-cols-2 gap-2">
-          <label class="block">
-            <span class="block text-[10px] font-black uppercase tracking-widest text-graphite/65 mb-2">Min</span>
-            <input v-model="minPrice" inputmode="numeric" placeholder="Rp" class="input-field py-2 text-sm" />
-          </label>
-          <label class="block">
-            <span class="block text-[10px] font-black uppercase tracking-widest text-graphite/65 mb-2">Max</span>
-            <input v-model="maxPrice" inputmode="numeric" placeholder="Rp" class="input-field py-2 text-sm" />
-          </label>
-        </div>
-
-        <label class="flex items-center gap-2 text-sm font-bold text-graphite">
-          <input v-model="inStockOnly" type="checkbox" class="w-4 h-4 accent-gold" />
-          Stok tersedia
-        </label>
-
-        <label class="flex items-center gap-2 text-sm font-bold text-graphite">
-          <input v-model="prescriptionSupported" type="checkbox" class="w-4 h-4 accent-gold" />
-          Bisa resep
-        </label>
-
-        <div class="flex items-end">
-          <button
-            @click="clearAllFilters"
-            class="w-full px-4 py-2 text-xs font-black uppercase tracking-wider border border-mist text-graphite hover:border-ink hover:text-ink transition-all"
-          >
-            Reset Filter
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="hasError" class="text-center py-24 rounded-lg border border-dashed" style="border-color: rgba(220,38,38,0.25); background: rgba(220,38,38,0.03);">
-      <span class="material-symbols-outlined text-5xl mb-4 block" style="color: rgba(220,38,38,0.5);">wifi_off</span>
-      <h2 class="text-xl font-bold text-ink mb-2">Gagal memuat produk</h2>
-      <p class="text-graphite/65 mb-6">Terjadi kesalahan server. Silakan coba lagi.</p>
-      <button @click="() => fetchProducts(false)" class="btn-primary"
-        style="background: linear-gradient(135deg, var(--ink) 0%, #3d2c0e 100%);">
-        Coba Lagi
-      </button>
-    </div>
-
-    <div v-else-if="isLoading" class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-6">
-      <div v-for="i in 12" :key="i" class="animate-pulse rounded-lg overflow-hidden" style="background: rgba(245,242,238,0.9);">
-        <div class="aspect-[4/5]" style="background: linear-gradient(135deg, var(--mist), var(--taupe));"></div>
-        <div class="p-5 space-y-3">
-          <div class="h-3 rounded-lg w-1/3" style="background: var(--taupe);"></div>
-          <div class="h-4 rounded-lg w-3/4" style="background: var(--mist);"></div>
-          <div class="h-3 rounded-lg w-1/2" style="background: var(--taupe);"></div>
-        </div>
-      </div>
-    </div>
-
-    <div v-else-if="products.length === 0" class="text-center py-32 rounded-lg border border-dashed" style="border-color: rgba(184,138,68,0.25); background: rgba(184,138,68,0.04);">
-      <span class="material-symbols-outlined text-7xl mb-6 block" style="color: rgba(184,138,68,0.4);">inventory_2</span>
-      <h2 class="text-2xl font-bold text-graphite mb-3" style="font-family: 'Cormorant Garamond', serif;">Produk tidak ditemukan</h2>
-      <p class="text-graphite/65">Coba pilih kategori lain atau kembali lagi nanti.</p>
-    </div>
-
-    <div v-else class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-6">
-      <article
-        v-for="product in products"
-        :key="product.id"
-        @click="goToDetail(product.slug)"
-        class="group relative flex flex-col cursor-pointer rounded-lg overflow-hidden transition-all duration-500 hover:-translate-y-1.5 hover:shadow-soft"
-        style="background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.06);"
-      >
-        <div class="relative aspect-[4/5] overflow-hidden flex items-center justify-center p-3 md:p-8"
-          style="background: linear-gradient(145deg, var(--ivory), var(--mist));">
-
-          <img
-            :src="resolveImageUrl(product)"
-            :alt="product.name"
-            class="object-contain w-full h-full mix-blend-multiply transition-transform duration-700 ease-out group-hover:scale-105"
-            :class="{ 'opacity-40 grayscale': product.stock <= 0 }"
-            loading="lazy"
-            decoding="async"
-          />
-
-          <button
-            class="absolute top-3 right-3 w-9 h-9 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-card"
-            :style="wishlistStore.isWishlisted(product.id)
-              ? 'background: rgba(184,138,68,0.18); backdrop-filter: blur(8px); opacity: 1;'
-              : 'background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);'"
-            @click.stop="toggleWishlist(product)"
-          >
-            <span class="material-symbols-outlined text-base" :style="wishlistStore.isWishlisted(product.id) ? 'color: var(--gold);' : 'color: var(--gold);'">favorite</span>
-          </button>
-
-          <button
-            class="absolute top-14 right-3 w-9 h-9 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-card"
-            :style="compareStore.isCompared(product.id)
-              ? 'background: rgba(26,18,9,0.9); backdrop-filter: blur(8px); opacity: 1; color: white;'
-              : 'background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); color: #6F4E1D;'"
-            @click.stop="toggleCompare(product)"
-          >
-            <span class="material-symbols-outlined text-base">compare_arrows</span>
-          </button>
-
-          <!-- Best Seller Badge -->
-          <div
-            v-if="product.is_best_seller"
-            class="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-[0.1em] text-white shadow-sm"
-            style="background: rgba(26,18,9,0.8); backdrop-filter: blur(4px); border: 1px solid rgba(184,138,68,0.3);"
-          >
-            <span class="material-symbols-outlined text-[10px]" style="color: var(--gold);">trending_up</span>
-            Terlaris
-          </div>
-
-          <!-- Promo Badge (Buy X Get Y) -->
-          <div
-            v-if="getProductPromos(product).buyPromos.length > 0"
-            class="absolute top-[44px] left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-[0.1em] text-white shadow-card"
-            style="background: var(--gold); border: 1px solid rgba(255,255,255,0.2);"
-          >
-            <span class="material-symbols-outlined text-[10px]">redeem</span>
-            {{ 
-              getProductPromos(product).buyPromos[0]
-                ? `Beli ${getProductPromos(product).buyPromos[0].buy_quantity} Gratis ${getProductPromos(product).buyPromos[0].get_quantity}` 
-                : 'Promo Spesial' 
-            }}
-          </div>
-
-          <!-- Promo Badge (Product Discount) -->
-          <div
-            v-if="getProductPromos(product).discountPromos.length > 0"
-            class="absolute top-[44px] left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-[0.1em] text-white shadow-card"
-            style="background: #ef4444; border: 1px solid rgba(255,255,255,0.2);"
-            :style="getProductPromos(product).buyPromos.length > 0 ? 'top: 74px;' : ''"
-          >
-            <span class="material-symbols-outlined text-[10px]">percent</span>
-            {{ 
-              getProductPromos(product).discountPromos[0]
-                ? `Diskon ${getProductPromos(product).discountPromos[0].discount_type === 'percentage' ? Math.round(Number(getProductPromos(product).discountPromos[0].discount_value)) + '%' : 'Rp ' + Number(getProductPromos(product).discountPromos[0].discount_value).toLocaleString('id-ID')}` 
-                : 'Diskon Spesial' 
-            }}
-          </div>
-
-          <div
-            v-if="product.stock <= 0 && !product.is_not_for_sale"
-            class="absolute inset-0 flex items-center justify-center"
-            style="background: rgba(255,255,255,0.15); backdrop-filter: blur(2px);"
-          >
-            <span class="text-[10px] md:text-xs font-black uppercase tracking-widest px-4 py-2 rounded"
-              style="background: rgba(15,10,5,0.85); color: rgba(255,255,255,0.9);">
-              Stok Habis
-            </span>
-          </div>
-
-          <div
-            v-if="product.is_not_for_sale"
-            class="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-[0.1em] text-white"
-            style="background: rgba(184,138,68,0.9); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2);"
-          >
-            Informasi
-          </div>
-        </div>
-
-        <div class="p-3 md:p-5 flex flex-col flex-grow min-w-0">
-          <span class="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] mb-1" style="color: #5c4a3a;">
-            {{ product.name }}
-          </span>
-          <h3
-            class="font-bold text-sm md:text-lg leading-tight mb-2 md:mb-3 transition-colors duration-300 line-clamp-2 min-h-[2.5rem] md:min-h-[3.5rem]"
-            style="color: var(--ink); font-family: 'Cormorant Garamond', serif; letter-spacing: -0.01em;"
-            :class="{ 'group-hover:text-gold': product.stock > 0 }"
-          >
-            {{ product.brand || 'Optik Medio' }}
-          </h3>
-          <div class="grid grid-cols-1 gap-1.5 mb-2 md:mb-3 text-[10px] md:text-[11px]" style="color: #5c4a3a;">
-            <span class="flex items-center gap-1.5 min-w-0">
-              <span class="material-symbols-outlined text-sm" style="color: var(--gold);">star</span>
-              {{ Number(product.avg_rating || 0).toFixed(1) }} · {{ product.review_count || 0 }} ulasan
-            </span>
-            <span class="flex items-center gap-1.5 min-w-0">
-              <span class="material-symbols-outlined text-sm" style="color: var(--gold);">shopping_bag</span>
-              {{ Number(product.purchase_count || 0) }} terjual
-            </span>
-          </div>
-          <div class="flex items-start justify-between gap-3 mt-auto">
-            <div v-if="!product.is_not_for_sale">
-              <p class="text-xs md:text-base font-black" style="color: var(--ink);">
-                Rp {{ product.price.toLocaleString('id-ID') }}
-              </p>
+      <!-- ─── HOME-only sections (atas) ─────────────────────────────── -->
+      <template v-if="isHomePage">
+        <!-- Quick category rail -->
+        <section v-if="categories.length" class="storefront-section">
+          <div class="storefront-section__head">
+            <div>
+              <p class="eyebrow">Telusuri Koleksi</p>
+              <h2 class="editorial-h2 storefront-section__title">Kategori Populer</h2>
             </div>
-            <div v-else>
-              <p class="text-[10px] md:text-xs font-bold uppercase tracking-normal" style="color: var(--gold);">
-                Katalog Informasi
-              </p>
-            </div>
-            <span v-if="product.stock > 0 && !product.is_not_for_sale" class="shrink-0 flex items-center gap-1 text-[9px] font-bold text-right" style="color: #16a34a;">
-              <span class="w-1.5 h-1.5 rounded-lg bg-olive inline-block"></span>
-              Tersedia
-            </span>
-          </div>
-        </div>
-
-        <div
-          class="overflow-hidden transition-all duration-300 ease-out"
-          :class="product.stock > 0 ? 'max-h-0 group-hover:max-h-12' : 'max-h-0'"
-        >
-          <div class="px-4 md:px-5 pb-4">
             <button
-              class="w-full py-2.5 rounded-lg text-xs font-black uppercase tracking-wider text-white transition-all active:scale-95"
-              style="background: linear-gradient(135deg, var(--ink) 0%, #3d2c0e 100%);"
+              v-if="hiddenCategoryCount > 0"
+              type="button"
+              class="btn-ghost btn-sm hidden sm:inline-flex"
+              @click="showAllCategories = !showAllCategories"
             >
-              Lihat Detail
+              {{ showAllCategories ? 'Tampilkan Sedikit' : `Lihat Semua (${categories.length})` }}
+              <span class="material-symbols-outlined text-base" aria-hidden="true">{{ showAllCategories ? 'expand_less' : 'expand_more' }}</span>
             </button>
           </div>
-        </div>
-      </article>
-    </div>
 
-    <div
-      v-if="compareStore.count > 0"
-      class="fixed left-4 right-4 bottom-24 z-40 bg-porcelain border border-mist shadow-soft p-3 flex items-center justify-between gap-3 md:bottom-5 md:left-1/2 md:w-[720px] md:-translate-x-1/2"
-    >
-      <div class="flex items-center gap-3 min-w-0">
-        <span class="material-symbols-outlined text-xl shrink-0" style="color: var(--gold);">compare_arrows</span>
-        <div class="min-w-0">
-          <p class="text-xs font-black uppercase tracking-widest text-ink">{{ compareStore.count }}/4 produk</p>
-          <p class="text-[11px] text-graphite/65 truncate">{{ compareStore.items.map(item => item.name).join(', ') }}</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-2 shrink-0">
-        <button @click="compareStore.clear()" class="px-3 py-2 text-xs font-bold text-graphite/80 border border-mist">
-          Reset
-        </button>
-        <button
-          @click="router.push('/compare')"
-          :disabled="!compareStore.canCompare"
-          class="px-4 py-2 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50"
-          style="background: var(--ink);"
-        >
-          Compare
-        </button>
-      </div>
-    </div>
+          <div class="storefront-categories">
+            <button
+              type="button"
+              class="cat-tile"
+              :class="{ 'cat-tile--active': !categorySlug && !hasPromo }"
+              @click="goToCategory(null)"
+            >
+              <span class="cat-tile__icon-wrap">
+                <span class="material-symbols-outlined cat-tile__icon" aria-hidden="true">apps</span>
+              </span>
+              <span class="cat-tile__label">Semua</span>
+            </button>
 
-    <div class="w-full mt-12 mb-8 flex flex-col items-center gap-6">
-      <div v-if="isLoadingMore" class="flex items-center gap-3 text-graphite/65">
-        <span class="material-symbols-outlined animate-spin text-2xl" style="color: var(--gold);">sync</span>
-        <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--ink);">Memuat lebih banyak...</span>
-      </div>
-      
-      <div v-else-if="currentPage < lastPage" class="w-full flex justify-center">
-        <button 
-          @click="handleLoadMore"
-          class="group relative px-10 py-4 overflow-hidden transition-all duration-300 hover:shadow-[0_8px_30px_rgb(193,154,81,0.2)] active:scale-95"
-          style="background: var(--ink);"
-        >
-          <div class="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" style="background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);"></div>
-          
-          <div class="flex items-center gap-3 relative z-10">
-            <span class="text-xs font-black uppercase tracking-[0.3em] text-white">Tampilkan Lebih Banyak</span>
-            <span class="material-symbols-outlined text-sm text-gold group-hover:translate-y-1 transition-transform">expand_more</span>
+            <button
+              type="button"
+              class="cat-tile cat-tile--accent"
+              :class="{ 'cat-tile--active': hasPromo }"
+              @click="togglePromoFilter"
+            >
+              <span class="cat-tile__icon-wrap cat-tile__icon-wrap--accent">
+                <span class="material-symbols-outlined cat-tile__icon" aria-hidden="true">local_offer</span>
+              </span>
+              <span class="cat-tile__label">Promo</span>
+            </button>
+
+            <button
+              v-for="cat in visibleCategories"
+              :key="cat.id"
+              type="button"
+              class="cat-tile"
+              :class="{ 'cat-tile--active': categorySlug === cat.slug }"
+              @click="goToCategory(cat.slug)"
+            >
+              <span class="cat-tile__icon-wrap">
+                <img
+                  v-if="resolveCategoryImage(cat)"
+                  :src="resolveCategoryImage(cat)!"
+                  alt=""
+                  class="cat-tile__image"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span v-else class="material-symbols-outlined cat-tile__icon" aria-hidden="true">category</span>
+              </span>
+              <span class="cat-tile__label">{{ cat.name }}</span>
+            </button>
+
+            <button
+              v-if="hiddenCategoryCount > 0"
+              type="button"
+              class="cat-tile cat-tile--more sm:hidden"
+              @click="showAllCategories = !showAllCategories"
+            >
+              <span class="cat-tile__icon-wrap">
+                <span class="material-symbols-outlined cat-tile__icon" aria-hidden="true">{{ showAllCategories ? 'expand_less' : 'expand_more' }}</span>
+              </span>
+              <span class="cat-tile__label">{{ showAllCategories ? 'Tutup' : `+${hiddenCategoryCount}` }}</span>
+            </button>
           </div>
-        </button>
-      </div>
+        </section>
 
-      <div v-else-if="!isLoading && products.length > 0" class="flex flex-col items-center gap-2">
-        <div class="w-12 h-[1px] bg-mist"></div>
-        <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-graphite/45">
-          Semua {{ totalProducts }} produk telah ditampilkan
-        </span>
-      </div>
-    </div>
-
-    <section v-if="lensShowcaseProducts.length > 0 || isLoadingLensShowcase" class="mt-20 mb-12">
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
-        <div>
-          <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-3" style="color: var(--gold);">Pilihan Lensa Resep</p>
-          <h2 class="text-3xl md:text-4xl font-black tracking-normal" style="font-family: 'Cormorant Garamond', serif; color: var(--ink);">Merek Lensa yang Tersedia</h2>
-          <p class="text-sm text-graphite/65 mt-3 max-w-2xl leading-relaxed">
-            Produk berikut bersifat katalog informasi. Pemilihan dan pembelian lensa dilakukan bersama frame melalui konsultasi resep di Optik Medio.
-          </p>
-        </div>
-        <router-link to="/appointment" class="inline-flex items-center gap-2 px-5 py-3 text-xs font-black uppercase tracking-widest text-white transition-all hover:shadow-card" style="background: var(--ink);">
-          Konsultasi Lensa
-          <span class="material-symbols-outlined text-sm">arrow_forward</span>
-        </router-link>
-      </div>
-
-      <div v-if="isLoadingLensShowcase" class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div v-for="i in 4" :key="i" class="animate-pulse border border-mist p-5" style="background: var(--porcelain);">
-          <div class="aspect-[4/3] mb-4" style="background: var(--mist);"></div>
-          <div class="h-3 w-1/2 mb-3" style="background: var(--taupe);"></div>
-          <div class="h-4 w-3/4" style="background: var(--mist);"></div>
-        </div>
-      </div>
-
-      <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <article
-          v-for="lens in lensShowcaseProducts"
-          :key="lens.id"
-          class="group border border-mist overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-soft"
-          style="background: var(--porcelain);"
-          @click="goToDetail(lens.slug)"
-        >
-          <div class="aspect-[4/3] p-5 flex items-center justify-center" style="background: linear-gradient(145deg, var(--ivory), var(--mist));">
+        <!-- Banner -->
+        <section v-if="activeBanner" class="storefront-section">
+          <article class="storefront-banner">
             <img
-              :src="resolveImageUrl(lens)"
-              :alt="lens.name"
-              class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+              v-if="activeBanner.image_path"
+              :src="resolveImageUrl(activeBanner.image_path)"
+              :alt="activeBanner.title || 'Banner Optik Medio'"
+              class="storefront-banner__image"
               loading="lazy"
               decoding="async"
             />
+            <div class="storefront-banner__scrim" aria-hidden="true"></div>
+            <div class="storefront-banner__copy">
+              <p class="eyebrow text-gold">Penawaran Spesial</p>
+              <h3 class="storefront-banner__title editorial-display">{{ activeBanner.title }}</h3>
+              <p v-if="activeBanner.subtitle" class="storefront-banner__sub">{{ activeBanner.subtitle }}</p>
+              <a
+                v-if="activeBanner.cta_label"
+                :href="activeBanner.external_url || (activeBanner.product ? `/products/${activeBanner.product.slug}` : activeBanner.category ? `/products/category/${activeBanner.category.slug}` : '#')"
+                class="storefront-banner__cta"
+              >
+                {{ activeBanner.cta_label }}
+                <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_forward</span>
+              </a>
+            </div>
+            <div v-if="banners.length > 1" class="storefront-banner__dots" aria-label="Pilih banner">
+              <button
+                v-for="(_, idx) in banners"
+                :key="idx"
+                type="button"
+                class="storefront-banner__dot"
+                :class="{ 'storefront-banner__dot--active': idx === currentBannerIndex }"
+                :aria-label="`Banner ${idx + 1}`"
+                @click="currentBannerIndex = idx"
+              ></button>
+            </div>
+          </article>
+        </section>
+
+        <!-- Trust band -->
+        <section class="storefront-section">
+          <ul class="storefront-trust">
+            <li class="trust-tile">
+              <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+              <div>
+                <p class="trust-tile__title">Produk Original</p>
+                <p class="trust-tile__meta">Distribusi resmi & kartu garansi</p>
+              </div>
+            </li>
+            <li class="trust-tile">
+              <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+              <div>
+                <p class="trust-tile__title">Konsultasi Resep</p>
+                <p class="trust-tile__meta">Refraksi & rekomendasi lensa</p>
+              </div>
+            </li>
+            <li class="trust-tile">
+              <span class="material-symbols-outlined" aria-hidden="true">workspace_premium</span>
+              <div>
+                <p class="trust-tile__title">Garansi Lensa</p>
+                <p class="trust-tile__meta">Klaim cepat di toko atau online</p>
+              </div>
+            </li>
+            <li class="trust-tile">
+              <span class="material-symbols-outlined" aria-hidden="true">storefront</span>
+              <div>
+                <p class="trust-tile__title">Pickup di Toko</p>
+                <p class="trust-tile__meta">Fitting & ambil sendiri</p>
+              </div>
+            </li>
+          </ul>
+        </section>
+
+        <!-- Featured product grid (shared markup with catalog grid) -->
+        <section class="storefront-section">
+          <div class="storefront-section__head">
+            <div>
+              <p class="eyebrow">Pilihan Editor</p>
+              <h2 class="editorial-h2 storefront-section__title">{{ categoryTitle }}</h2>
+              <p class="text-lede storefront-section__sub">{{ categoryDescription }}</p>
+            </div>
+            <router-link to="/products" class="btn-ghost btn-sm hidden sm:inline-flex">
+              Lihat Semua
+              <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_forward</span>
+            </router-link>
           </div>
-          <div class="p-4">
-            <p class="text-[9px] font-black uppercase tracking-[0.2em] mb-2" style="color: #5c4a3a;">{{ lens.brand || 'Lensa' }}</p>
-            <h3 class="font-bold text-sm leading-tight line-clamp-2 min-h-[2.5rem]" style="color: var(--ink);">{{ lens.name }}</h3>
-            <div class="mt-4 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest" style="color: var(--gold);">
-              Informasi
-              <span class="material-symbols-outlined text-sm">visibility</span>
+        </section>
+      </template>
+
+      <!-- ─── CATALOG-only toolbar + chips + filter ──────────────────── -->
+      <template v-if="isCatalogPage">
+        <!-- Sticky toolbar -->
+        <div class="catalog-toolbar">
+          <div class="catalog-toolbar__count" aria-live="polite">
+            <span v-if="!isLoading && !hasError">
+              <strong>{{ totalProducts }}</strong> produk
+            </span>
+            <span v-else-if="isLoading" class="text-graphite/60">Memuat...</span>
+          </div>
+
+          <div class="catalog-toolbar__actions">
+            <button
+              type="button"
+              class="catalog-toolbar__btn"
+              :class="{ 'catalog-toolbar__btn--active': showFilterPanel || activeFilterChips.length > 0 }"
+              :aria-haspopup="'dialog'"
+              :aria-expanded="showFilterPanel"
+              @click="showFilterPanel = !showFilterPanel"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+              <span class="hidden sm:inline">Filter</span>
+              <span
+                v-if="activeFilterChips.length > 0"
+                class="catalog-toolbar__count-pill"
+                :aria-label="`${activeFilterChips.length} filter aktif`"
+              >{{ activeFilterChips.length }}</span>
+            </button>
+
+            <label class="catalog-toolbar__select">
+              <span class="sr-only">Merek</span>
+              <select v-model="selectedBrand">
+                <option value="">Semua Merek</option>
+                <option v-for="brand in availableBrands" :key="brand" :value="brand">{{ brand }}</option>
+              </select>
+              <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+            </label>
+
+            <label class="catalog-toolbar__select">
+              <span class="sr-only">Urutkan</span>
+              <select v-model="selectedSort">
+                <option value="latest">Terbaru</option>
+                <option value="price_low">Harga Terendah</option>
+                <option value="price_high">Harga Tertinggi</option>
+                <option value="best_seller">Terlaris</option>
+                <option value="rating">Rating</option>
+                <option value="popular">Populer</option>
+              </select>
+              <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Quick category chips -->
+        <nav class="catalog-cats" aria-label="Kategori cepat">
+          <button
+            type="button"
+            class="chip"
+            :class="{ 'chip-active': !categorySlug && !hasPromo }"
+            @click="goToCategory(null)"
+          >Semua</button>
+          <button
+            type="button"
+            class="chip"
+            :class="hasPromo ? 'chip-active' : 'chip-gold'"
+            @click="togglePromoFilter"
+          >
+            <span class="material-symbols-outlined text-base" aria-hidden="true">local_offer</span>
+            Promo
+          </button>
+          <button
+            v-for="cat in categories"
+            :key="cat.id"
+            type="button"
+            class="chip"
+            :class="{ 'chip-active': categorySlug === cat.slug }"
+            @click="goToCategory(cat.slug)"
+          >{{ cat.name }}</button>
+        </nav>
+
+        <!-- Applied filter chips -->
+        <div v-if="activeFilterChips.length > 0" class="catalog-applied" aria-label="Filter aktif">
+          <button
+            v-for="chip in activeFilterChips"
+            :key="chip.key"
+            type="button"
+            class="chip chip-removable"
+            @click="clearFilter(chip.key)"
+          >
+            <span class="catalog-applied__label">{{ chip.label }}:</span>
+            <span>{{ chip.value }}</span>
+            <span class="material-symbols-outlined text-base" aria-hidden="true">close</span>
+          </button>
+          <button type="button" class="btn-ghost btn-sm" @click="clearAllFilters">Reset semua</button>
+        </div>
+
+        <!-- Filter sheet -->
+        <Transition name="fade">
+          <div
+            v-if="showFilterPanel"
+            class="catalog-filter-backdrop md:hidden"
+            role="button"
+            tabindex="-1"
+            aria-label="Tutup filter"
+            @click="showFilterPanel = false"
+            @keydown.enter="showFilterPanel = false"
+            @keydown.escape="showFilterPanel = false"
+          />
+        </Transition>
+
+        <Transition name="sheet">
+          <section
+            v-if="showFilterPanel"
+            class="catalog-filter"
+            role="dialog"
+            aria-label="Filter produk"
+            aria-modal="true"
+          >
+            <span class="bottom-sheet-handle md:hidden" aria-hidden="true"></span>
+            <div class="catalog-filter__head">
+              <h3 class="editorial-h3 catalog-filter__title">Filter Produk</h3>
+              <button
+                type="button"
+                class="btn-icon-ghost"
+                aria-label="Tutup filter"
+                @click="showFilterPanel = false"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true">close</span>
+              </button>
+            </div>
+
+            <div class="catalog-filter__grid">
+              <label class="catalog-filter__field">
+                <span class="text-meta">Gender</span>
+                <select v-model="selectedGender" class="input-field">
+                  <option value="">Semua</option>
+                  <option v-for="item in availableGenders" :key="item" :value="item">{{ formatFilterLabel(item) }}</option>
+                </select>
+              </label>
+
+              <label class="catalog-filter__field">
+                <span class="text-meta">Bentuk Frame</span>
+                <select v-model="selectedFrameShape" class="input-field">
+                  <option value="">Semua</option>
+                  <option v-for="item in availableFrameShapes" :key="item" :value="item">{{ formatFilterLabel(item) }}</option>
+                </select>
+              </label>
+
+              <label class="catalog-filter__field">
+                <span class="text-meta">Material</span>
+                <select v-model="selectedFrameMaterial" class="input-field">
+                  <option value="">Semua</option>
+                  <option v-for="item in availableFrameMaterials" :key="item" :value="item">{{ formatFilterLabel(item) }}</option>
+                </select>
+              </label>
+
+              <label class="catalog-filter__field">
+                <span class="text-meta">Warna</span>
+                <select v-model="selectedFrameColor" class="input-field">
+                  <option value="">Semua</option>
+                  <option v-for="item in availableFrameColors" :key="item" :value="item">{{ formatFilterLabel(item) }}</option>
+                </select>
+              </label>
+
+              <label class="catalog-filter__field">
+                <span class="text-meta">Fit Wajah</span>
+                <select v-model="selectedFaceSizeFit" class="input-field">
+                  <option value="">Semua</option>
+                  <option v-for="item in availableFaceSizeFits" :key="item" :value="item">{{ formatFilterLabel(item) }}</option>
+                </select>
+              </label>
+
+              <fieldset class="catalog-filter__field catalog-filter__field--price">
+                <legend class="text-meta">Harga (Rp)</legend>
+                <div class="catalog-filter__price">
+                  <input v-model="minPrice" inputmode="numeric" placeholder="Min" class="input-field" aria-label="Harga minimum" />
+                  <span class="catalog-filter__price-sep" aria-hidden="true">—</span>
+                  <input v-model="maxPrice" inputmode="numeric" placeholder="Max" class="input-field" aria-label="Harga maksimum" />
+                </div>
+              </fieldset>
+
+              <label class="catalog-filter__check">
+                <input v-model="inStockOnly" type="checkbox" />
+                <span>Stok tersedia</span>
+              </label>
+
+              <label class="catalog-filter__check">
+                <input v-model="prescriptionSupported" type="checkbox" />
+                <span>Bisa dengan resep optik</span>
+              </label>
+            </div>
+
+            <footer class="catalog-filter__foot">
+              <button type="button" class="btn-outline" @click="clearAllFilters">Reset</button>
+              <button type="button" class="btn-primary" @click="showFilterPanel = false">
+                Tampilkan {{ totalProducts }} produk
+              </button>
+            </footer>
+          </section>
+        </Transition>
+      </template>
+
+      <!-- ─── SHARED grid + states (Home & Catalog) ─────────────────── -->
+      <div v-if="hasError" class="empty-state empty-state--error">
+        <span class="material-symbols-outlined text-4xl" aria-hidden="true">wifi_off</span>
+        <h2 class="editorial-h3">Gagal memuat produk</h2>
+        <p>Terjadi kesalahan server. Silakan coba lagi.</p>
+        <button type="button" class="btn-primary" @click="fetchProducts(false)">Coba Lagi</button>
+      </div>
+
+      <div v-else-if="isLoading" class="product-grid">
+        <div v-for="i in 12" :key="i" class="product-card-skeleton">
+          <div class="skeleton product-card-skeleton__image"></div>
+          <div class="product-card-skeleton__body">
+            <div class="skeleton h-3 w-1/3"></div>
+            <div class="skeleton h-4 w-3/4"></div>
+            <div class="skeleton h-3 w-1/2"></div>
+          </div>
+        </div>
+      </div>
+
+      <div v-else-if="products.length === 0" class="empty-state">
+        <span class="material-symbols-outlined text-4xl text-gold" aria-hidden="true">inventory_2</span>
+        <h2 class="editorial-h3">Produk tidak ditemukan</h2>
+        <p>Coba pilih kategori lain atau hapus beberapa filter.</p>
+        <button v-if="activeFilterChips.length > 0" type="button" class="btn-outline btn-sm" @click="clearAllFilters">Reset Filter</button>
+      </div>
+
+      <div v-else class="product-grid">
+        <article
+          v-for="product in products"
+          :key="product.id"
+          class="product-card group"
+          tabindex="0"
+          role="link"
+          :aria-label="`Lihat detail ${product.name}`"
+          @click="goToDetail(product.slug)"
+          @keydown.enter="goToDetail(product.slug)"
+          @keydown.space.prevent="goToDetail(product.slug)"
+        >
+          <div class="product-card__media">
+            <img
+              :src="resolveImageUrl(product)"
+              :alt="product.name"
+              class="product-card__image"
+              :class="{ 'product-card__image--out': product.stock <= 0 }"
+              loading="lazy"
+              decoding="async"
+            />
+
+            <div class="product-card__quick">
+              <button
+                type="button"
+                class="product-card__quick-btn"
+                :class="{ 'product-card__quick-btn--active': wishlistStore.isWishlisted(product.id) }"
+                :aria-label="wishlistStore.isWishlisted(product.id) ? 'Hapus dari wishlist' : 'Tambah ke wishlist'"
+                @click.stop="toggleWishlist(product)"
+              >
+                <span class="material-symbols-outlined text-base" aria-hidden="true">favorite</span>
+              </button>
+              <button
+                type="button"
+                class="product-card__quick-btn"
+                :class="{ 'product-card__quick-btn--active': compareStore.isCompared(product.id) }"
+                :aria-label="compareStore.isCompared(product.id) ? 'Hapus dari compare' : 'Tambah ke compare'"
+                @click.stop="toggleCompare(product)"
+              >
+                <span class="material-symbols-outlined text-base" aria-hidden="true">compare_arrows</span>
+              </button>
+            </div>
+
+            <div class="product-card__badges">
+              <span v-if="product.is_best_seller" class="product-badge product-badge--ink">
+                <span class="material-symbols-outlined text-base" aria-hidden="true">trending_up</span>
+                Terlaris
+              </span>
+              <span v-if="productPromoBuyLabel(product)" class="product-badge product-badge--gold">
+                <span class="material-symbols-outlined text-base" aria-hidden="true">redeem</span>
+                {{ productPromoBuyLabel(product) }}
+              </span>
+              <span v-if="productPromoDiscountLabel(product)" class="product-badge product-badge--red">
+                <span class="material-symbols-outlined text-base" aria-hidden="true">percent</span>
+                {{ productPromoDiscountLabel(product) }}
+              </span>
+              <span v-if="product.is_not_for_sale" class="product-badge product-badge--gold">Informasi</span>
+            </div>
+
+            <div v-if="product.stock <= 0 && !product.is_not_for_sale" class="product-card__out-overlay">
+              <span class="product-card__out-pill">Stok Habis</span>
+            </div>
+          </div>
+
+          <div class="product-card__body">
+            <p class="product-card__brand">{{ product.brand || 'Optik Medio' }}</p>
+            <h3 class="product-card__name">{{ product.name }}</h3>
+            <ul class="product-card__meta">
+              <li>
+                <span class="material-symbols-outlined text-base" aria-hidden="true">star</span>
+                {{ Number(product.avg_rating || 0).toFixed(1) }} · {{ product.review_count || 0 }} ulasan
+              </li>
+              <li>
+                <span class="material-symbols-outlined text-base" aria-hidden="true">shopping_bag</span>
+                {{ Number(product.purchase_count || 0) }} terjual
+              </li>
+            </ul>
+            <div class="product-card__foot">
+              <p v-if="!product.is_not_for_sale" class="product-card__price">{{ formatMoney(product.price) }}</p>
+              <p v-else class="product-card__price product-card__price--info">Katalog Informasi</p>
+              <span v-if="product.stock > 0 && !product.is_not_for_sale" class="product-card__stock">
+                <span class="product-card__stock-dot" aria-hidden="true"></span>
+                Tersedia
+              </span>
             </div>
           </div>
         </article>
       </div>
-    </section>
 
-    <section v-if="isHomePage" class="mt-24 mb-12">
-      <!-- Header: fully centered, consistent with Review section -->
-      <div class="text-center mb-10">
-        <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-3" style="color: var(--gold);">Wawasan & Tips</p>
-        <h2 class="text-3xl md:text-4xl font-black tracking-normal" style="font-family: 'Cormorant Garamond', serif; color: var(--ink);">Blog & Edukasi</h2>
-        <div class="w-12 h-1 bg-gold mx-auto mt-4"></div>
-        <router-link to="/blog" class="inline-flex items-center gap-2 mt-5 text-xs font-black uppercase tracking-widest text-gold hover:text-gold transition-all group">
-          Lihat Semua Artikel
-          <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
-        </router-link>
-      </div>
-
-      <!-- Blog grid: 2 cols mobile, 3 cols desktop -->
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
-        <div class="group cursor-pointer" @click="router.push('/blog/cara-memilih-frame-sesuai-bentuk-wajah')">
-          <div class="aspect-[4/3] overflow-hidden mb-3 relative">
-            <picture>
-              <source srcset="/blog_feature_1_face_shape_1777451535680.webp" type="image/webp" />
-              <img alt="Panduan memilih frame kacamata sesuai bentuk wajah" src="/blog_feature_1_face_shape_1777451535680.png" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" decoding="async" width="800" height="600" />
-            </picture>
-            <div class="absolute inset-0 bg-graphite/20 group-hover:bg-transparent transition-all"></div>
+      <!-- Compare bar (shared) -->
+      <div v-if="compareStore.count > 0" class="compare-bar">
+        <div class="compare-bar__info">
+          <span class="material-symbols-outlined" aria-hidden="true">compare_arrows</span>
+          <div>
+            <p class="compare-bar__title">{{ compareStore.count }}/4 produk</p>
+            <p class="compare-bar__list">{{ compareStore.items.map(item => item.name).join(', ') }}</p>
           </div>
-          <h3 class="font-bold text-sm md:text-lg mb-1 md:mb-2 group-hover:text-gold transition-colors leading-snug" style="font-family: 'Cormorant Garamond', serif;">Cara Memilih Frame Sesuai Bentuk Wajah</h3>
-          <p class="hidden md:block text-sm text-graphite/65 leading-relaxed line-clamp-2">Temukan panduan lengkap untuk mendapatkan kacamata yang paling pas dan menunjang penampilan Anda.</p>
         </div>
-        <div class="group cursor-pointer" @click="router.push('/blog/pentingnya-perlindungan-lensa-blueray')">
-          <div class="aspect-[4/3] overflow-hidden mb-3 relative">
-            <picture>
-              <source srcset="/blog_feature_2_blueray_lens_1777451550672.webp" type="image/webp" />
-              <img alt="Lensa blueray melindungi mata dari radiasi layar" src="/blog_feature_2_blueray_lens_1777451550672.png" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" decoding="async" width="800" height="600" />
-            </picture>
-            <div class="absolute inset-0 bg-graphite/20 group-hover:bg-transparent transition-all"></div>
-          </div>
-          <h3 class="font-bold text-sm md:text-lg mb-1 md:mb-2 group-hover:text-gold transition-colors leading-snug" style="font-family: 'Cormorant Garamond', serif;">Pentingnya Perlindungan Lensa Blueray</h3>
-          <p class="hidden md:block text-sm text-graphite/65 leading-relaxed line-clamp-2">Lindungi mata Anda dari radiasi layar digital dengan teknologi lensa terkini dari Optik Medio.</p>
-        </div>
-        <div class="group cursor-pointer col-span-2 md:col-span-1" @click="router.push('/blog/update-tren-kacamata-2026')">
-          <div class="aspect-[16/7] md:aspect-[4/3] overflow-hidden mb-3 relative">
-            <picture>
-              <source srcset="/blog_feature_3_trends_2026_1777451566973.webp" type="image/webp" />
-              <img alt="Tren kacamata 2026 — gaya retro hingga futuristik" src="/blog_feature_3_trends_2026_1777451566973.png" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" decoding="async" width="1200" height="800" />
-            </picture>
-            <div class="absolute inset-0 bg-graphite/20 group-hover:bg-transparent transition-all"></div>
-          </div>
-          <h3 class="font-bold text-sm md:text-lg mb-1 md:mb-2 group-hover:text-gold transition-colors leading-snug" style="font-family: 'Cormorant Garamond', serif;">Update Tren Kacamata 2026</h3>
-          <p class="hidden md:block text-sm text-graphite/65 leading-relaxed line-clamp-2">Jelajahi gaya terbaru yang akan mendominasi tahun ini, mulai dari gaya retro hingga futuristik.</p>
+        <div class="compare-bar__actions">
+          <button type="button" class="btn-outline btn-sm" @click="compareStore.clear()">Reset</button>
+          <button
+            type="button"
+            class="btn-primary btn-sm"
+            :disabled="!compareStore.canCompare"
+            @click="router.push('/compare')"
+          >Compare</button>
         </div>
       </div>
-    </section>
 
-    <section v-if="isHomePage && testimonials.length > 0" class="mt-24 mb-16 px-6 md:px-0">
-      <div class="text-center mb-12">
-        <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-3" style="color: var(--gold);">Apa Kata Pelanggan Kami</p>
-        <h2 class="text-3xl md:text-4xl font-black tracking-normal" style="font-family: 'Cormorant Garamond', serif; color: var(--ink);">Review Google Maps</h2>
-        <div class="w-12 h-1 bg-gold mx-auto mt-4"></div>
-      </div>
-
-      <!-- Mobile: horizontal scroll centered; Desktop: flex-wrap centered -->
-      <div class="flex overflow-x-auto md:flex-wrap md:overflow-visible md:justify-center gap-4 md:gap-6 pb-4 md:pb-0 snap-x snap-mandatory md:snap-none scrollbar-hide"
-           style="scroll-padding-inline: calc((100% - 72vw) / 2);">
-        <!-- Left spacer so first card is centered on mobile -->
-        <div class="shrink-0 w-[calc((100vw-72vw)/2)] md:hidden" aria-hidden="true"></div>
-
-        <div
-          v-for="(t, idx) in testimonials"
-          :key="idx"
-          class="shrink-0 w-[72vw] sm:w-[54vw] md:w-[30%] md:max-w-[320px] px-5 py-6 group transition-all duration-500 hover:shadow-soft border border-mist snap-center md:snap-align-none flex flex-col items-center text-center"
-          style="background: white;"
+      <!-- Load more / end -->
+      <footer class="catalog-foot">
+        <div v-if="isLoadingMore" class="catalog-foot__loading">
+          <span class="material-symbols-outlined animate-spin" aria-hidden="true">sync</span>
+          <span>Memuat lebih banyak...</span>
+        </div>
+        <button
+          v-else-if="currentPage < lastPage"
+          type="button"
+          class="btn-primary btn-lg"
+          @click="handleLoadMore"
         >
-          <!-- Quote icon -->
-          <div class="w-9 h-9 flex items-center justify-center bg-graphite text-gold mb-4">
-            <span class="material-symbols-outlined text-base">format_quote</span>
-          </div>
+          Tampilkan Lebih Banyak
+          <span class="material-symbols-outlined text-base" aria-hidden="true">expand_more</span>
+        </button>
+        <p v-else-if="!isLoading && products.length > 0" class="catalog-foot__end">
+          <span class="divider-mute" aria-hidden="true"></span>
+          <span class="text-meta">Semua {{ totalProducts }} produk telah ditampilkan</span>
+        </p>
+      </footer>
 
-          <!-- Stars -->
-          <div class="flex justify-center gap-0.5 mb-3">
-            <span v-for="star in t.rating" :key="star" class="material-symbols-outlined text-xs" style="color: #fbbf24;">star</span>
-          </div>
-
-          <!-- Review text -->
-          <p class="w-full text-graphite/80 italic text-sm leading-relaxed mb-4 text-center line-clamp-4">"{{ t.review }}"</p>
-
-          <!-- Reviewer info -->
-          <div class="flex flex-col items-center gap-1.5 mt-auto">
-            <div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs" style="background: var(--ivory); color: var(--gold);">
-              {{ t.name.charAt(0) }}
+      <!-- ─── HOME-only sections (bawah grid) ───────────────────────── -->
+      <template v-if="isHomePage">
+        <!-- Lens showcase -->
+        <section v-if="lensShowcaseProducts.length > 0 || isLoadingLensShowcase" class="storefront-section">
+          <div class="storefront-section__head">
+            <div>
+              <p class="eyebrow">Pilihan Lensa Resep</p>
+              <h2 class="editorial-h2 storefront-section__title">Merek Lensa yang Tersedia</h2>
+              <p class="text-lede storefront-section__sub">
+                Produk berikut bersifat katalog informasi. Pemilihan dan pembelian lensa dilakukan bersama frame melalui konsultasi resep di Optik Medio.
+              </p>
             </div>
-            <div class="text-center">
-              <h4 class="font-bold text-xs text-ink">{{ t.name }}</h4>
-              <p class="text-[9px] uppercase tracking-widest text-graphite/45">Google Reviewer</p>
-            </div>
+            <router-link to="/appointment" class="btn-primary btn-sm hidden sm:inline-flex">
+              Konsultasi Lensa
+              <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_forward</span>
+            </router-link>
           </div>
-        </div>
 
-        <!-- Right spacer so last card is centered on mobile -->
-        <div class="shrink-0 w-[calc((100vw-72vw)/2)] md:hidden" aria-hidden="true"></div>
-      </div>
-    </section>
-  </main>
+          <div v-if="isLoadingLensShowcase" class="lens-grid">
+            <div v-for="i in 4" :key="i" class="skeleton lens-skel"></div>
+          </div>
+          <div v-else class="lens-grid">
+            <article
+              v-for="lens in lensShowcaseProducts"
+              :key="lens.id"
+              class="lens-card group"
+              tabindex="0"
+              role="link"
+              :aria-label="`Lihat detail ${lens.name}`"
+              @click="goToDetail(lens.slug)"
+              @keydown.enter="goToDetail(lens.slug)"
+              @keydown.space.prevent="goToDetail(lens.slug)"
+            >
+              <div class="lens-card__media">
+                <img
+                  :src="resolveImageUrl(lens)"
+                  :alt="lens.name"
+                  class="lens-card__image"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <div class="lens-card__body">
+                <p class="text-meta">{{ lens.brand || 'Lensa' }}</p>
+                <h3 class="lens-card__title">{{ lens.name }}</h3>
+                <span class="lens-card__cta">
+                  Informasi
+                  <span class="material-symbols-outlined text-base" aria-hidden="true">visibility</span>
+                </span>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- Blog -->
+        <section class="storefront-section">
+          <div class="storefront-section__head storefront-section__head--center">
+            <p class="eyebrow">Wawasan & Tips</p>
+            <h2 class="editorial-h2 storefront-section__title">Blog & Edukasi</h2>
+            <p class="text-lede storefront-section__sub">Tips memilih frame, lensa, dan tren eyewear terbaru.</p>
+            <router-link to="/blog" class="btn-ghost btn-sm storefront-section__head-cta">
+              Lihat Semua Artikel
+              <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_forward</span>
+            </router-link>
+          </div>
+
+          <div class="blog-grid">
+            <article
+              class="blog-card group"
+              tabindex="0"
+              role="link"
+              aria-label="Artikel: Cara Memilih Frame Sesuai Bentuk Wajah"
+              @click="router.push('/blog/cara-memilih-frame-sesuai-bentuk-wajah')"
+              @keydown.enter="router.push('/blog/cara-memilih-frame-sesuai-bentuk-wajah')"
+            >
+              <div class="blog-card__media">
+                <picture>
+                  <source srcset="/blog_feature_1_face_shape_1777451535680.webp" type="image/webp" />
+                  <img
+                    src="/blog_feature_1_face_shape_1777451535680.png"
+                    alt="Panduan memilih frame kacamata sesuai bentuk wajah"
+                    class="blog-card__image"
+                    loading="lazy"
+                    decoding="async"
+                    width="800"
+                    height="600"
+                  />
+                </picture>
+              </div>
+              <h3 class="blog-card__title">Cara Memilih Frame Sesuai Bentuk Wajah</h3>
+              <p class="blog-card__meta">Panduan lengkap menemukan kacamata yang pas dan menunjang penampilan.</p>
+            </article>
+
+            <article
+              class="blog-card group"
+              tabindex="0"
+              role="link"
+              aria-label="Artikel: Pentingnya Perlindungan Lensa Blueray"
+              @click="router.push('/blog/pentingnya-perlindungan-lensa-blueray')"
+              @keydown.enter="router.push('/blog/pentingnya-perlindungan-lensa-blueray')"
+            >
+              <div class="blog-card__media">
+                <picture>
+                  <source srcset="/blog_feature_2_blueray_lens_1777451550672.webp" type="image/webp" />
+                  <img
+                    src="/blog_feature_2_blueray_lens_1777451550672.png"
+                    alt="Lensa blueray melindungi mata dari radiasi layar"
+                    class="blog-card__image"
+                    loading="lazy"
+                    decoding="async"
+                    width="800"
+                    height="600"
+                  />
+                </picture>
+              </div>
+              <h3 class="blog-card__title">Pentingnya Perlindungan Lensa Blueray</h3>
+              <p class="blog-card__meta">Lindungi mata dari radiasi layar digital dengan teknologi lensa terkini.</p>
+            </article>
+
+            <article
+              class="blog-card blog-card--feature group"
+              tabindex="0"
+              role="link"
+              aria-label="Artikel: Update Tren Kacamata 2026"
+              @click="router.push('/blog/update-tren-kacamata-2026')"
+              @keydown.enter="router.push('/blog/update-tren-kacamata-2026')"
+            >
+              <div class="blog-card__media blog-card__media--wide">
+                <picture>
+                  <source srcset="/blog_feature_3_trends_2026_1777451566973.webp" type="image/webp" />
+                  <img
+                    src="/blog_feature_3_trends_2026_1777451566973.png"
+                    alt="Tren kacamata 2026 — gaya retro hingga futuristik"
+                    class="blog-card__image"
+                    loading="lazy"
+                    decoding="async"
+                    width="1200"
+                    height="800"
+                  />
+                </picture>
+              </div>
+              <h3 class="blog-card__title">Update Tren Kacamata 2026</h3>
+              <p class="blog-card__meta">Jelajahi gaya terbaru yang akan mendominasi tahun ini.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Testimonials -->
+        <section v-if="testimonials.length > 0" class="storefront-section">
+          <div class="storefront-section__head storefront-section__head--center">
+            <p class="eyebrow">Apa Kata Pelanggan</p>
+            <h2 class="editorial-h2 storefront-section__title">Review Google Maps</h2>
+          </div>
+
+          <div class="testimonial-rail" role="list">
+            <article
+              v-for="(t, idx) in testimonials"
+              :key="idx"
+              class="testimonial-card"
+              role="listitem"
+            >
+              <span class="testimonial-card__quote material-symbols-outlined" aria-hidden="true">format_quote</span>
+              <div class="testimonial-card__stars" :aria-label="`Rating ${t.rating} bintang`">
+                <span v-for="star in t.rating" :key="star" class="material-symbols-outlined" aria-hidden="true">star</span>
+              </div>
+              <p class="testimonial-card__body">"{{ t.review }}"</p>
+              <footer class="testimonial-card__foot">
+                <span class="testimonial-card__avatar">{{ t.name.charAt(0) }}</span>
+                <div>
+                  <p class="testimonial-card__name">{{ t.name }}</p>
+                  <p class="testimonial-card__role">Google Reviewer</p>
+                </div>
+              </footer>
+            </article>
+          </div>
+        </section>
+      </template>
+    </main>
+  </div>
 </template>
 
 <style scoped>
-.scrollbar-hide::-webkit-scrollbar {
+/* ════════════════════════════════════════════════════════════════════════
+   STOREFRONT (Home)
+   ════════════════════════════════════════════════════════════════════════ */
+.storefront-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: clamp(360px, 56vw, 560px);
+  padding-top: calc(var(--header-height, 72px) + clamp(40px, 6vw, 80px));
+  padding-bottom: clamp(80px, 10vw, 120px);
+  margin-bottom: -64px;
+  color: #fff;
+}
+
+.storefront-hero__media { position: absolute; inset: 0; z-index: -1; }
+
+.storefront-hero__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 38%;
+  transform: scale(1.04);
+}
+
+.storefront-hero__scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(160deg, rgba(10, 8, 5, 0.55) 0%, rgba(30, 20, 10, 0.32) 60%, transparent 100%),
+    linear-gradient(180deg, rgba(10, 8, 5, 0.10) 0%, rgba(10, 8, 5, 0.42) 100%);
+}
+
+.storefront-hero__rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: clamp(80px, 10vw, 120px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(184, 138, 68, 0.55), transparent);
+}
+
+.storefront-hero__fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: clamp(80px, 10vw, 120px);
+  background: linear-gradient(to bottom, transparent 0%, var(--ivory) 100%);
+}
+
+.storefront-hero__inner {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+}
+
+.storefront-hero__copy { max-width: 64ch; }
+
+.storefront-hero__title {
+  margin-top: 14px;
+  color: #fff;
+  font-size: clamp(2rem, 1.4rem + 3.4vw, 4rem);
+  line-height: 1.04;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.30);
+}
+
+.storefront-hero__lede {
+  margin-top: 16px;
+  max-width: 56ch;
+  font-size: clamp(13px, 1.1vw, 16px);
+  line-height: 1.65;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.storefront-hero__cta-row {
+  margin-top: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.storefront-hero__cta-secondary {
+  background: rgba(252, 250, 246, 0.92);
+  border-color: transparent;
+}
+
+.storefront-main {
+  position: relative;
+  z-index: 1;
+  padding-top: clamp(48px, 6vw, 80px);
+  padding-bottom: clamp(48px, 6vw, 96px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(56px, 7vw, 96px);
+}
+
+.catalog-main {
+  position: relative;
+  z-index: 1;
+  padding-top: clamp(8px, 1.4vw, 24px);
+  padding-bottom: clamp(48px, 6vw, 96px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.storefront-section { scroll-margin-top: calc(var(--header-height, 72px) + 24px); }
+
+.storefront-section__head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: clamp(20px, 2.4vw, 32px);
+}
+
+@media (min-width: 768px) {
+  .storefront-section__head {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .storefront-section__head > div { max-width: 64ch; }
+}
+
+.storefront-section__head--center {
+  align-items: center;
+  text-align: center;
+  flex-direction: column !important;
+}
+
+.storefront-section__head--center > div { max-width: none; }
+
+.storefront-section__title { margin-top: 6px; }
+.storefront-section__sub { margin-top: 8px; }
+.storefront-section__head-cta { margin-top: 12px; }
+
+/* Categories — chip rail */
+.storefront-categories {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+@media (min-width: 480px) { .storefront-categories { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 768px) { .storefront-categories { grid-template-columns: repeat(6, 1fr); gap: 14px; } }
+@media (min-width: 1024px) { .storefront-categories { grid-template-columns: repeat(9, 1fr); } }
+
+.cat-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--mist);
+  background: var(--porcelain);
+  color: var(--graphite);
+  min-height: 96px;
+  transition: border-color var(--motion-base), box-shadow var(--motion-base), transform var(--motion-fast), background-color var(--motion-base);
+}
+
+.cat-tile:hover { border-color: rgba(184, 138, 68, 0.45); box-shadow: var(--shadow-card); }
+.cat-tile:active { transform: scale(0.98); }
+
+.cat-tile--active {
+  border-color: var(--gold);
+  background: var(--gold-soft);
+  color: #6F4E1D;
+  box-shadow: 0 0 0 1px rgba(184, 138, 68, 0.35);
+}
+
+.cat-tile--accent {
+  border-color: rgba(184, 138, 68, 0.45);
+  background: rgba(184, 138, 68, 0.08);
+  color: #6F4E1D;
+}
+
+.cat-tile__icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--ivory);
+  color: var(--graphite);
+}
+
+.cat-tile--active .cat-tile__icon-wrap { background: rgba(184, 138, 68, 0.18); color: var(--gold); }
+.cat-tile__icon-wrap--accent { background: rgba(184, 138, 68, 0.18); color: var(--gold); }
+
+.cat-tile__icon { font-size: 22px; }
+.cat-tile__image { width: 30px; height: 30px; object-fit: contain; mix-blend-mode: multiply; }
+
+.cat-tile__label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: center;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cat-tile--more { background: var(--ivory); }
+
+/* Banner */
+.storefront-banner {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--graphite);
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--mist);
+  box-shadow: var(--shadow-card);
+}
+
+@media (min-width: 768px) { .storefront-banner { aspect-ratio: 16 / 6; } }
+
+.storefront-banner__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: right center;
+}
+
+.storefront-banner__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0.30) 45%, rgba(0, 0, 0, 0) 80%);
+}
+
+.storefront-banner__copy {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding: clamp(20px, 4vw, 56px);
+  max-width: min(82%, 640px);
+  color: #fff;
+}
+
+.storefront-banner__title {
+  color: #fff;
+  font-size: clamp(1.25rem, 1rem + 1.4vw, 2.25rem);
+  line-height: 1.06;
+}
+
+.storefront-banner__sub {
+  font-size: clamp(12px, 1vw, 14px);
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.86);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.storefront-banner__cta {
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #fff;
+  align-self: flex-start;
+  transition: background-color var(--motion-base);
+}
+
+.storefront-banner__cta:hover { background: rgba(255, 255, 255, 0.12); }
+
+.storefront-banner__dots {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  gap: 6px;
+}
+
+.storefront-banner__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+  transition: width var(--motion-base), background-color var(--motion-base);
+}
+
+.storefront-banner__dot--active { width: 22px; background: var(--gold); }
+
+/* Trust band */
+.storefront-trust {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (min-width: 768px) {
+  .storefront-trust { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+}
+
+.trust-tile__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+.trust-tile__meta {
+  margin-top: 2px;
+  font-size: 11px;
+  color: rgba(43, 41, 38, 0.62);
+  line-height: 1.4;
+}
+
+/* Lens showcase */
+.lens-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (min-width: 768px) { .lens-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; } }
+
+.lens-skel { aspect-ratio: 4 / 5; border-radius: 8px; }
+
+.lens-card {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  background: var(--porcelain);
+  border: 1px solid var(--mist);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform var(--motion-base), box-shadow var(--motion-base), border-color var(--motion-base);
+}
+
+.lens-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+  border-color: rgba(184, 138, 68, 0.45);
+}
+
+.lens-card__media {
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(145deg, var(--ivory), var(--mist));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.lens-card__image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform var(--motion-slow) var(--easing-standard);
+}
+
+.lens-card:hover .lens-card__image { transform: scale(1.05); }
+
+.lens-card__body {
+  padding: 14px 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lens-card__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 36px;
+}
+
+.lens-card__cta {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--gold);
+}
+
+/* Blog */
+.blog-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (min-width: 768px) { .blog-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; } }
+
+.blog-card { cursor: pointer; }
+.blog-card--feature { grid-column: span 2; }
+@media (min-width: 768px) { .blog-card--feature { grid-column: auto; } }
+
+.blog-card__media {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.blog-card__media--wide { aspect-ratio: 16 / 7; }
+@media (min-width: 768px) { .blog-card__media--wide { aspect-ratio: 4 / 3; } }
+
+.blog-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--motion-slow) var(--easing-standard);
+}
+
+.blog-card:hover .blog-card__image { transform: scale(1.04); }
+
+.blog-card__title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(0.95rem, 0.85rem + 0.4vw, 1.25rem);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.25;
+  margin-bottom: 6px;
+  transition: color var(--motion-base);
+}
+
+.blog-card:hover .blog-card__title { color: var(--gold); }
+
+.blog-card__meta {
+  font-size: 13px;
+  color: rgba(43, 41, 38, 0.60);
+  line-height: 1.55;
   display: none;
 }
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+
+@media (min-width: 768px) {
+  .blog-card__meta {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* Testimonials */
+.testimonial-rail {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
   -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 768px) {
+  .testimonial-rail {
+    overflow-x: visible;
+    scroll-snap-type: none;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+  }
+}
+
+.testimonial-card {
+  flex-shrink: 0;
+  width: 78vw;
+  max-width: 320px;
+  scroll-snap-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 24px 20px 20px;
+  background: var(--porcelain);
+  border: 1px solid var(--mist);
+  border-radius: 8px;
+}
+
+@media (min-width: 768px) { .testimonial-card { width: clamp(280px, 28vw, 320px); } }
+
+.testimonial-card__quote {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--graphite);
+  color: var(--gold);
+  font-size: 18px;
+}
+
+.testimonial-card__stars {
+  margin-top: 12px;
+  display: flex;
+  gap: 2px;
+  color: #fbbf24;
+  font-size: 14px;
+}
+
+.testimonial-card__body {
+  margin-top: 10px;
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(43, 41, 38, 0.78);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.testimonial-card__foot {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.testimonial-card__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--ivory);
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.testimonial-card__name { font-size: 12px; font-weight: 600; color: var(--ink); }
+
+.testimonial-card__role {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(43, 41, 38, 0.45);
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   CATALOG — toolbar, chips, filter sheet
+   ════════════════════════════════════════════════════════════════════════ */
+.catalog-toolbar {
+  position: sticky;
+  top: var(--header-height, 72px);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  margin-top: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--mist);
+  background: rgba(252, 250, 246, 0.96);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-card);
+}
+
+.catalog-toolbar__count { font-size: 13px; color: var(--graphite); }
+.catalog-toolbar__count strong { color: var(--ink); font-weight: 700; }
+
+.catalog-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.catalog-toolbar__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--mist);
+  background: var(--porcelain);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  min-height: 36px;
+  transition: background-color var(--motion-base), border-color var(--motion-base), color var(--motion-base);
+}
+
+.catalog-toolbar__btn:hover { border-color: var(--ink); }
+.catalog-toolbar__btn--active {
+  background: var(--ink);
+  color: var(--ivory);
+  border-color: var(--ink);
+}
+
+.catalog-toolbar__count-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.catalog-toolbar__select {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.catalog-toolbar__select select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding: 8px 36px 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--mist);
+  background: var(--porcelain);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  min-height: 36px;
+  cursor: pointer;
+}
+
+.catalog-toolbar__select select:hover { border-color: rgba(184, 138, 68, 0.45); }
+.catalog-toolbar__select select:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(184, 138, 68, 0.13); }
+
+.catalog-toolbar__select .material-symbols-outlined {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: rgba(43, 41, 38, 0.55);
+  font-size: 18px;
+}
+
+@media (max-width: 480px) {
+  .catalog-toolbar { padding: 10px 10px; gap: 8px; }
+  .catalog-toolbar__btn { padding: 8px 10px; }
+  .catalog-toolbar__select select { padding: 8px 28px 8px 10px; font-size: 11px; max-width: 132px; }
+}
+
+.catalog-cats {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin: 0 -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 768px) {
+  .catalog-cats {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+.catalog-cats .chip { white-space: nowrap; flex-shrink: 0; }
+
+.catalog-applied {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.catalog-applied__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(43, 41, 38, 0.62);
+  margin-right: 4px;
+}
+
+.catalog-filter-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(21, 18, 14, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.catalog-filter {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 70;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 0 16px 16px;
+  background: var(--porcelain);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  box-shadow: 0 -20px 60px rgba(21, 18, 14, 0.18);
+}
+
+@media (min-width: 768px) {
+  .catalog-filter {
+    position: relative;
+    inset: auto;
+    margin: 8px 0 0;
+    border-radius: 12px;
+    border: 1px solid var(--mist);
+    box-shadow: var(--shadow-soft);
+    padding: 20px 24px 24px;
+    max-height: none;
+    z-index: 1;
+  }
+}
+
+.catalog-filter__head {
+  position: sticky;
+  top: 0;
+  background: var(--porcelain);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0 14px;
+  border-bottom: 1px solid var(--mist);
+  margin-bottom: 16px;
+}
+
+.catalog-filter__title { margin: 0; }
+
+.catalog-filter__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 480px) { .catalog-filter__grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1024px) { .catalog-filter__grid { grid-template-columns: repeat(3, 1fr); } }
+
+.catalog-filter__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.catalog-filter__field--price legend { padding: 0; margin-bottom: 6px; }
+
+.catalog-filter__price {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.catalog-filter__price-sep {
+  color: rgba(43, 41, 38, 0.55);
+  font-weight: 700;
+}
+
+.catalog-filter__check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--graphite);
+  padding: 12px 14px;
+  border: 1px solid var(--mist);
+  border-radius: 8px;
+  background: var(--porcelain);
+  min-height: var(--tap-target);
+  cursor: pointer;
+}
+
+.catalog-filter__check input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--gold);
+}
+
+.catalog-filter__foot {
+  position: sticky;
+  bottom: 0;
+  background: var(--porcelain);
+  padding-top: 14px;
+  margin-top: 18px;
+  border-top: 1px solid var(--mist);
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 10px;
+}
+
+@media (min-width: 768px) {
+  .catalog-filter__foot {
+    position: static;
+    grid-template-columns: auto 1fr;
+    justify-content: flex-end;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   SHARED — product grid, card, compare bar, footer
+   ════════════════════════════════════════════════════════════════════════ */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (min-width: 768px) { .product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } }
+@media (min-width: 1024px) { .product-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 1280px) { .product-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@media (min-width: 1536px) { .product-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+
+.product-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--mist);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color var(--motion-base), box-shadow var(--motion-base);
+}
+
+.product-card:hover {
+  border-color: rgba(184, 138, 68, 0.45);
+  box-shadow: var(--shadow-soft);
+}
+
+.product-card__media {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: linear-gradient(145deg, var(--ivory), var(--mist));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+@media (min-width: 768px) { .product-card__media { padding: 24px; } }
+
+.product-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+  transition: transform var(--motion-slow) var(--easing-standard);
+}
+
+.product-card:hover .product-card__image { transform: scale(1.04); }
+.product-card__image--out { opacity: 0.40; filter: grayscale(1); }
+
+.product-card__quick {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  opacity: 1;
+  transition: opacity var(--motion-base);
+}
+
+@media (min-width: 768px) {
+  .product-card__quick { opacity: 0; }
+  .product-card:hover .product-card__quick,
+  .product-card:focus-within .product-card__quick { opacity: 1; }
+}
+
+.product-card__quick-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--gold);
+  border: 1px solid rgba(184, 138, 68, 0.20);
+  backdrop-filter: blur(6px);
+  box-shadow: var(--shadow-card);
+  transition: background-color var(--motion-base), color var(--motion-base);
+}
+
+.product-card__quick-btn:hover { background: var(--gold-soft); }
+.product-card__quick-btn--active {
+  background: var(--gold-soft);
+  color: var(--gold);
+  border-color: rgba(184, 138, 68, 0.50);
+}
+
+.product-card__badges {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  pointer-events: none;
+}
+
+.product-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  border: 1px solid transparent;
+}
+
+.product-badge .material-symbols-outlined { font-size: 12px; }
+
+.product-badge--ink {
+  background: rgba(21, 18, 14, 0.86);
+  color: #fff;
+  border-color: rgba(184, 138, 68, 0.30);
+  backdrop-filter: blur(4px);
+}
+
+.product-badge--gold { background: var(--gold); color: var(--ink); }
+.product-badge--red { background: #dc2626; color: #fff; }
+
+.product-card__out-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(2px);
+}
+
+.product-card__out-pill {
+  padding: 6px 16px;
+  border-radius: 6px;
+  background: rgba(15, 10, 5, 0.86);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+.product-card__body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-grow: 1;
+}
+
+@media (min-width: 768px) { .product-card__body { padding: 16px; } }
+
+.product-card__brand {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: rgba(43, 41, 38, 0.62);
+}
+
+.product-card__name {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(14px, 0.85rem + 0.4vw, 18px);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.4em;
+}
+
+.product-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: rgba(43, 41, 38, 0.65);
+}
+
+.product-card__meta li { display: inline-flex; align-items: center; gap: 6px; }
+.product-card__meta .material-symbols-outlined { color: var(--gold); font-size: 14px; }
+
+.product-card__foot {
+  margin-top: auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.product-card__price {
+  font-size: clamp(12px, 0.78rem + 0.3vw, 16px);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.product-card__price--info {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--gold);
+}
+
+.product-card__stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--olive);
+}
+
+.product-card__stock-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--olive);
+}
+
+/* Skeleton */
+.product-card-skeleton {
+  border-radius: 10px;
+  border: 1px solid var(--mist);
+  overflow: hidden;
+  background: var(--porcelain);
+}
+
+.product-card-skeleton__image { aspect-ratio: 4 / 5; border-radius: 0; }
+
+.product-card-skeleton__body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Compare bar */
+.compare-bar {
+  position: fixed;
+  z-index: 40;
+  left: 16px;
+  right: 16px;
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--mist);
+  background: var(--porcelain);
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .compare-bar {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    bottom: 24px;
+    width: min(720px, 96vw);
+  }
+}
+
+.compare-bar__info { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.compare-bar__info .material-symbols-outlined { color: var(--gold); flex-shrink: 0; }
+
+.compare-bar__title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ink);
+}
+
+.compare-bar__list {
+  margin-top: 2px;
+  font-size: 11px;
+  color: rgba(43, 41, 38, 0.65);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 40vw;
+}
+
+.compare-bar__actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* Catalog footer */
+.catalog-foot {
+  margin-top: clamp(24px, 3vw, 40px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 16px;
+}
+
+.catalog-foot__loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--graphite);
+}
+
+.catalog-foot__loading .material-symbols-outlined { color: var(--gold); }
+
+.catalog-foot__end {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.catalog-foot__end .divider-mute { width: 56px; }
+
+/* Empty state error variant */
+.empty-state--error {
+  border-color: rgba(220, 38, 38, 0.30);
+  background: rgba(220, 38, 38, 0.04);
+  color: var(--graphite);
+}
+
+.empty-state--error .material-symbols-outlined { color: rgba(220, 38, 38, 0.55); }
+
+/* sr-only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Transitions */
+.fade-enter-active, .fade-leave-active { transition: opacity var(--motion-base) var(--easing-standard); }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+
+.sheet-enter-active, .sheet-leave-active { transition: transform var(--motion-slow) var(--easing-standard); }
+.sheet-enter-from, .sheet-leave-to { transform: translateY(100%); }
+
+@media (min-width: 768px) {
+  .sheet-enter-from, .sheet-leave-to { transform: none; opacity: 0; }
 }
 </style>

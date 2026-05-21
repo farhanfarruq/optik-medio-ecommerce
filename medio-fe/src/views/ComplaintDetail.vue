@@ -98,7 +98,7 @@ onMounted(async () => {
         :backLabel="backLabel"
       />
 
-      <main class="max-w-3xl mx-auto px-6 py-10">
+      <main class="max-w-3xl mx-auto px-6 pt-8 pb-10">
         <!-- Header -->
         <div class="premium-card mb-6 p-6">
           <div class="mb-3">

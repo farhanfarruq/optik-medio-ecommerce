@@ -34,4 +34,4 @@ fi
 
 # Start PHP server
 echo "[INFO] Starting PHP server on 0.0.0.0:${PORT:-8000}..."
-exec php -S 0.0.0.0:${PORT:-8000} -t public/
+exec env PHP_CLI_SERVER_WORKERS=5 php -S 0.0.0.0:${PORT:-8000} -t public/

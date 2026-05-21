@@ -7,27 +7,30 @@ return [
     | Cross-Origin Resource Sharing (CORS) Configuration
     |--------------------------------------------------------------------------
     |
-    | P1-3 (Phase 2): allowed_methods dan allowed_headers di-explicit-list.
-    | Sebelumnya `['*']` yang melawan rekomendasi MDN ketika
-    | supports_credentials = true (browser modern reject sebagian preflight).
+    | paths harus cover semua route yang diakses frontend: api/*, auth/*, events, dll.
+    | allowed_origins_patterns dipakai untuk Railway wildcard domain.
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    // Cover semua path yang diakses frontend (bukan hanya api/*)
+    'paths' => ['*'],
 
     'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
     'allowed_origins' => array_values(array_filter([
-        env('FRONTEND_URL', 'http://localhost:5173'),
-        // Allowlist development origins (dev/test only).
-        // Di production, hapus 4 baris berikut atau pastikan FRONTEND_URL sudah benar.
+        env('FRONTEND_URL'),            // set di Railway env vars
+        env('FRONTEND_URL_2'),          // backup domain jika ada
         'http://localhost:3000',
         'http://127.0.0.1:3000',
         'http://localhost:5173',
         'http://127.0.0.1:5173',
     ])),
 
-    'allowed_origins_patterns' => [],
+    // Wildcard pattern untuk semua subdomain Railway
+    'allowed_origins_patterns' => [
+        '#^https://.*\.railway\.app$#',
+        '#^https://.*\.up\.railway\.app$#',
+    ],
 
     'allowed_headers' => [
         'Accept',
@@ -43,8 +46,6 @@ return [
         'X-Correlation-ID',
     ],
 
-    // Cache preflight response selama 1 jam (3600 detik) — kurangi
-    // overhead OPTIONS request berulang. Di dev/test, browser tetap revalidate.
     'max_age' => 3600,
 
     'supports_credentials' => true,

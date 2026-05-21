@@ -29,10 +29,11 @@ RUN mkdir -p storage/framework/{cache,sessions,views} \
 
 EXPOSE 8000
 
-# Start: cache config → migrate → serve
-CMD php artisan config:cache && \
-    php artisan route:cache && \
-    php artisan view:cache && \
+# PENTING: setiap step pakai || true agar server tetap start meski ada yang gagal
+# Railway inject $PORT secara otomatis — shell form wajib agar ter-expand
+CMD sh -c "php artisan config:cache || true && \
+    php artisan route:cache || true && \
+    php artisan view:cache || true && \
     php artisan storage:link || true && \
-    php artisan migrate --force && \
-    php -S 0.0.0.0:${PORT:-8000} -t public/
+    php artisan migrate --force || true && \
+    php -S 0.0.0.0:${PORT:-8000} -t public/"

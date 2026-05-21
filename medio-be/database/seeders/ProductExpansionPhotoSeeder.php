@@ -11,8 +11,8 @@ class ProductExpansionPhotoSeeder extends Seeder
 {
     public function run(): void
     {
-        $sourceDir = public_path('images/foto_produk/expansion');
-        $targetDir = storage_path('app/public/products/foto_produk/expansion');
+        $sourceDir = public_path('images/foto_produk');
+        $targetDir = storage_path('app/public/products/foto_produk');
 
         File::ensureDirectoryExists($targetDir);
 
@@ -27,7 +27,7 @@ class ProductExpansionPhotoSeeder extends Seeder
                 continue;
             }
 
-            $relativePath = 'products/foto_produk/expansion/' . $item['slug'] . '.' . pathinfo($item['photo_file'], PATHINFO_EXTENSION);
+            $relativePath = 'products/foto_produk/' . $item['slug'] . '.' . pathinfo($item['photo_file'], PATHINFO_EXTENSION);
             $targetPath = storage_path('app/public/' . $relativePath);
 
             File::copy($sourcePath, $targetPath);

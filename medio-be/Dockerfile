@@ -19,6 +19,12 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copy source
 COPY . .
 
+# Product data stores image paths under /storage/products/foto_produk.
+# The tracked seed assets live in public/images/foto_produk, so copy them into
+# the public disk during image build. storage:link exposes them at /storage.
+RUN mkdir -p storage/app/public/products/foto_produk \
+    && cp -R public/images/foto_produk/. storage/app/public/products/foto_produk/
+
 # Install PHP dependencies (production, no dev)
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 

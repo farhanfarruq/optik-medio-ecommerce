@@ -15,7 +15,7 @@ class OrderStatusMail extends Mailable
 
     public function __construct(
         public Order $order,
-        public string $eventType, // 'payment_verified' | 'processing' | 'cancelled' | 'delivered'
+        public string $eventType, // 'payment_verified' | 'processing' | 'cancelled' | 'delivered' | 'completed'
     ) {}
 
     public function envelope(): Envelope
@@ -25,6 +25,7 @@ class OrderStatusMail extends Mailable
             'processing'       => "🔄 Pesanan #{$this->order->order_number} Sedang Diproses — Optik Medio",
             'cancelled'        => "❌ Pesanan #{$this->order->order_number} Dibatalkan — Optik Medio",
             'delivered'        => "📦 Pesanan #{$this->order->order_number} Telah Diterima — Optik Medio",
+            'completed'        => "✅ Pesanan #{$this->order->order_number} Selesai — Optik Medio",
             default            => "Update Pesanan #{$this->order->order_number} — Optik Medio",
         };
 

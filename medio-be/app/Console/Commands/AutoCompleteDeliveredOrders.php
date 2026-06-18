@@ -14,7 +14,7 @@ class AutoCompleteDeliveredOrders extends Command
      * @var string
      */
     protected $signature = 'orders:auto-complete-delivered
-                            {--days=3 : Jumlah hari minimum sejak delivered sebelum di-complete}
+                            {--days=3 : Jumlah hari minimum sejak pesanan diterima sebelum diselesaikan}
                             {--dry-run : Tampilkan order yang akan diproses tanpa mengubah status}
                             {--chunk=100 : Jumlah order yang diproses per batch}';
 
@@ -23,7 +23,7 @@ class AutoCompleteDeliveredOrders extends Command
      *
      * @var string
      */
-    protected $description = 'Auto-complete semua order lama yang statusnya "delivered" lebih dari N hari (default: 3 hari)';
+    protected $description = 'Auto-complete semua order lama yang statusnya "delivered/Diterima" lebih dari N hari (default: 3 hari)';
 
     /**
      * Execute the console command.

@@ -33,9 +33,18 @@ use Illuminate\Support\Facades\Route;
 // 1. Health Check
 // ==========================================
 Route::get('/health', function () {
+    try {
+        DB::select('select 1');
+        $database = 'ok';
+    } catch (Throwable) {
+        $database = 'error';
+    }
+
     return response()->json([
         'status' => 'ok',
         'time' => now(),
+        'app_env' => app()->environment(),
+        'database' => $database,
         'message' => 'Backend is running'
     ]);
 });

@@ -1,0 +1,58 @@
+<mxfile host="app.diagrams.net" modified="2026-06-23T00:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="gambar-3-1" name="Gambar 3.1 Arsitektur Sistem">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="Gambar 3.1 Arsitektur sistem e-commerce Optik Medio" style="text;html=1;strokeColor=none;fillColor=none;fontSize=20;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="250" y="30" width="670" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="customer" value="Pelanggan&#xa;Browser" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="70" y="150" width="150" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="admin" value="Admin&#xa;Panel Admin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="70" y="360" width="150" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="frontend" value="Frontend Vue&#xa;Katalog, Detail Produk, Checkout, Akun" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="310" y="140" width="230" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="api" value="Laravel API&#xa;Auth, Produk, Pesanan, Pembayaran, Pengiriman, Ulasan" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="640" y="230" width="260" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="admin-be" value="Backend Admin&#xa;Kelola produk, pesanan, status, laporan" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="310" y="350" width="230" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="db" value="Database&#xa;users, products, orders, order_items, payments" style="shape=cylinder3d;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13" vertex="1" parent="1">
+          <mxGeometry x="970" y="245" width="150" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="xendit" value="Xendit&#xa;Invoice, checkout URL, webhook" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="650" y="80" width="210" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="raja" value="RajaOngkir&#xa;Provinsi, kota, ongkir" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="650" y="430" width="210" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="e1" value="akses website" style="endArrow=block;html=1;rounded=0;fontSize=12" edge="1" parent="1" source="customer" target="frontend">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2" value="REST API" style="endArrow=block;html=1;rounded=0;fontSize=12" edge="1" parent="1" source="frontend" target="api">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3" value="kelola data" style="endArrow=block;html=1;rounded=0;fontSize=12" edge="1" parent="1" source="admin" target="admin-be">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e4" value="API admin" style="endArrow=block;html=1;rounded=0;fontSize=12" edge="1" parent="1" source="admin-be" target="api">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e5" value="CRUD data" style="endArrow=block;html=1;rounded=0;fontSize=12" edge="1" parent="1" source="api" target="db">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e6" value="buat invoice dan webhook" style="endArrow=block;html=1;rounded=0;fontSize=12" edge="1" parent="1" source="api" target="xendit">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e7" value="cek ongkir" style="endArrow=block;html=1;rounded=0;fontSize=12" edge="1" parent="1" source="api" target="raja">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

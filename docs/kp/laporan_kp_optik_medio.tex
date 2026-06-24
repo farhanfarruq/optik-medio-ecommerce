@@ -1,0 +1,681 @@
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[provide=*,indonesian]{babel}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{enumitem}
+
+\geometry{left=4cm,right=3cm,top=3cm,bottom=3cm}
+\onehalfspacing
+\setlist{nosep}
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue}
+
+\newcommand{\placeholder}[1]{\fbox{\parbox{0.92\textwidth}{\centering #1}}}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    {\Large LAPORAN KERJA PRAKTIK\par}
+    \vspace{1.5cm}
+    {\Large\bfseries RANCANG BANGUN DAN PENGEMBANGAN SISTEM E-COMMERCE OPTIK MEDIO\par}
+    \vspace{1.5cm}
+    \placeholder{[LOGO KAMPUS / LOGO PERUSAHAAN - TEMPATKAN DI SINI]}
+    \vfill
+    \begin{tabular}{rl}
+        Nama & : [ISI DATA ASLI] \\
+        NIM & : [ISI DATA ASLI] \\
+        Program Studi & : [ISI DATA ASLI] \\
+        Instansi KP & : Optik Medio \\
+    \end{tabular}
+    \vfill
+    {\large [NAMA UNIVERSITAS / INSTITUSI]\par}
+    {\large [FAKULTAS / JURUSAN]\par}
+    {\large [TAHUN]\par}
+\end{titlepage}
+
+\chapter*{LEMBAR PENGESAHAN}
+\addcontentsline{toc}{chapter}{LEMBAR PENGESAHAN}
+Laporan Kerja Praktik ini disusun sebagai dokumentasi kegiatan pengembangan sistem e-commerce Optik Medio.
+
+\vspace{1cm}
+\begin{tabular}{p{0.45\textwidth}p{0.45\textwidth}}
+Pembimbing Lapangan, & Dosen Pembimbing, \\
+\vspace{2.5cm} & \vspace{2.5cm} \\
+\texttt{[ISI DATA ASLI]} & \texttt{[ISI DATA ASLI]} \\
+\end{tabular}
+
+\chapter*{KATA PENGANTAR}
+\addcontentsline{toc}{chapter}{KATA PENGANTAR}
+Puji syukur penulis panjatkan ke hadirat Tuhan Yang Maha Esa karena laporan Kerja Praktik ini dapat disusun sebagai dokumentasi kegiatan pada project Optik Medio E-Commerce. Laporan ini membahas profil perusahaan, landasan teori, perancangan sistem, implementasi, pengujian, dan penutup berdasarkan kondisi repository aktual.
+
+Data identitas, waktu kerja praktik, alamat, nama pembimbing, dan data perusahaan yang belum diverifikasi ditandai dengan \texttt{[ISI DATA ASLI]} agar tidak terjadi pengisian data yang tidak valid.
+
+\chapter*{RINGKASAN EKSEKUTIF}
+\addcontentsline{toc}{chapter}{RINGKASAN EKSEKUTIF}
+Laporan ini mendokumentasikan pekerjaan pada repository Optik Medio E-Commerce. Audit dilakukan terhadap manifest dependency, struktur folder, route, model, migration, dan konfigurasi project. Hasil audit menunjukkan bahwa project menggunakan arsitektur dua aplikasi: frontend pada folder \texttt{medio-fe} dan backend pada folder \texttt{medio-be}.
+
+Frontend dibangun menggunakan Vue.js 3, Vite, TypeScript, Tailwind CSS, Pinia, Vue Router, Axios, dan DOMPurify. Backend dibangun menggunakan Laravel 13, PHP 8.3, Laravel Sanctum, Filament, Resend, Symfony HTML Sanitizer, dan Xendit. Modul utama yang teridentifikasi mencakup autentikasi, katalog produk, kategori, keranjang, order, pembayaran, pengiriman, promo, komplain, appointment, review, artikel, FAQ, wishlist, loyalty, referral, warranty, dan admin panel.
+
+Validasi terakhir pada 18 Juni 2026 menunjukkan frontend berhasil dibangun, typecheck berhasil, test frontend berhasil dengan 45 test passed, dan test backend berhasil dengan 142 test passed. Lint frontend masih memiliki 265 warning dan 0 error sehingga tidak menghentikan proses build, tetapi warning tersebut tetap menjadi catatan perbaikan kualitas kode.
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+\chapter*{DAFTAR LAMPIRAN}
+\addcontentsline{toc}{chapter}{DAFTAR LAMPIRAN}
+\begin{enumerate}
+    \item Lampiran A: Screenshot halaman frontend Optik Medio. [ISI DATA ASLI]
+    \item Lampiran B: Screenshot dashboard admin Filament. [ISI DATA ASLI]
+    \item Lampiran C: Bukti validasi build, lint, dan test. [ISI DATA ASLI]
+    \item Lampiran D: Dokumentasi API utama. [ISI DATA ASLI]
+\end{enumerate}
+
+\chapter{PENDAHULUAN}
+\section{Latar Belakang}
+Optik Medio membutuhkan sistem e-commerce untuk mendukung katalog produk optik, proses pemesanan, pengelolaan transaksi, layanan pelanggan, promosi, dan administrasi toko. Berdasarkan audit repository, project ini dibangun sebagai aplikasi terpisah antara frontend dan backend. Frontend berada pada folder \texttt{medio-fe}, sedangkan backend berada pada folder \texttt{medio-be}.
+
+Stack aktual repository adalah Vue.js 3, Vite, TypeScript, Tailwind CSS, Pinia, Vue Router, dan Axios pada frontend. Backend menggunakan Laravel 13, PHP 8.3, Laravel Sanctum, Filament, Resend, Xendit, dan konfigurasi database melalui file \texttt{.env}. Karena stack aktual bukan React, dokumentasi dan pengerjaan sistem mengikuti arsitektur Vue/Laravel yang sudah ada.
+
+\section{Rumusan Masalah}
+\begin{enumerate}
+    \item Bagaimana mengidentifikasi stack aktual project Optik Medio E-Commerce berdasarkan manifest, route, dan struktur folder?
+    \item Bagaimana rancangan sistem e-commerce Optik Medio berdasarkan modul frontend dan backend yang tersedia?
+    \item Bagaimana implementasi dan validasi project dilakukan agar aplikasi dapat dijalankan tanpa error utama?
+\end{enumerate}
+
+\section{Batasan Masalah}
+\begin{enumerate}
+    \item Pembahasan hanya mencakup repository Optik Medio E-Commerce.
+    \item Dokumentasi teknis mengikuti stack aktual Vue.js dan Laravel yang ditemukan pada repository.
+    \item Data perusahaan, identitas akademik, alamat, nama pembimbing, sejarah, visi, misi, dan waktu kerja praktik yang belum tersedia tidak diisi dengan asumsi.
+    \item Screenshot, diagram, dan gambar yang belum dibuat diberi placeholder agar dapat diganti dengan aset final.
+    \item Pembahasan tidak menggunakan konteks sistem keamanan jaringan, DDoS, Slowloris, Snort, PCAP, flood signal, atau dashboard defensive lab.
+\end{enumerate}
+
+\section{Tujuan}
+\subsection{Tujuan Umum}
+Mendokumentasikan proses audit, perancangan, implementasi, dan validasi sistem Optik Medio E-Commerce.
+
+\subsection{Tujuan Khusus}
+\begin{enumerate}
+    \item Mengidentifikasi tech stack aktual dari \texttt{package.json}, \texttt{composer.json}, route, struktur folder, dan konfigurasi.
+    \item Menyusun dokumentasi kerja praktik berbasis LaTeX sesuai struktur laporan akademik.
+    \item Menyediakan roadmap pengerjaan dan validasi project.
+    \item Menandai seluruh data yang belum pasti dengan placeholder.
+\end{enumerate}
+
+\section{Manfaat}
+\subsection{Manfaat untuk Optik Medio}
+Dokumentasi ini membantu Optik Medio memahami struktur sistem, modul utama, dan kebutuhan validasi aplikasi.
+
+\subsection{Manfaat untuk Pelanggan}
+Sistem e-commerce mendukung akses katalog produk, informasi produk, transaksi, dan layanan pelanggan secara lebih terstruktur.
+
+\subsection{Manfaat untuk Mahasiswa}
+Mahasiswa memperoleh pengalaman audit repository, pengembangan aplikasi web, dokumentasi teknis, dan validasi sistem.
+
+\section{Waktu dan Tempat Kerja Praktik}
+\begin{tabular}{ll}
+Waktu & : [ISI DATA ASLI] \\
+Tempat & : Optik Medio, [ISI DATA ASLI] \\
+Pembimbing Lapangan & : [ISI DATA ASLI] \\
+Dosen Pembimbing & : [ISI DATA ASLI] \\
+\end{tabular}
+
+\section{Sistematika Laporan}
+Laporan terdiri dari BAB I Pendahuluan, BAB II Profil Perusahaan, BAB III Landasan Teori, BAB IV Perancangan Sistem, BAB V Implementasi dan Pembahasan, BAB VI Penutup, serta lampiran.
+
+\section{Metode Pelaksanaan}
+Metode pelaksanaan kerja pada laporan ini dilakukan melalui beberapa tahap:
+\begin{enumerate}
+    \item Audit repository untuk mengidentifikasi struktur project, dependency, route, migration, dan konfigurasi.
+    \item Analisis kebutuhan berdasarkan modul yang sudah tersedia pada frontend dan backend.
+    \item Penyusunan rancangan sistem, aktor, alur proses, struktur data, dan kebutuhan antarmuka.
+    \item Implementasi perbaikan terbatas pada bagian yang menyebabkan validasi gagal.
+    \item Validasi menggunakan command build, lint, typecheck, unit test frontend, dan test backend.
+    \item Penyusunan laporan LaTeX dan roadmap kerja.
+\end{enumerate}
+
+\chapter{PROFIL PERUSAHAAN}
+\section{Sejarah Optik Medio}
+[ISI DATA ASLI]
+
+\section{Visi Optik Medio}
+[ISI DATA ASLI]
+
+\section{Misi Optik Medio}
+[ISI DATA ASLI]
+
+\section{Tujuan Optik Medio}
+[ISI DATA ASLI]
+
+\section{Struktur Organisasi}
+\begin{figure}[H]
+    \centering
+    \placeholder{[GAMBAR 2.1 STRUKTUR ORGANISASI OPTIK MEDIO - TEMPATKAN DI SINI]}
+    \caption{Struktur organisasi Optik Medio}
+\end{figure}
+
+\section{Logo dan Alamat}
+\begin{figure}[H]
+    \centering
+    \placeholder{[GAMBAR 2.2 LOGO OPTIK MEDIO - TEMPATKAN DI SINI]}
+    \caption{Logo Optik Medio}
+\end{figure}
+
+Alamat: [ISI DATA ASLI]
+
+\chapter{LANDASAN TEORI}
+\section{Sistem Informasi}
+Sistem informasi adalah kombinasi komponen manusia, prosedur, perangkat lunak, perangkat keras, jaringan, dan data untuk mengolah informasi yang mendukung kegiatan operasional.
+
+\section{E-Commerce}
+E-commerce adalah model transaksi perdagangan yang memanfaatkan aplikasi web untuk menampilkan produk, mengelola pesanan, pembayaran, promosi, dan layanan pelanggan.
+
+\section{Vue.js}
+Vue.js adalah framework JavaScript progresif untuk membangun antarmuka pengguna berbasis komponen. Pada project ini Vue digunakan pada aplikasi \texttt{medio-fe}.
+
+\section{Vite dan TypeScript}
+Vite digunakan sebagai build tool frontend. TypeScript digunakan untuk menambah tipe statis pada kode frontend agar pengembangan lebih terstruktur.
+
+\section{Tailwind CSS}
+Tailwind CSS digunakan sebagai utility-first CSS framework untuk membangun tampilan responsif dengan kelas utilitas.
+
+\section{Pinia dan Persisted State}
+Pinia digunakan sebagai state management Vue. Repository juga menggunakan \texttt{pinia-plugin-persistedstate} untuk menyimpan state tertentu secara persisten.
+
+\section{Vue Router}
+Vue Router digunakan untuk mengatur navigasi halaman pada frontend single page application.
+
+\section{Axios}
+Axios digunakan sebagai HTTP client untuk komunikasi frontend dengan backend API Laravel.
+
+\section{Laravel}
+Laravel adalah framework PHP berbasis MVC yang digunakan pada backend \texttt{medio-be}. Project menggunakan Laravel 13 dan PHP 8.3.
+
+\section{Laravel Sanctum}
+Laravel Sanctum digunakan untuk autentikasi API dan pengelolaan token/session pada aplikasi.
+
+\section{Filament}
+Filament digunakan sebagai panel administrasi berbasis Laravel untuk pengelolaan data operasional.
+
+\section{Xendit}
+Xendit digunakan sebagai integrasi pembayaran. Detail konfigurasi menggunakan variabel \texttt{XENDIT\_SECRET\_KEY} dan \texttt{XENDIT\_WEBHOOK\_TOKEN} pada environment backend.
+
+\section{Metode Pengembangan}
+Metode pengembangan yang digunakan dalam dokumentasi ini mengikuti alur analisis kebutuhan, perancangan, implementasi, pengujian, dan pemeliharaan.
+
+\section{Application Programming Interface}
+Application Programming Interface (API) adalah antarmuka yang memungkinkan frontend berkomunikasi dengan backend. Pada project ini API Laravel menyediakan endpoint untuk data publik, autentikasi, transaksi, pembayaran, komplain, appointment, review, dan layanan pelanggan.
+
+\section{Payment Gateway}
+Payment gateway adalah layanan pihak ketiga yang memproses pembayaran digital. Project ini menggunakan Xendit untuk kebutuhan pembayaran dan webhook status transaksi.
+
+\section{State Management}
+State management digunakan untuk menyimpan dan mengatur data aplikasi pada sisi frontend. Pada project ini Pinia digunakan untuk state autentikasi, cart, wishlist, comparison, dan recently viewed product.
+
+\chapter{PERANCANGAN SISTEM}
+\section{Hasil Audit Tech Stack}
+\begin{table}[H]
+\centering
+\caption{Tech stack aktual repository}
+\begin{tabular}{p{0.28\textwidth}p{0.62\textwidth}}
+\toprule
+Bagian & Teknologi \\
+\midrule
+Frontend & Vue.js 3, Vite, TypeScript, Tailwind CSS, Pinia, Vue Router, Axios, DOMPurify \\
+Backend & Laravel 13, PHP 8.3, Laravel Sanctum, Filament, Resend, Xendit \\
+Database & MySQL atau database lain sesuai nilai \texttt{DB\_CONNECTION} pada \texttt{medio-be/.env} \\
+Build frontend & \texttt{npm run build} pada \texttt{medio-fe} \\
+Validasi frontend & \texttt{npm run lint}, \texttt{npm run typecheck}, \texttt{npm run test:run} \\
+Validasi backend & \texttt{php artisan test} pada \texttt{medio-be} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Arsitektur Sistem}
+Sistem terdiri dari frontend SPA dan backend API. Frontend mengakses API backend melalui konfigurasi \texttt{VITE\_API\_URL}. Backend menangani autentikasi, katalog produk, keranjang, order, pembayaran, komplain, appointment, review, artikel, promosi, dan data master.
+
+\begin{figure}[H]
+    \centering
+    \placeholder{[GAMBAR 4.1 ARSITEKTUR SISTEM FRONTEND VUE DAN BACKEND LARAVEL - TEMPATKAN DI SINI]}
+    \caption{Arsitektur sistem Optik Medio E-Commerce}
+\end{figure}
+
+\section{Kebutuhan Fungsional}
+\begin{longtable}{p{0.18\textwidth}p{0.72\textwidth}}
+\caption{Kebutuhan fungsional sistem}\\
+\toprule
+Kode & Kebutuhan \\
+\midrule
+\endfirsthead
+\toprule
+Kode & Kebutuhan \\
+\midrule
+\endhead
+KF-01 & Sistem menyediakan autentikasi pelanggan melalui modul backend API. \\
+KF-02 & Sistem menampilkan katalog produk, kategori, detail produk, review, dan informasi ketersediaan produk. \\
+KF-03 & Sistem menyediakan keranjang belanja, checkout, perhitungan order, dan pengelolaan item pesanan. \\
+KF-04 & Sistem mendukung integrasi pembayaran melalui Xendit dan menerima webhook status pembayaran. \\
+KF-05 & Sistem menyediakan fitur alamat pengiriman, ekspedisi, biaya pengiriman, dan tracking order. \\
+KF-06 & Sistem menyediakan promo, diskon, loyalty, referral, affiliate, dan komisi sesuai modul yang tersedia. \\
+KF-07 & Sistem menyediakan appointment, komplain, return, warranty, dan layanan purna jual. \\
+KF-08 & Sistem menyediakan artikel, FAQ, banner, dan pengaturan aplikasi untuk kebutuhan konten. \\
+KF-09 & Admin dapat mengelola data operasional melalui backend Laravel dan panel admin Filament. \\
+\bottomrule
+\end{longtable}
+
+\section{Kebutuhan Nonfungsional}
+\begin{longtable}{p{0.18\textwidth}p{0.72\textwidth}}
+\caption{Kebutuhan nonfungsional sistem}\\
+\toprule
+Kode & Kebutuhan \\
+\midrule
+\endfirsthead
+\toprule
+Kode & Kebutuhan \\
+\midrule
+\endhead
+KNF-01 & Frontend harus dapat dibangun untuk production menggunakan \texttt{npm run build}. \\
+KNF-02 & Kode frontend harus lolos typecheck TypeScript menggunakan \texttt{npm run typecheck}. \\
+KNF-03 & Backend harus lolos automated test menggunakan \texttt{php artisan test}. \\
+KNF-04 & API harus menyediakan endpoint health check untuk memeriksa status aplikasi dan database. \\
+KNF-05 & Input dan konten HTML perlu disanitasi untuk mengurangi risiko konten berbahaya. \\
+KNF-06 & Konfigurasi secret seperti Xendit dan database harus disimpan pada file environment, bukan hardcoded pada source code. \\
+\bottomrule
+\end{longtable}
+
+\section{Aktor Sistem}
+\begin{table}[H]
+\centering
+\caption{Aktor sistem}
+\begin{tabular}{p{0.25\textwidth}p{0.65\textwidth}}
+\toprule
+Aktor & Peran \\
+\midrule
+Pelanggan & Melihat katalog, detail produk, mengelola keranjang, checkout, appointment, komplain, dan review. \\
+Admin & Mengelola produk, kategori, pesanan, promosi, stok, artikel, komplain, dan konfigurasi toko melalui backend/admin panel. \\
+Sistem Pembayaran & Memproses pembayaran dan webhook melalui Xendit. \\
+Kurir/Ekspedisi & Menyediakan layanan pengiriman. Detail integrasi: [ISI DATA ASLI]. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Perancangan Proses}
+\subsection{Flowchart Pelanggan}
+\begin{figure}[H]
+    \centering
+    \placeholder{[GAMBAR 4.2 FLOWCHART USER PELANGGAN - TEMPATKAN DI SINI]}
+    \caption{Flowchart pelanggan}
+\end{figure}
+
+\subsection{Flowchart Admin}
+\begin{figure}[H]
+    \centering
+    \placeholder{[GAMBAR 4.3 FLOWCHART USER ADMIN - TEMPATKAN DI SINI]}
+    \caption{Flowchart admin}
+\end{figure}
+
+\subsection{Data Flow Diagram}
+\begin{figure}[H]
+    \centering
+    \placeholder{[GAMBAR 4.4 DFD LEVEL 0 - TEMPATKAN DI SINI]}
+    \caption{DFD level 0}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \placeholder{[GAMBAR 4.5 DFD LEVEL 1 - TEMPATKAN DI SINI]}
+    \caption{DFD level 1}
+\end{figure}
+
+\section{Perancangan Database}
+Database backend dirancang melalui migration Laravel pada folder \texttt{medio-be/database/migrations}. Tabel inti yang teridentifikasi antara lain users, categories, products, product\_variants, carts, orders, order\_items, payments, shipping\_addresses, promos, discounts, product\_reviews, prescription\_profiles, complains, appointments, articles, faqs, expeditions, commissions, dan business\_events.
+
+\begin{figure}[H]
+    \centering
+    \placeholder{[GAMBAR 4.6 ERD DATABASE OPTIK MEDIO - TEMPATKAN DI SINI]}
+    \caption{ERD database Optik Medio}
+\end{figure}
+
+\begin{longtable}{p{0.30\textwidth}p{0.60\textwidth}}
+\caption{Kelompok tabel database yang teridentifikasi}\\
+\toprule
+Kelompok & Tabel / data utama \\
+\midrule
+\endfirsthead
+\toprule
+Kelompok & Tabel / data utama \\
+\midrule
+\endhead
+User dan autentikasi & \texttt{users}, membership, affiliator, referral, session/token sesuai konfigurasi Laravel Sanctum. \\
+Produk & \texttt{products}, \texttt{categories}, \texttt{product\_variants}, atribut optik, review, wishlist, comparison, dan recently viewed. \\
+Transaksi & \texttt{carts}, \texttt{orders}, \texttt{order\_items}, \texttt{payments}, status pembayaran, dan riwayat pesanan. \\
+Pengiriman & \texttt{shipping\_addresses}, expedition, expedition services, shipping rates, dan tracking. \\
+Promosi & promo, discount, loyalty point, level member, affiliate, dan commission. \\
+Layanan pelanggan & appointment, complain, return, warranty, service claim, prescription profile. \\
+Konten & article, FAQ, banner, app setting, merchant feed, dan business event. \\
+\bottomrule
+\end{longtable}
+
+\section{Perancangan Modul API}
+Route API backend berjumlah 118 route call yang teridentifikasi pada \texttt{medio-be/routes/api.php}. Controller yang digunakan mencakup \texttt{AuthController}, \texttt{ProductController}, \texttt{CategoryController}, \texttt{CartController}, \texttt{OrderController}, \texttt{WebhookController}, \texttt{ShippingController}, \texttt{AppointmentController}, \texttt{ComplainController}, \texttt{ReviewController}, \texttt{WishlistController}, \texttt{WarrantyController}, \texttt{ReturnController}, \texttt{ArticleController}, \texttt{FaqController}, \texttt{AffiliateController}, dan controller pendukung lain.
+
+\begin{longtable}{p{0.28\textwidth}p{0.62\textwidth}}
+\caption{Rancangan modul API}\\
+\toprule
+Modul & Fungsi utama \\
+\midrule
+\endfirsthead
+\toprule
+Modul & Fungsi utama \\
+\midrule
+\endhead
+Health check & Mengecek status backend, waktu response, environment aplikasi, dan status database. \\
+Master data & Menyediakan settings, banner, FAQ, bank, payment method, store status, data optik, branch, dan data referensi lain. \\
+Auth & Menangani registrasi, login, OTP, session, dan endpoint autentikasi pelanggan. \\
+Produk & Menyediakan katalog produk, detail produk, kategori, filter, review, wishlist, dan merchant feed. \\
+Cart dan checkout & Menangani keranjang, kalkulasi checkout, pembuatan order, item order, dan proteksi transaksi. \\
+Payment & Menyediakan status pembayaran dan webhook Xendit. \\
+Shipping & Menyediakan alamat pengiriman, ekspedisi, ongkir, tracking, dan proteksi pengiriman. \\
+Customer service & Menyediakan appointment, complain, return, warranty, dan service claim. \\
+Marketing & Menyediakan promo, discount, referral, affiliate, loyalty, dan business event. \\
+Konten & Menyediakan article, FAQ, legal content, dan informasi toko. \\
+\bottomrule
+\end{longtable}
+
+\section{Perancangan User Interface}
+\subsection{Frontend Pelanggan}
+\begin{figure}[H]
+    \centering
+    \placeholder{[GAMBAR 4.7 WIREFRAME HALAMAN KATALOG PRODUK - TEMPATKAN DI SINI]}
+    \caption{Wireframe katalog produk}
+\end{figure}
+
+\subsection{Panel Admin}
+\begin{figure}[H]
+    \centering
+    \placeholder{[GAMBAR 4.8 WIREFRAME PANEL ADMIN FILAMENT - TEMPATKAN DI SINI]}
+    \caption{Wireframe panel admin}
+\end{figure}
+
+\section{Perancangan Navigasi Frontend}
+Frontend memiliki 27 file view Vue yang teridentifikasi. Halaman utama yang relevan untuk pelanggan meliputi halaman produk, detail produk, cart, checkout, waiting payment, order detail, profile, appointment, complaint, referral, loyalty, warranty, artikel, FAQ, privacy, terms, virtual try on, dan shared wishlist.
+
+\begin{longtable}{p{0.30\textwidth}p{0.60\textwidth}}
+\caption{Kelompok halaman frontend}\\
+\toprule
+Kelompok halaman & Contoh view \\
+\midrule
+\endfirsthead
+\toprule
+Kelompok halaman & Contoh view \\
+\midrule
+\endhead
+Katalog & \texttt{Product.vue}, \texttt{ProductDetail.vue}, \texttt{CategoryLanding.vue}, \texttt{BrandLanding.vue}. \\
+Transaksi & \texttt{CartView.vue}, \texttt{CheckoutView.vue}, \texttt{WaitingPayment.vue}, \texttt{OrderDetail.vue}, \texttt{Tracking.vue}. \\
+Akun & \texttt{Login.vue}, \texttt{Register.vue}, \texttt{Profile.vue}. \\
+Interaksi pelanggan & \texttt{AppointmentPage.vue}, \texttt{Complaint.vue}, \texttt{ComplaintDetail.vue}, \texttt{WarrantyPage.vue}. \\
+Marketing & \texttt{ReferralPage.vue}, \texttt{LoyaltyPage.vue}, \texttt{SharedWishlist.vue}, \texttt{ProductCompare.vue}. \\
+Konten & \texttt{ArticleList.vue}, \texttt{ArticleDetail.vue}, \texttt{FAQView.vue}, \texttt{PrivacyView.vue}, \texttt{TermsView.vue}. \\
+\bottomrule
+\end{longtable}
+
+\chapter{IMPLEMENTASI DAN PEMBAHASAN}
+\section{Struktur Repository}
+\begin{table}[H]
+\centering
+\caption{Struktur folder utama}
+\begin{tabular}{p{0.28\textwidth}p{0.62\textwidth}}
+\toprule
+Folder/File & Keterangan \\
+\midrule
+\texttt{medio-fe} & Aplikasi frontend Vue 3, Vite, TypeScript, Tailwind CSS. \\
+\texttt{medio-be} & Aplikasi backend Laravel 13, API, admin, migration, model, controller. \\
+\texttt{docs/kp} & Dokumentasi kerja praktik dan aset laporan. \\
+\texttt{docker-compose.yml} & Konfigurasi container project. Detail penggunaan: [ISI DATA ASLI]. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Implementasi Frontend}
+Frontend menggunakan Vue 3 dengan Vite dan TypeScript. Modul pendukung yang teridentifikasi meliputi Vue Router untuk routing, Pinia untuk state management, Axios untuk request API, DOMPurify untuk sanitasi konten, dan Tailwind CSS untuk styling.
+
+Command utama frontend:
+\begin{verbatim}
+cd medio-fe
+npm install
+npm run dev
+npm run build
+\end{verbatim}
+
+\subsection{Struktur Frontend}
+Struktur frontend mengikuti pola aplikasi Vue berbasis komponen. Folder \texttt{src/views} berisi halaman utama aplikasi, \texttt{src/stores} berisi state Pinia, sedangkan \texttt{src/repositories} berisi lapisan komunikasi API. Pemisahan ini membantu menjaga halaman UI tidak langsung memuat semua detail request HTTP.
+
+\begin{longtable}{p{0.28\textwidth}p{0.62\textwidth}}
+\caption{Implementasi frontend}\\
+\toprule
+Bagian & Implementasi \\
+\midrule
+\endfirsthead
+\toprule
+Bagian & Implementasi \\
+\midrule
+\endhead
+Routing & Menggunakan Vue Router pada frontend untuk navigasi antar halaman. \\
+State & Menggunakan Pinia untuk \texttt{authStore}, \texttt{cartStore}, \texttt{wishlistStore}, \texttt{compareStore}, dan \texttt{recentlyViewedStore}. \\
+API client & Menggunakan Axios dan repository TypeScript untuk komunikasi dengan backend. \\
+Styling & Menggunakan Tailwind CSS dan konfigurasi PostCSS. \\
+Sanitasi konten & Menggunakan DOMPurify untuk konten HTML yang perlu dirender pada frontend. \\
+Testing & Menggunakan Vitest untuk unit test/composable/store test. \\
+\bottomrule
+\end{longtable}
+
+\subsection{State Keranjang}
+State keranjang berada pada \texttt{cartStore}. Store ini digunakan untuk mengelola item keranjang dan berinteraksi dengan backend cart/order. Pada project aktual, cart tidak diimplementasikan sebagai React localStorage manual, tetapi mengikuti stack Vue dan Pinia yang tersedia.
+
+\subsection{Repository API Frontend}
+Repository frontend yang teridentifikasi mencakup modul order, shipping, complaint, review, prescription, dan master data. Pola repository memudahkan pengembangan karena request API dipusatkan pada file khusus, sedangkan halaman Vue dapat fokus pada interaksi pengguna.
+
+\section{Implementasi Backend}
+Backend menggunakan Laravel 13 dengan PHP 8.3. Modul yang teridentifikasi pada route API meliputi auth, master data, produk, kategori, cart, order, payment status, shipping, discount, referral, affiliate, appointment, complain, review, article, FAQ, dan webhook.
+
+Command utama backend:
+\begin{verbatim}
+cd medio-be
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+php artisan serve
+\end{verbatim}
+
+\subsection{Struktur Backend}
+Backend menggunakan struktur Laravel MVC. Folder \texttt{routes} berisi definisi endpoint, \texttt{app/Http/Controllers} berisi controller API, \texttt{app/Models} berisi model Eloquent, \texttt{database/migrations} berisi struktur database, dan \texttt{resources/views} berisi Blade view untuk email, Filament page, dan view pendukung.
+
+\begin{longtable}{p{0.28\textwidth}p{0.62\textwidth}}
+\caption{Implementasi backend}\\
+\toprule
+Bagian & Implementasi \\
+\midrule
+\endfirsthead
+\toprule
+Bagian & Implementasi \\
+\midrule
+\endhead
+Route API & Didefinisikan pada \texttt{medio-be/routes/api.php}. \\
+Route web & Didefinisikan pada \texttt{medio-be/routes/web.php}, termasuk route sitemap dan welcome page. \\
+Controller & Menggunakan controller API untuk auth, produk, kategori, cart, order, shipping, webhook, dan modul lain. \\
+Model & Menggunakan model Eloquent untuk entitas database. \\
+Migration & Menggunakan 81 migration yang teridentifikasi untuk membuat dan mengubah tabel. \\
+Admin panel & Menggunakan Filament untuk dashboard dan halaman admin. \\
+Email view & Menggunakan Blade view pada \texttt{resources/views/emails}. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Endpoint Health Check}
+Endpoint \texttt{/api/health} digunakan untuk memastikan backend berjalan. Pada proses validasi, test backend mengharapkan response memuat \texttt{status}, \texttt{time}, \texttt{app\_env}, dan \texttt{database}. Implementasi endpoint diperbarui agar melakukan query sederhana \texttt{select 1} melalui facade database dan mengembalikan status database.
+
+\subsection{Integrasi Pembayaran}
+Integrasi pembayaran menggunakan Xendit melalui package \texttt{xendit/xendit-php}. Konfigurasi secret dan webhook token ditempatkan pada environment backend. Endpoint webhook Xendit digunakan untuk menerima update status pembayaran dari payment gateway.
+
+\subsection{Panel Admin}
+Panel admin dibangun menggunakan Filament. File Blade pada folder \texttt{resources/views/filament} menunjukkan adanya halaman dan widget admin seperti order kanban, import CSV produk, stock opname, checkout failed, dan search no result. Detail tampilan final perlu dilengkapi dengan screenshot asli.
+
+\section{Konfigurasi Environment}
+\begin{table}[H]
+\centering
+\caption{Environment penting}
+\begin{tabular}{p{0.34\textwidth}p{0.56\textwidth}}
+\toprule
+Variabel & Keterangan \\
+\midrule
+\texttt{VITE\_API\_URL} & URL backend API untuk frontend. \\
+\texttt{FRONTEND\_URL} & URL frontend yang diizinkan backend. \\
+\texttt{DB\_CONNECTION} & Driver database backend. \\
+\texttt{XENDIT\_SECRET\_KEY} & Secret key integrasi Xendit. \\
+\texttt{XENDIT\_WEBHOOK\_TOKEN} & Token validasi webhook Xendit. \\
+\texttt{RAJAONGKIR\_API\_KEY} & API key layanan ongkir. [ISI DATA ASLI] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Langkah Instalasi dan Menjalankan Sistem}
+\subsection{Backend}
+\begin{verbatim}
+cd medio-be
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+php artisan serve
+\end{verbatim}
+
+\subsection{Frontend}
+\begin{verbatim}
+cd medio-fe
+npm install
+cp .env.example .env
+npm run dev
+\end{verbatim}
+
+Nilai \texttt{VITE\_API\_URL} pada frontend harus mengarah ke URL backend Laravel. Nilai database, Xendit, RajaOngkir, mailer, dan konfigurasi secret lain harus menggunakan data asli dari environment project.
+
+\section{Pengujian}
+Pengujian dilakukan melalui command validasi yang tersedia pada manifest project.
+
+\begin{table}[H]
+\centering
+\caption{Rencana validasi}
+\begin{tabular}{p{0.34\textwidth}p{0.24\textwidth}p{0.30\textwidth}}
+\toprule
+Command & Lokasi & Status \\
+\midrule
+\texttt{npm run build} & \texttt{medio-fe} & Berhasil pada validasi 18 Juni 2026 \\
+\texttt{npm run lint} & \texttt{medio-fe} & Berhasil dengan 265 warning dan 0 error pada validasi 18 Juni 2026 \\
+\texttt{npm run typecheck} & \texttt{medio-fe} & Berhasil pada validasi 18 Juni 2026 \\
+\texttt{npm run test:run} & \texttt{medio-fe} & Berhasil, 6 file test dan 45 test passed pada validasi 18 Juni 2026 \\
+\texttt{php artisan test} & \texttt{medio-be} & Berhasil, 142 test passed dan 462 assertions pada validasi 18 Juni 2026 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Skenario Pengujian}
+\begin{longtable}{p{0.18\textwidth}p{0.42\textwidth}p{0.30\textwidth}}
+\caption{Skenario pengujian utama}\\
+\toprule
+Kode & Skenario & Hasil validasi \\
+\midrule
+\endfirsthead
+\toprule
+Kode & Skenario & Hasil validasi \\
+\midrule
+\endhead
+U-01 & Build frontend production menggunakan Vite. & Berhasil. \\
+U-02 & Typecheck frontend menggunakan \texttt{vue-tsc}. & Berhasil. \\
+U-03 & Lint frontend menggunakan ESLint. & Berhasil dengan warning. \\
+U-04 & Unit test frontend untuk composable dan store. & 45 test passed. \\
+U-05 & Automated test backend Laravel. & 142 test passed. \\
+U-06 & Health endpoint backend mengembalikan status aplikasi dan database. & Berhasil setelah patch endpoint. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Catatan Kualitas Kode}
+Lint frontend menghasilkan 265 warning dan 0 error. Warning yang paling banyak muncul berkaitan dengan penggunaan \texttt{any}, penggunaan \texttt{console}, accessibility warning pada elemen klik, dan penggunaan \texttt{v-html}. Karena warning tidak menghentikan build, sistem tetap dapat dijalankan. Namun warning tersebut disarankan ditangani pada tahap refactor kualitas kode.
+
+\section{Screenshot Implementasi}
+\begin{figure}[H]
+    \centering
+    \placeholder{[GAMBAR 5.1 SCREENSHOT HALAMAN BERANDA - TEMPATKAN DI SINI]}
+    \caption{Halaman beranda}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \placeholder{[GAMBAR 5.2 SCREENSHOT HALAMAN DETAIL PRODUK - TEMPATKAN DI SINI]}
+    \caption{Halaman detail produk}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \placeholder{[GAMBAR 5.3 SCREENSHOT HALAMAN CHECKOUT - TEMPATKAN DI SINI]}
+    \caption{Halaman checkout}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \placeholder{[GAMBAR 5.4 SCREENSHOT DASHBOARD ADMIN - TEMPATKAN DI SINI]}
+    \caption{Dashboard admin}
+\end{figure}
+
+\chapter{PENUTUP}
+\section{Kesimpulan}
+Berdasarkan audit repository, Optik Medio E-Commerce menggunakan arsitektur frontend Vue 3 dan backend Laravel 13. Dokumentasi laporan ini disusun mengikuti stack aktual tersebut. Data yang belum terverifikasi ditandai dengan \texttt{[ISI DATA ASLI]} dan aset visual yang belum tersedia ditandai dengan placeholder gambar.
+
+\section{Saran}
+\begin{enumerate}
+    \item Lengkapi data perusahaan, identitas mahasiswa, waktu kerja praktik, dan data pembimbing dengan data asli.
+    \item Tambahkan screenshot nyata dari halaman frontend dan panel admin ke folder \texttt{docs/kp/assets}.
+    \item Tambahkan diagram flowchart, DFD, dan ERD final setelah rancangan disetujui.
+    \item Jalankan validasi build, lint, typecheck, dan test sebelum laporan difinalkan.
+\end{enumerate}
+
+\appendix
+\chapter{Lampiran Placeholder Aset}
+\begin{enumerate}
+    \item [GAMBAR 2.1 STRUKTUR ORGANISASI OPTIK MEDIO]
+    \item [GAMBAR 2.2 LOGO OPTIK MEDIO]
+    \item [GAMBAR 4.1 ARSITEKTUR SISTEM FRONTEND VUE DAN BACKEND LARAVEL]
+    \item [GAMBAR 4.2 FLOWCHART USER PELANGGAN]
+    \item [GAMBAR 4.3 FLOWCHART USER ADMIN]
+    \item [GAMBAR 4.4 DFD LEVEL 0]
+    \item [GAMBAR 4.5 DFD LEVEL 1]
+    \item [GAMBAR 4.6 ERD DATABASE OPTIK MEDIO]
+    \item [GAMBAR 5.1 SCREENSHOT HALAMAN BERANDA]
+    \item [GAMBAR 5.2 SCREENSHOT HALAMAN DETAIL PRODUK]
+    \item [GAMBAR 5.3 SCREENSHOT HALAMAN CHECKOUT]
+    \item [GAMBAR 5.4 SCREENSHOT DASHBOARD ADMIN]
+\end{enumerate}
+
+\chapter{Lampiran Validasi}
+Output validasi command ditempatkan di sini setelah proses final:
+\begin{enumerate}
+    \item Frontend build: berhasil, Vite production build selesai.
+    \item Frontend lint: berhasil dengan 265 warning dan 0 error.
+    \item Frontend typecheck: berhasil, \texttt{vue-tsc --noEmit} selesai tanpa error.
+    \item Frontend test: berhasil, 6 file test dan 45 test passed.
+    \item Backend test: berhasil, 142 test passed dan 462 assertions.
+\end{enumerate}
+
+\end{document}

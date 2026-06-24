@@ -1,0 +1,185 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[provide=*,indonesian]{babel}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{titlesec}
+
+\geometry{left=4cm,right=3cm,top=3cm,bottom=3cm}
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0pt}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue,
+    citecolor=blue
+}
+
+\lstdefinestyle{promptstyle}{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    breakatwhitespace=false,
+    frame=single,
+    columns=fullflexible,
+    keepspaces=true,
+    showstringspaces=false,
+    backgroundcolor=\color{gray!8},
+    rulecolor=\color{black!60}
+}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+{\bfseries\Large ROADMAP DAN PROMPT REVISI LAPORAN MAGANG\par}
+\vspace{1cm}
+{\bfseries\Large IMPLEMENTASI SISTEM E-COMMERCE OPTIK MEDIO BERBASIS WEB SEBAGAI STUDI KASUS PENERAPAN PENGALAMAN MAGANG PADA PT. PANEMU SOLUSI INDUSTRI\par}
+\vspace{1cm}
+{\bfseries Farhan Miftakhul Farruq\par}
+{\bfseries NIM: [ISI NIM]\par}
+\vfill
+{\bfseries PROGRAM STUDI INFORMATIKA\par}
+{\bfseries FAKULTAS TEKNOLOGI INDUSTRI\par}
+{\bfseries INSTITUT TEKNOLOGI DIRGANTARA ADISUTJIPTO\par}
+{\bfseries YOGYAKARTA\par}
+{\bfseries 2026\par}
+\end{titlepage}
+
+\tableofcontents
+
+\chapter{POSISI KONTEKS LAPORAN}
+
+Dokumen ini menggantikan roadmap lama yang masih memakai sudut pandang Laporan Kerja Praktik dan seolah-olah tempat magang berada di Optik Medio. Konteks yang benar adalah sebagai berikut:
+
+\begin{enumerate}
+    \item Jenis laporan adalah Laporan Magang, bukan Laporan Kerja Praktik.
+    \item Tempat magang resmi adalah PT. Panemu Solusi Industri, Kulon Progo, Yogyakarta.
+    \item Bidang pekerjaan magang berkaitan dengan pengembangan dan pemeliharaan sistem e-commerce.
+    \item Aktivitas magang mencakup pemahaman issue atau bug, debugging, perbaikan fitur, pengujian pada server development, dan pemahaman alur production.
+    \item Sistem e-commerce perusahaan atau klien tidak boleh dibahas secara internal.
+    \item Optik Medio dipakai sebagai proyek studi kasus mandiri untuk menerapkan pengalaman magang.
+    \item Optik Medio bukan instansi magang; posisikan hanya sebagai studi kasus penerapan.
+\end{enumerate}
+
+\section{Batasan Kerahasiaan}
+
+Laporan tidak boleh menampilkan source code internal perusahaan atau klien, nama database internal, endpoint rahasia, credential, token, API key, webhook secret, data transaksi, data pelanggan, tiket issue internal, konfigurasi server, screenshot dashboard internal, atau informasi production. Semua screenshot dan diagram teknis menggunakan proyek Optik Medio dari repository ini.
+
+\chapter{STRUKTUR LAPORAN MAGANG}
+
+Struktur laporan mengikuti format Laporan Magang ITDA:
+
+\begin{enumerate}
+    \item Halaman Sampul/Cover.
+    \item Halaman Judul.
+    \item Lembar Pengesahan kampus.
+    \item Lembar Pengesahan tempat magang.
+    \item Kata Pengantar.
+    \item Daftar Isi.
+    \item Daftar Gambar.
+    \item Daftar Tabel.
+    \item Daftar Lampiran jika ada.
+    \item Daftar Singkatan dan Lambang jika ada.
+    \item BAB I PENDAHULUAN.
+    \item BAB II PELAKSANAAN.
+    \item BAB III HASIL DAN PEMBAHASAN.
+    \item BAB IV PENUTUP.
+    \item Daftar Pustaka.
+    \item Lampiran.
+\end{enumerate}
+
+\chapter{ARAH ISI PER BAB}
+
+\section{BAB I Pendahuluan}
+
+BAB I harus menjelaskan latar belakang pentingnya pengembangan dan pemeliharaan sistem e-commerce, alur issue atau bug, server development, production, dan alasan Optik Medio digunakan sebagai studi kasus aman. Tujuan laporan menjelaskan pelaksanaan magang di PT. Panemu Solusi Industri serta penerapan pengalaman tersebut pada proyek Optik Medio.
+
+\section{BAB II Pelaksanaan}
+
+BAB II memuat profil PT. Panemu Solusi Industri, bukan profil Optik Medio sebagai tempat magang. Jika sejarah, visi, misi, struktur organisasi, alamat lengkap, atau data legal belum tersedia, gunakan placeholder [ISI DATA RESMI PT. PANEMU SOLUSI INDUSTRI]. Lingkup kegiatan menjelaskan pekerjaan issue/bug, debugging, testing, pemahaman development dan production, serta penerapan pengalaman ke Optik Medio.
+
+\section{BAB III Hasil dan Pembahasan}
+
+BAB III membahas proyek Optik Medio sebagai studi kasus. Pembahasan meliputi analisis kebutuhan, perancangan sistem, use case, flowchart checkout, arsitektur sistem, DFD, ERD atau struktur data, implementasi frontend Vue, backend Laravel, panel admin Filament, integrasi ekspedisi atau RajaOngkir jika tersedia, integrasi Xendit jika tersedia, pengujian black-box, kendala teknis, dan evaluasi hasil.
+
+\section{BAB IV Penutup}
+
+BAB IV berisi kesimpulan dan saran. Kesimpulan harus menjawab bahwa magang di PT. Panemu Solusi Industri memberi pengalaman pengembangan dan pemeliharaan sistem e-commerce, sedangkan Optik Medio menjadi media penerapan pembelajaran tanpa membuka data rahasia perusahaan.
+
+\chapter{ROADMAP PENGERJAAN}
+
+\begin{longtable}{|p{1cm}|p{4cm}|p{8cm}|}
+\caption{Roadmap Revisi Laporan Magang}\\
+\hline
+Fase & Nama Fase & Target Keluaran\\ \hline
+0 & Audit Konteks & Pastikan laporan memosisikan Optik Medio sebagai studi kasus dan tidak memakai struktur KP.\\ \hline
+1 & Audit Repository & Catat stack aktual Vue, Vite, TypeScript, Tailwind, Pinia, Laravel, Sanctum, Filament, shipping, dan Xendit.\\ \hline
+2 & Revisi BAB I & Latar belakang Panemu, issue/bug e-commerce, development, production, dan alasan Optik Medio sebagai studi kasus.\\ \hline
+3 & Revisi BAB II & Profil PT. Panemu Solusi Industri dan lingkup kegiatan magang.\\ \hline
+4 & Revisi BAB III & Pembahasan teknis Optik Medio, integrasi RajaOngkir jika tersedia, Xendit, pengujian, dan evaluasi hasil.\\ \hline
+5 & Revisi BAB IV & Kesimpulan dan saran sesuai tujuan magang.\\ \hline
+6 & Placeholder & Kumpulkan NIM, tanggal, pembimbing, alamat resmi, profil perusahaan, diagram, screenshot, dan hasil testing.\\ \hline
+7 & Validasi & Compile XeLaTeX, cek istilah rahasia, cek BAB I sampai BAB IV, dan cek daftar pustaka.\\ \hline
+\end{longtable}
+
+\chapter{PROMPT CODEX AGENT}
+
+\begin{lstlisting}[style=promptstyle]
+Kamu adalah agentic AI yang bekerja di dalam repository proyek saya. Tugasmu adalah menyusun dan merevisi LAPORAN MAGANG dalam format LaTeX sesuai panduan resmi ITDA.
+
+KONTEKS WAJIB:
+1. Jenis laporan adalah LAPORAN MAGANG, bukan Laporan Kerja Praktik.
+2. Tempat magang resmi adalah PT. Panemu Solusi Industri, Kulon Progo, Yogyakarta.
+3. Optik Medio bukan instansi magang; posisikan hanya sebagai studi kasus penerapan.
+4. Optik Medio adalah proyek studi kasus/proyek implementasi mandiri untuk menerapkan pengalaman magang.
+5. Selama magang, pekerjaan berkaitan dengan pengembangan dan pemeliharaan sistem e-commerce, termasuk issue/bug, debugging, perbaikan fitur, pengujian pada server development, dan pemahaman alur production.
+6. Sistem e-commerce perusahaan/klien tidak boleh dibahas secara internal.
+7. Jangan menampilkan source code internal, database internal, endpoint rahasia, credential, token, API key, webhook secret, data transaksi, data pelanggan, tiket issue internal, konfigurasi server, screenshot dashboard internal, atau informasi production.
+8. Semua screenshot, diagram, dan pembahasan teknis rinci harus menggunakan proyek Optik Medio.
+9. Stack dan tools harus mengikuti repository aktual.
+10. RajaOngkir dibahas sebagai integrasi ekspedisi/ongkos kirim jika tersedia. Xendit dibahas sebagai payment gateway jika tersedia. Jangan menampilkan secret key atau payload transaksi asli.
+
+JUDUL:
+Implementasi Sistem E-Commerce Optik Medio Berbasis Web sebagai Studi Kasus Penerapan Pengalaman Magang pada PT. Panemu Solusi Industri
+
+OUTPUT:
+1. File LaTeX lengkap yang bisa dikompilasi.
+2. references.bib.
+3. checklist-final.md.
+4. 00-audit-repository.md.
+5. Semua placeholder dikumpulkan.
+
+VALIDASI:
+1. Compile dengan XeLaTeX.
+2. Jangan mengubah source code aplikasi kecuali diminta.
+3. Jangan mengarang data perusahaan.
+4. Jangan membuka data rahasia perusahaan.
+\end{lstlisting}
+
+\chapter{CHECKLIST AKHIR}
+
+\begin{longtable}{|p{1cm}|p{10cm}|p{3cm}|}
+\caption{Checklist Revisi}\\
+\hline
+No & Item Pemeriksaan & Status\\ \hline
+1 & Tempat magang tertulis PT. Panemu Solusi Industri & [ ]\\ \hline
+2 & Optik Medio tertulis sebagai studi kasus, bukan instansi magang & [ ]\\ \hline
+3 & Struktur laporan memakai BAB I sampai BAB IV & [ ]\\ \hline
+4 & Tidak ada detail internal sistem perusahaan atau klien & [ ]\\ \hline
+5 & Stack mengikuti repository aktual & [ ]\\ \hline
+6 & RajaOngkir/Xendit dibahas tanpa API key atau secret & [ ]\\ \hline
+7 & Semua data resmi yang belum diketahui memakai placeholder & [ ]\\ \hline
+8 & PDF berhasil dikompilasi & [ ]\\ \hline
+\end{longtable}
+
+\end{document}

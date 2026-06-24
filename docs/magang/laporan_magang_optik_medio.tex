@@ -1,0 +1,656 @@
+\documentclass[12pt,a4paper,oneside]{report}
+
+\usepackage{fontspec}
+\IfFontExistsTF{Times New Roman}
+  {\setmainfont{Times New Roman}}
+  {\setmainfont{TeX Gyre Termes}}
+\usepackage[a4paper,left=4cm,right=3cm,top=3cm,bottom=3cm]{geometry}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0pt}
+\setlist[enumerate]{leftmargin=1.25cm}
+\setlist[itemize]{leftmargin=1.25cm}
+
+\renewcommand{\contentsname}{DAFTAR ISI}
+\renewcommand{\listfigurename}{DAFTAR GAMBAR}
+\renewcommand{\listtablename}{DAFTAR TABEL}
+\renewcommand{\bibname}{DAFTAR PUSTAKA}
+\renewcommand{\chaptername}{BAB}
+\renewcommand{\figurename}{Gambar}
+\renewcommand{\tablename}{Tabel}
+\renewcommand{\cftchapfont}{\normalfont\bfseries}
+\renewcommand{\cftchappagefont}{\normalfont\bfseries}
+\titleformat{\chapter}[display]
+  {\normalfont\bfseries\centering}
+  {\chaptername\ \thechapter}
+  {0pt}
+  {\MakeUppercase}
+\titlespacing*{\chapter}{0pt}{0pt}{24pt}
+
+\newcommand{\placeholder}[1]{\textbf{[#1]}}
+\newcommand{\namamahasiswa}{Farhan Miftakhul Farruq}
+\newcommand{\nimmahasiswa}{\placeholder{ISI NIM}}
+\newcommand{\programstudi}{Informatika}
+\newcommand{\fakultas}{Fakultas Teknologi Industri}
+\newcommand{\kampus}{Institut Teknologi Dirgantara Adisutjipto}
+\newcommand{\tahunlaporan}{2026}
+\newcommand{\tempatmagang}{PT. Panemu Solusi Industri}
+\newcommand{\lokasimagang}{Kulon Progo, Yogyakarta}
+\newcommand{\alamatmagang}{\placeholder{ISI ALAMAT RESMI PT. PANEMU SOLUSI INDUSTRI}}
+\newcommand{\proyekstudi}{Optik Medio}
+\newcommand{\judul}{Implementasi Sistem E-Commerce Optik Medio Berbasis Web sebagai Studi Kasus Penerapan Pengalaman Magang pada PT. Panemu Solusi Industri}
+
+\captionsetup[table]{position=top,justification=centering}
+\captionsetup[figure]{position=bottom,justification=centering}
+
+\newcommand{\gambarplaceholder}[2]{
+  \begin{figure}[H]
+    \centering
+    \fbox{
+      \begin{minipage}[c][4.5cm][c]{0.82\textwidth}
+        \centering
+        \placeholder{TANDA GAMBAR: #1}
+      \end{minipage}
+    }
+    \caption{#2}
+  \end{figure}
+}
+
+\begin{document}
+
+\pagenumbering{gobble}
+
+\begin{titlepage}
+  \centering
+  \vspace*{1cm}
+  {\bfseries LAPORAN MAGANG\par}
+  \vspace{1.5cm}
+  {\bfseries\MakeUppercase{\judul}\par}
+  \vspace{1cm}
+  {\bfseries Disusun untuk memenuhi salah satu persyaratan kegiatan Magang\par}
+  \vspace{2cm}
+  \placeholder{LOGO KAMPUS ATAU LOGO PERUSAHAAN}
+  \vspace{2cm}
+
+  Disusun oleh:\par
+  \vspace{0.5cm}
+  {\bfseries \namamahasiswa\par}
+  {\bfseries \nimmahasiswa\par}
+
+  \vfill
+  {\bfseries PROGRAM STUDI \MakeUppercase{\programstudi}\par}
+  {\bfseries \MakeUppercase{\fakultas}\par}
+  {\bfseries \MakeUppercase{\kampus}\par}
+  {\bfseries YOGYAKARTA\par}
+  {\bfseries \tahunlaporan\par}
+\end{titlepage}
+
+\begin{titlepage}
+  \centering
+  \vspace*{1cm}
+  {\bfseries HALAMAN JUDUL\par}
+  \vspace{1.5cm}
+  {\bfseries LAPORAN MAGANG\par}
+  \vspace{1cm}
+  {\bfseries\MakeUppercase{\judul}\par}
+  \vspace{1cm}
+  Studi kasus proyek \proyekstudi\ berdasarkan pengalaman magang di \tempatmagang\par
+  \vspace{1.5cm}
+  Disusun oleh:\par
+  \vspace{0.5cm}
+  {\bfseries \namamahasiswa\par}
+  {\bfseries \nimmahasiswa\par}
+  \vfill
+  {\bfseries PROGRAM STUDI \MakeUppercase{\programstudi}\par}
+  {\bfseries \MakeUppercase{\fakultas}\par}
+  {\bfseries \MakeUppercase{\kampus}\par}
+  {\bfseries YOGYAKARTA\par}
+  {\bfseries \tahunlaporan\par}
+\end{titlepage}
+
+\pagenumbering{roman}
+
+\chapter*{LEMBAR PENGESAHAN}
+\addcontentsline{toc}{chapter}{LEMBAR PENGESAHAN}
+
+Laporan Magang dengan judul ``\judul'' disusun oleh:
+
+\begin{center}
+\begin{tabular}{ll}
+Nama & : \namamahasiswa \\
+NIM & : \nimmahasiswa \\
+Program Studi & : \programstudi \\
+Fakultas & : \fakultas \\
+\end{tabular}
+\end{center}
+
+Laporan ini disusun berdasarkan hasil kegiatan magang di \tempatmagang, \lokasimagang, yang dilaksanakan pada \placeholder{ISI TANGGAL MULAI MAGANG} sampai dengan \placeholder{ISI TANGGAL SELESAI MAGANG}. Pembahasan teknis menggunakan proyek studi kasus \proyekstudi\ sebagai penerapan pengalaman pengembangan dan pemeliharaan sistem e-commerce selama magang. Laporan ini diajukan sebagai dokumen akademik kegiatan Magang pada Program Studi \programstudi, \fakultas, \kampus.
+
+\vspace{1cm}
+\begin{center}
+\placeholder{ISI TEMPAT PENGESAHAN}, \placeholder{ISI TANGGAL PENGESAHAN}
+\end{center}
+
+\vspace{0.8cm}
+\begin{tabular}{p{0.45\textwidth}p{0.45\textwidth}}
+Mengetahui, & Menyetujui,\\
+Ketua Program Studi \programstudi & Dosen Pembimbing\\
+\vspace{2.5cm} & \vspace{2.5cm}\\
+\placeholder{ISI NAMA KETUA PROGRAM STUDI} & \placeholder{ISI NAMA DOSEN PEMBIMBING}\\
+NIP. \placeholder{ISI NIP KETUA PROGRAM STUDI} & NIP. \placeholder{ISI NIP DOSEN PEMBIMBING}\\
+\end{tabular}
+
+\chapter*{LEMBAR PENGESAHAN TEMPAT MAGANG}
+\addcontentsline{toc}{chapter}{LEMBAR PENGESAHAN TEMPAT MAGANG}
+
+Laporan Magang dengan judul ``\judul'' telah diperiksa oleh pembimbing lapangan dari \tempatmagang. Kegiatan magang dilaksanakan di \alamatmagang, \lokasimagang, pada divisi atau penempatan \placeholder{ISI DIVISI ATAU PENEMPATAN}.
+
+\vspace{1cm}
+\begin{center}
+\placeholder{ISI TEMPAT PENGESAHAN}, \placeholder{ISI TANGGAL PENGESAHAN}
+\end{center}
+
+\vspace{0.8cm}
+\begin{flushright}
+Pembimbing Lapangan\\
+\tempatmagang\\
+\vspace{2.5cm}
+\placeholder{ISI NAMA PEMBIMBING LAPANGAN}\\
+\placeholder{ISI JABATAN PEMBIMBING LAPANGAN}
+\end{flushright}
+
+\chapter*{KATA PENGANTAR}
+\addcontentsline{toc}{chapter}{KATA PENGANTAR}
+
+Puji syukur dipanjatkan kepada Tuhan Yang Maha Esa karena laporan Magang berjudul ``\judul'' dapat disusun sebagai dokumentasi kegiatan magang di \tempatmagang. Laporan ini memuat pelaksanaan kegiatan, pembelajaran dari pekerjaan pengembangan dan pemeliharaan sistem e-commerce, serta penerapan pembelajaran tersebut pada proyek studi kasus \proyekstudi.
+
+Penyusunan laporan ini tidak terlepas dari arahan dan dukungan berbagai pihak. Oleh karena itu, penulis menyampaikan terima kasih kepada:
+
+\begin{enumerate}
+  \item \placeholder{ISI NAMA KETUA PROGRAM STUDI}, selaku Ketua Program Studi \programstudi.
+  \item \placeholder{ISI NAMA DOSEN PEMBIMBING}, selaku dosen pembimbing magang.
+  \item \placeholder{ISI NAMA PEMBIMBING LAPANGAN}, selaku pembimbing lapangan di \tempatmagang.
+  \item Seluruh pihak di \tempatmagang\ yang telah membantu pelaksanaan kegiatan magang.
+\end{enumerate}
+
+Laporan ini masih memerlukan validasi data resmi perusahaan, data pembimbing, dan aset gambar. Seluruh bagian yang belum memiliki data asli ditandai dengan placeholder agar tidak terjadi pengisian data yang tidak terverifikasi.
+
+\vspace{1cm}
+\begin{flushright}
+Yogyakarta, \placeholder{ISI TANGGAL}\\
+\vspace{1.5cm}
+\namamahasiswa
+\end{flushright}
+
+\tableofcontents
+\clearpage
+\listoffigures
+\clearpage
+\listoftables
+\clearpage
+
+\chapter*{DAFTAR LAMPIRAN}
+\addcontentsline{toc}{chapter}{DAFTAR LAMPIRAN}
+
+\begin{enumerate}
+  \item Surat permohonan atau penerimaan magang. \placeholder{TANDA LAMPIRAN: surat magang}
+  \item Agenda kegiatan magang. \placeholder{TANDA LAMPIRAN: agenda kegiatan}
+  \item Screenshot antarmuka sistem. \placeholder{TANDA LAMPIRAN: screenshot sistem}
+  \item Dokumentasi kode dan hasil pengujian. \placeholder{TANDA LAMPIRAN: bukti pengujian}
+\end{enumerate}
+
+\chapter*{DAFTAR SINGKATAN DAN LAMBANG}
+\addcontentsline{toc}{chapter}{DAFTAR SINGKATAN DAN LAMBANG}
+
+\begin{longtable}{p{0.25\textwidth}p{0.65\textwidth}}
+\toprule
+Singkatan & Keterangan\\
+\midrule
+API & \textit{Application Programming Interface}\\
+DFD & \textit{Data Flow Diagram}\\
+ERD & \textit{Entity Relationship Diagram}\\
+UI & \textit{User Interface}\\
+UX & \textit{User Experience}\\
+HVS & \textit{Houtvrij Schrijfpapier}\\
+\bottomrule
+\end{longtable}
+
+\clearpage
+\pagenumbering{arabic}
+
+\chapter{PENDAHULUAN}
+
+\section{Latar Belakang}
+
+Perkembangan teknologi informasi mendorong perusahaan pengembang perangkat lunak untuk menyediakan dan memelihara sistem digital yang stabil, aman, dan mudah digunakan. Pada bidang e-commerce, sistem tidak hanya menampilkan produk, tetapi juga menangani katalog, keranjang, checkout, ongkos kirim, pembayaran, status pesanan, integrasi pihak ketiga, serta pengelolaan data melalui panel admin. Kompleksitas tersebut membuat kegiatan pemeliharaan, penanganan issue, debugging, pengujian pada server development, dan penyesuaian sebelum production menjadi bagian penting dari alur kerja pengembangan.
+
+\tempatmagang\ merupakan tempat kegiatan magang yang berkaitan dengan pengembangan dan pemeliharaan sistem e-commerce. Selama magang, pekerjaan diarahkan pada pemahaman laporan issue atau bug, pengecekan pada lingkungan development, pengujian hasil perbaikan, dan pemahaman alur penyesuaian sistem yang berkaitan dengan production. Sistem e-commerce perusahaan atau klien yang menjadi acuan pengalaman kerja tidak dibahas secara internal dalam laporan ini karena dapat memuat source code, endpoint, data transaksi, credential, konfigurasi server, dan informasi production yang bersifat rahasia.
+
+Sebagai pengganti objek pembahasan teknis yang aman secara akademik dan perusahaan, laporan ini menggunakan proyek mandiri \proyekstudi. Proyek tersebut diposisikan sebagai studi kasus penerapan pengalaman magang, bukan sebagai sistem resmi milik \tempatmagang. Hasil audit repository menunjukkan bahwa sistem studi kasus dibangun dengan frontend Vue 3, Vite, TypeScript, Tailwind CSS, Pinia, Vue Router, dan Axios. Backend menggunakan Laravel 13, Laravel Sanctum, Filament, integrasi pengiriman atau ongkos kirim, serta integrasi pembayaran Xendit. Temuan tersebut menjadi dasar penulisan laporan agar pembahasan mengikuti kondisi aktual repository dan tidak mengarang stack.
+
+Topik magang diarahkan pada implementasi sistem e-commerce \proyekstudi\ sebagai studi kasus penerapan pengalaman magang di \tempatmagang. Kegiatan ini relevan dengan bidang Informatika karena melibatkan analisis kebutuhan sistem, perancangan alur data, perancangan antarmuka, implementasi frontend dan backend, pengelolaan \textit{state}, komunikasi API, autentikasi, integrasi ekspedisi, integrasi pembayaran, pengujian fungsional, dan dokumentasi. Teknologi Vue, Vite, Tailwind CSS, Pinia, Laravel, Filament, dan Xendit dijadikan landasan teknis karena ditemukan pada repository aktual \cite{vue2026docs,vite2026docs,tailwind2026docs,pinia2026docs,laravel2026docs,filament2026docs,xendit2026docs}.
+
+Panduan ITDA mengatur bahwa laporan Magang harus menggunakan struktur yang berbeda dari laporan Kerja Praktik. Laporan Magang menggunakan BAB I Pendahuluan, BAB II Pelaksanaan, BAB III Hasil dan Pembahasan, serta BAB IV Penutup \cite{itda2024panduan}. Oleh karena itu, laporan ini tidak memakai struktur KP yang memisahkan profil perusahaan, landasan teori, perancangan, dan implementasi menjadi bab tersendiri.
+
+\section{Tujuan}
+
+Tujuan kegiatan magang ini dibagi menjadi tujuan umum dan tujuan khusus.
+
+\subsection{Tujuan Umum}
+
+Tujuan umum kegiatan magang adalah mendokumentasikan pelaksanaan magang di \tempatmagang\ dan menerapkan pengalaman pengembangan serta pemeliharaan sistem e-commerce ke dalam proyek studi kasus \proyekstudi, serta menghubungkan praktik pengembangan perangkat lunak dengan kompetensi bidang Informatika.
+
+\subsection{Tujuan Khusus}
+
+Tujuan khusus kegiatan magang adalah sebagai berikut:
+
+\begin{enumerate}
+  \item Memahami alur kerja penanganan issue dan bug pada sistem e-commerce di lingkungan magang.
+  \item Memahami perbedaan penggunaan server development dan production dalam proses pengembangan.
+  \item Mengidentifikasi kebutuhan sistem informasi e-commerce produk optik berdasarkan struktur aplikasi studi kasus yang tersedia pada repository.
+  \item Menjelaskan teknologi frontend dan backend yang digunakan dalam sistem.
+  \item Mendeskripsikan rancangan alur sistem, alur data, antarmuka, dan struktur data.
+  \item Menjelaskan implementasi fitur utama seperti katalog produk, detail produk, keranjang, checkout, pesanan, autentikasi, profil pelanggan, wishlist, komparasi produk, pengaduan, ulasan, dan panel admin.
+  \item Menyusun skenario pengujian \textit{black-box} untuk mengevaluasi kesesuaian fungsi sistem.
+\end{enumerate}
+
+\section{Manfaat}
+
+\subsection{Manfaat bagi Tempat Magang}
+
+Kegiatan magang ini dapat membantu \tempatmagang\ melalui kontribusi pada aktivitas pengembangan, pemeliharaan, debugging, dan pengujian sistem e-commerce tanpa membuka data rahasia perusahaan atau klien. Dokumentasi studi kasus \proyekstudi\ dapat menjadi bentuk penerapan pembelajaran yang aman untuk kebutuhan akademik.
+
+\subsection{Manfaat bagi Perguruan Tinggi}
+
+Kegiatan magang ini dapat menjadi bukti keterkaitan antara pembelajaran akademik dan penerapan teknologi informasi pada lingkungan kerja. Laporan ini juga dapat menjadi referensi akademik untuk kegiatan magang bertema pengembangan sistem informasi berbasis web.
+
+\subsection{Manfaat bagi Mahasiswa}
+
+Kegiatan magang ini memberikan pengalaman dalam memahami alur penanganan issue, debugging, pengujian pada server development, pemahaman alur production, analisis repository, arsitektur frontend dan backend, integrasi API pihak ketiga, serta penyusunan dokumentasi teknis.
+
+\section{Waktu dan Tempat Magang}
+
+Kegiatan magang dilaksanakan pada:
+
+\begin{longtable}{p{0.32\textwidth}p{0.58\textwidth}}
+\toprule
+Uraian & Keterangan\\
+\midrule
+Tempat magang & \tempatmagang\\
+Lokasi & \lokasimagang\\
+Alamat & \alamatmagang\\
+Tanggal mulai & \placeholder{ISI TANGGAL MULAI MAGANG}\\
+Tanggal selesai & \placeholder{ISI TANGGAL SELESAI MAGANG}\\
+Divisi atau penempatan & \placeholder{ISI DIVISI ATAU PENEMPATAN}\\
+Jam kerja & \placeholder{ISI JAM KERJA MAGANG}\\
+Pembimbing lapangan & \placeholder{ISI NAMA PEMBIMBING LAPANGAN}\\
+\bottomrule
+\end{longtable}
+
+\section{Sistematika Laporan}
+
+Sistematika laporan ini disusun sebagai berikut:
+
+\begin{enumerate}
+  \item BAB I Pendahuluan berisi latar belakang, tujuan, manfaat, waktu dan tempat magang, serta sistematika laporan.
+  \item BAB II Pelaksanaan berisi profil \tempatmagang, lingkup kegiatan, uraian kegiatan magang, teknologi dan perangkat yang digunakan, serta jadwal kegiatan.
+  \item BAB III Hasil dan Pembahasan berisi penerapan pengalaman magang pada studi kasus \proyekstudi, analisis kebutuhan, perancangan sistem, perancangan antarmuka, implementasi, pengujian, kendala teknis, solusi, dan evaluasi hasil.
+  \item BAB IV Penutup berisi kesimpulan dan saran yang berkaitan dengan hasil kegiatan magang.
+\end{enumerate}
+
+\chapter{PELAKSANAAN}
+
+\section{Profil Tempat Kegiatan}
+
+\tempatmagang\ merupakan tempat kegiatan magang yang berlokasi di \lokasimagang. Lingkup pengalaman magang berkaitan dengan pengembangan dan pemeliharaan sistem e-commerce, termasuk penanganan issue, laporan bug, debugging, pengujian pada server development, dan pemahaman alur penyesuaian yang berkaitan dengan production. Data profil resmi perusahaan masih perlu dilengkapi berdasarkan sumber resmi agar tidak terjadi pengisian data yang tidak terverifikasi.
+
+\subsection{Sejarah Singkat}
+
+\placeholder{ISI SEJARAH RESMI PT. PANEMU SOLUSI INDUSTRI}
+
+\subsection{Visi}
+
+\placeholder{ISI VISI RESMI PT. PANEMU SOLUSI INDUSTRI}
+
+\subsection{Misi}
+
+\placeholder{ISI MISI RESMI PT. PANEMU SOLUSI INDUSTRI}
+
+\subsection{Struktur Organisasi}
+
+Struktur organisasi resmi \tempatmagang\ perlu dimasukkan setelah tersedia dari sumber perusahaan.
+
+\gambarplaceholder{struktur organisasi resmi PT. Panemu Solusi Industri}{Struktur organisasi PT. Panemu Solusi Industri}
+
+\subsection{Produk dan Layanan}
+
+Produk dan layanan resmi \tempatmagang\ perlu diisi berdasarkan data perusahaan. Dalam konteks kegiatan magang, pengalaman teknis diarahkan pada sistem e-commerce yang ditangani perusahaan. Dalam konteks laporan akademik, pembahasan teknis diarahkan pada proyek studi kasus \proyekstudi\ yang mendukung pengelolaan produk optik, katalog, detail produk, keranjang, checkout, pesanan, ulasan, pengaduan, ekspedisi, pembayaran, dan fitur pelanggan lain.
+
+\subsection{Logo dan Alamat}
+
+\gambarplaceholder{logo resmi PT. Panemu Solusi Industri}{Logo PT. Panemu Solusi Industri}
+
+Alamat tempat magang adalah \alamatmagang, \lokasimagang. Data alamat harus divalidasi menggunakan sumber resmi perusahaan sebelum laporan diserahkan.
+
+\section{Lingkup Kegiatan}
+
+Lingkup kegiatan magang difokuskan pada pengembangan dan pemeliharaan sistem e-commerce di lingkungan \tempatmagang. Kegiatan meliputi pemahaman laporan issue atau bug, pengecekan kondisi pada server development, debugging, penyesuaian fitur, pengujian hasil perbaikan, pemahaman alur production, serta dokumentasi teknis. Karena sistem perusahaan atau klien tidak dapat dibahas secara internal, pembahasan teknis laporan menggunakan proyek studi kasus \proyekstudi.
+
+Ruang lingkup sistem yang dijelaskan mencakup:
+
+\begin{enumerate}
+  \item Studi kasus frontend pelanggan untuk katalog produk, detail produk, keranjang, checkout, riwayat pesanan, profil, wishlist, komparasi produk, pelacakan, dan pengaduan.
+  \item Backend API untuk autentikasi, produk, kategori, keranjang, pesanan, pembayaran, pengiriman, ulasan, dan data pendukung.
+  \item Panel admin berbasis Filament untuk pengelolaan data operasional.
+  \item Integrasi layanan ekspedisi atau ongkos kirim serta pembayaran menggunakan Xendit sesuai dependensi backend dan cakupan studi kasus.
+\end{enumerate}
+
+\section{Uraian Kegiatan Magang}
+
+Uraian kegiatan magang disusun berdasarkan tahapan pekerjaan yang wajar untuk pengembangan dan dokumentasi sistem informasi berbasis web. Tanggal detail kegiatan masih perlu disesuaikan dengan agenda magang asli.
+
+\begin{longtable}{>{\centering\arraybackslash}p{0.08\textwidth}p{0.22\textwidth}p{0.56\textwidth}}
+\caption{Uraian kegiatan magang}\\
+\toprule
+No & Tahap & Uraian Kegiatan\\
+\midrule
+1 & Pengenalan & Mengenali profil tempat magang, aturan kerja, alur komunikasi issue, dan ruang lingkup pekerjaan e-commerce.\\
+2 & Pemahaman issue & Memahami laporan bug atau issue, dampak terhadap pengguna, dan prioritas perbaikan.\\
+3 & Development & Mengecek kode atau konfigurasi pada server development, melakukan debugging, dan menyiapkan penyesuaian.\\
+4 & Pengujian & Menguji hasil perbaikan dan memahami batasan sebelum perubahan berkaitan dengan production.\\
+5 & Studi kasus & Menerapkan pembelajaran ke proyek \proyekstudi\ melalui audit repository, perancangan, dan implementasi fitur e-commerce.\\
+6 & Integrasi & Membahas integrasi ekspedisi atau ongkos kirim dan pembayaran seperti RajaOngkir dan Xendit jika tersedia pada studi kasus.\\
+7 & Dokumentasi & Menyusun laporan Magang, daftar pustaka, checklist placeholder, audit repository, dan dokumentasi batasan kerahasiaan.\\
+\bottomrule
+\end{longtable}
+
+\section{Teknologi dan Perangkat yang Digunakan}
+
+Teknologi yang digunakan ditentukan berdasarkan repository, bukan berdasarkan asumsi. Frontend menggunakan Vue 3 sebagai kerangka kerja antarmuka, Vite sebagai perangkat build, TypeScript untuk pengetikan statis, Tailwind CSS untuk utilitas tampilan, Pinia untuk pengelolaan \textit{state}, Vue Router untuk navigasi, dan Axios untuk komunikasi HTTP \cite{vue2026docs,vite2026docs,tailwind2026docs,pinia2026docs}.
+
+Backend menggunakan Laravel 13 sebagai kerangka kerja aplikasi, Laravel Sanctum untuk autentikasi API, Filament untuk panel admin, Xendit PHP SDK untuk integrasi pembayaran, Resend Laravel untuk layanan surel, dan Symfony HTML Sanitizer untuk sanitasi konten \cite{laravel2026docs,filament2026docs,xendit2026docs}. Integrasi ekspedisi atau perhitungan ongkos kirim pada studi kasus dijelaskan sebagai pola penggunaan API ekspedisi seperti RajaOngkir jika fitur tersedia pada repository \cite{rajaongkir2026docs}.
+
+\begin{longtable}{p{0.28\textwidth}p{0.22\textwidth}p{0.40\textwidth}}
+\caption{Teknologi dan perangkat yang digunakan}\\
+\toprule
+Komponen & Teknologi & Keterangan\\
+\midrule
+Frontend & Vue 3 & Kerangka kerja antarmuka pelanggan.\\
+Build tool & Vite & Perangkat pengembangan dan bundling frontend.\\
+Bahasa frontend & TypeScript & Pengetikan statis pada kode frontend.\\
+Styling & Tailwind CSS & Utilitas CSS untuk tampilan responsif.\\
+State management & Pinia & Pengelolaan data auth, keranjang, wishlist, komparasi, dan data terkait.\\
+Routing & Vue Router & Navigasi halaman frontend.\\
+HTTP client & Axios & Komunikasi frontend dengan API backend.\\
+Backend & Laravel 13 & Kerangka kerja API dan logika bisnis.\\
+Autentikasi & Laravel Sanctum & Autentikasi berbasis token atau session sesuai konfigurasi API.\\
+Admin panel & Filament & Panel pengelolaan data admin.\\
+Pembayaran & Xendit SDK & Integrasi layanan pembayaran.\\
+Ekspedisi & RajaOngkir atau modul shipping & Perhitungan ongkos kirim dan pilihan kurir jika tersedia pada studi kasus.\\
+Database & \placeholder{ISI DATABASE AKTUAL} & Perlu validasi dari konfigurasi environment.\\
+Editor & \placeholder{ISI EDITOR ATAU IDE} & Perangkat kerja mahasiswa.\\
+\bottomrule
+\end{longtable}
+
+\section{Jadwal Kegiatan Magang}
+
+Jadwal kegiatan mingguan harus disesuaikan dengan tanggal magang asli. Tabel berikut disusun sebagai kerangka awal.
+
+\begin{longtable}{>{\centering\arraybackslash}p{0.10\textwidth}p{0.25\textwidth}p{0.50\textwidth}}
+\caption{Jadwal kegiatan magang}\\
+\toprule
+Minggu & Periode & Kegiatan\\
+\midrule
+1 & \placeholder{ISI TANGGAL} & Pengenalan tempat magang, pembimbing, aturan kerja, dan ruang lingkup proyek.\\
+2 & \placeholder{ISI TANGGAL} & Audit repository frontend dan backend.\\
+3 & \placeholder{ISI TANGGAL} & Analisis kebutuhan pengguna dan kebutuhan sistem.\\
+4 & \placeholder{ISI TANGGAL} & Perancangan alur sistem, DFD, dan struktur data.\\
+5 & \placeholder{ISI TANGGAL} & Perancangan antarmuka pelanggan dan admin.\\
+6 & \placeholder{ISI TANGGAL} & Pembahasan implementasi fitur frontend.\\
+7 & \placeholder{ISI TANGGAL} & Pembahasan implementasi API backend dan panel admin.\\
+8 & \placeholder{ISI TANGGAL} & Penyusunan pengujian, dokumentasi, revisi, dan finalisasi laporan.\\
+\bottomrule
+\end{longtable}
+
+\chapter{HASIL DAN PEMBAHASAN}
+
+\section{Analisis Kebutuhan Sistem}
+
+Analisis kebutuhan sistem dilakukan berdasarkan struktur repository dan fitur yang ditemukan. Pengguna sistem dapat dikelompokkan menjadi pelanggan, admin, dan sistem eksternal. Pelanggan membutuhkan akses untuk melihat produk, melihat detail produk, mengelola keranjang, melakukan checkout, memantau pesanan, mengelola profil, menyimpan wishlist, membandingkan produk, memberikan ulasan, dan membuat pengaduan. Admin membutuhkan fasilitas untuk mengelola produk, kategori, pesanan, pengguna, banner, pengaturan, dan data operasional melalui panel admin.
+
+\subsection{Kebutuhan Fungsional}
+
+\begin{longtable}{>{\centering\arraybackslash}p{0.08\textwidth}p{0.26\textwidth}p{0.54\textwidth}}
+\caption{Kebutuhan fungsional sistem}\\
+\toprule
+No & Kebutuhan & Keterangan\\
+\midrule
+1 & Katalog produk & Sistem menampilkan daftar produk optik kepada pelanggan.\\
+2 & Detail produk & Sistem menampilkan informasi detail produk, gambar, harga, dan informasi pendukung.\\
+3 & Keranjang & Sistem menyimpan produk yang dipilih pelanggan sebelum checkout.\\
+4 & Checkout & Sistem memproses data pesanan dan menghubungkannya dengan layanan pembayaran.\\
+5 & Pesanan & Sistem menampilkan status dan detail pesanan pelanggan.\\
+6 & Autentikasi & Sistem menyediakan registrasi, login, dan akses profil pelanggan.\\
+7 & Wishlist & Sistem menyimpan produk yang diminati pelanggan.\\
+8 & Komparasi produk & Sistem membantu pelanggan membandingkan beberapa produk.\\
+9 & Pengaduan & Sistem menyediakan kanal pengaduan pelanggan.\\
+10 & Ulasan & Sistem menyediakan fitur ulasan produk atau layanan.\\
+11 & Admin & Sistem menyediakan panel admin untuk pengelolaan data.\\
+\bottomrule
+\end{longtable}
+
+\subsection{Kebutuhan Nonfungsional}
+
+\begin{enumerate}
+  \item Sistem harus memiliki tampilan responsif agar dapat digunakan pada perangkat desktop dan mobile.
+  \item Sistem harus menjaga validitas data yang dikirim dari frontend ke backend.
+  \item Sistem harus mendukung pengelolaan autentikasi pelanggan secara aman.
+  \item Sistem harus menyediakan struktur kode yang mudah dipelihara melalui pemisahan repository API, store, view, controller, model, dan resource admin.
+  \item Sistem harus memiliki skenario pengujian untuk memastikan fitur utama berjalan sesuai kebutuhan.
+\end{enumerate}
+
+\section{Perancangan Sistem}
+
+Perancangan sistem menggambarkan hubungan antara frontend, backend, database, panel admin, dan layanan pembayaran. Frontend Vue menangani interaksi pelanggan, sedangkan backend Laravel menyediakan API dan logika bisnis. Panel admin Filament digunakan untuk mengelola data operasional. Integrasi Xendit digunakan untuk mendukung alur pembayaran.
+
+\gambarplaceholder{arsitektur sistem Vue, Laravel, Filament, database, dan Xendit}{Arsitektur sistem e-commerce Optik Medio}
+
+\subsection{Flowchart Pelanggan}
+
+Alur pelanggan dimulai dari membuka halaman katalog, memilih produk, melihat detail produk, menambahkan produk ke keranjang, melakukan checkout, melakukan pembayaran, dan memantau status pesanan.
+
+\gambarplaceholder{flowchart pelanggan}{Flowchart alur pelanggan}
+
+\subsection{Flowchart Admin}
+
+Alur admin dimulai dari login ke panel admin, mengelola produk dan kategori, memeriksa pesanan, memperbarui status transaksi, mengelola pelanggan, dan melihat ringkasan data operasional.
+
+\gambarplaceholder{flowchart admin}{Flowchart alur admin}
+
+\subsection{Data Flow Diagram}
+
+DFD level 0 menggambarkan sistem sebagai satu proses utama yang menerima input dari pelanggan dan admin, kemudian menghasilkan data produk, pesanan, pembayaran, ulasan, dan pengaduan. DFD level 1 dapat merinci proses katalog produk, autentikasi, keranjang, checkout, pembayaran, dan pengelolaan admin.
+
+\gambarplaceholder{DFD level 0 sistem e-commerce Optik Medio}{DFD level 0}
+\gambarplaceholder{DFD level 1 katalog, keranjang, checkout, pembayaran, dan admin}{DFD level 1}
+
+\subsection{Struktur Data}
+
+Struktur data perlu divalidasi dari migration Laravel. Berdasarkan cakupan fitur, data utama yang relevan meliputi pengguna, produk, kategori, keranjang, pesanan, detail pesanan, pembayaran, pengiriman, ulasan, pengaduan, banner, dan pengaturan aplikasi.
+
+\gambarplaceholder{ERD atau struktur data sistem Optik Medio}{ERD atau struktur data}
+
+\section{Perancangan Antarmuka}
+
+Perancangan antarmuka diarahkan agar pelanggan dapat mencari produk, memahami informasi produk, menyimpan produk ke keranjang atau wishlist, melakukan checkout, dan memantau pesanan. Komponen layout seperti navigasi atas, tab bawah, footer, hero halaman, banner promo, dan toast mendukung pengalaman penggunaan yang konsisten.
+
+\subsection{Halaman Katalog Produk}
+
+Halaman katalog menampilkan daftar produk optik, kategori, filter, pencarian, dan aksi menuju detail produk. Repository menunjukkan adanya `Product.vue`, `ProductRepository.ts`, dan komponen layout yang mendukung tampilan daftar produk.
+
+\gambarplaceholder{rancangan atau screenshot halaman katalog produk}{Rancangan halaman katalog produk}
+
+\subsection{Halaman Detail Produk}
+
+Halaman detail produk menampilkan informasi produk secara lebih lengkap, termasuk nama, harga, gambar, deskripsi, pilihan terkait, dan aksi keranjang atau wishlist.
+
+\gambarplaceholder{rancangan atau screenshot halaman detail produk}{Rancangan halaman detail produk}
+
+\subsection{Halaman Keranjang}
+
+Halaman keranjang digunakan untuk meninjau produk yang dipilih, jumlah produk, subtotal, dan aksi menuju checkout. Repository menunjukkan adanya `cartStore.ts` dan `CartView.vue` sebagai bagian dari alur ini.
+
+\gambarplaceholder{rancangan atau screenshot halaman keranjang}{Rancangan halaman keranjang}
+
+\subsection{Halaman Checkout}
+
+Halaman checkout digunakan untuk memasukkan atau meninjau data transaksi sebelum pesanan diproses. Repository menunjukkan adanya `CheckoutView.vue`, `WaitingPayment.vue`, dan integrasi backend Xendit untuk pembayaran.
+
+\gambarplaceholder{rancangan atau screenshot halaman checkout}{Rancangan halaman checkout}
+
+\subsection{Panel Admin}
+
+Panel admin berbasis Filament digunakan untuk mengelola data operasional seperti produk, kategori, pesanan, pengguna, dan pengaturan aplikasi.
+
+\gambarplaceholder{screenshot dashboard admin Filament}{Panel admin Filament}
+
+\section{Implementasi Sistem}
+
+Implementasi sistem dibagi menjadi frontend, backend, dan panel admin. Pembahasan ini didasarkan pada audit repository.
+
+\subsection{Implementasi Frontend}
+
+Frontend berada pada direktori `medio-fe`. Struktur frontend menggunakan Vue 3, Vite, dan TypeScript. State aplikasi dikelola dengan Pinia, misalnya `authStore.ts`, `cartStore.ts`, `compareStore.ts`, `recentlyViewedStore.ts`, dan `wishlistStore.ts`. Komunikasi API dikelola melalui repository seperti `ProductRepository.ts`, `OrderRepository.ts`, `AuthRepository.ts`, `ReviewRepository.ts`, `ShippingRepository.ts`, dan repository pendukung lain.
+
+Halaman utama yang terkait dengan e-commerce meliputi `Product.vue`, `ProductDetail.vue`, `CartView.vue`, `CheckoutView.vue`, `WaitingPayment.vue`, `OrderDetail.vue`, `Profile.vue`, `ProductCompare.vue`, `Tracking.vue`, `Complaint.vue`, dan `VirtualTryOn.vue`. Struktur ini menunjukkan bahwa frontend tidak hanya menampilkan katalog, tetapi juga mendukung transaksi, layanan pelanggan, dan fitur interaktif.
+
+\subsection{Implementasi Backend}
+
+Backend berada pada direktori `medio-be`. Manifest composer menunjukkan penggunaan Laravel 13, Laravel Sanctum, Filament, Xendit PHP SDK, Resend Laravel, dan Symfony HTML Sanitizer. Controller API yang relevan meliputi `ProductController.php`, `OrderController.php`, `CartController.php`, `AuthController.php`, `ShippingController.php`, `ReviewController.php`, `OpticalController.php`, dan controller pendukung lain.
+
+Backend berfungsi sebagai pengelola data produk, autentikasi, keranjang, pesanan, pembayaran, pengiriman, ulasan, pengaduan, dan konfigurasi aplikasi. Laravel Sanctum digunakan sebagai basis autentikasi API, sedangkan Xendit digunakan untuk integrasi pembayaran. Modul shipping digunakan untuk mendukung alur pengiriman dan perhitungan ongkos kirim. Filament digunakan untuk membangun panel admin.
+
+\subsection{Implementasi Panel Admin}
+
+Panel admin berbasis Filament membantu pengelolaan data operasional. Resource yang ditemukan pada repository mencakup pengelolaan kategori, produk, pesanan, pengguna, pengaturan aplikasi, data layanan, dan widget ringkasan seperti `StatsOverview.php` dan `TopProductsWidget.php`. Panel ini mendukung admin dalam memantau dan mengelola operasional e-commerce.
+
+\section{Integrasi Ekspedisi dan Pembayaran}
+
+Integrasi ekspedisi dan pembayaran merupakan bagian penting dalam sistem e-commerce. Pada studi kasus \proyekstudi, alur ekspedisi dibahas melalui proses pemilihan alamat, pemilihan kurir, perhitungan ongkos kirim, dan penyimpanan informasi pengiriman pada pesanan. Jika integrasi RajaOngkir tersedia pada repository, API key harus disimpan melalui environment variable dan tidak boleh ditulis di laporan.
+
+\gambarplaceholder{alur integrasi ekspedisi atau RajaOngkir pada studi kasus Optik Medio}{Alur integrasi ekspedisi}
+
+Integrasi pembayaran dibahas melalui proses pembuatan pesanan, pembuatan invoice atau payment request, pengalihan pelanggan ke halaman pembayaran, penerimaan respons pembayaran, dan pembaruan status pesanan. Jika integrasi Xendit digunakan pada repository, secret key, webhook secret, token, payload transaksi asli, dan data pelanggan tidak boleh ditampilkan pada laporan.
+
+\gambarplaceholder{alur integrasi pembayaran Xendit pada studi kasus Optik Medio}{Alur integrasi pembayaran Xendit}
+
+\section{Pengujian Sistem}
+
+Pengujian sistem disusun menggunakan pendekatan \textit{black-box}. Pengujian berfokus pada input, proses, dan output yang terlihat oleh pengguna tanpa membahas struktur internal kode.
+
+\begin{longtable}{>{\centering\arraybackslash}p{0.06\textwidth}p{0.18\textwidth}p{0.19\textwidth}p{0.22\textwidth}p{0.18\textwidth}p{0.12\textwidth}p{0.10\textwidth}}
+\caption{Skenario pengujian black-box}\\
+\toprule
+No & Fitur & Skenario & Langkah Pengujian & Hasil yang Diharapkan & Hasil Aktual & Status\\
+\midrule
+1 & Katalog produk & Menampilkan produk & Buka halaman katalog produk. & Daftar produk tampil. & \placeholder{ISI HASIL AKTUAL} & \placeholder{Lulus/Tidak}\\
+2 & Detail produk & Melihat detail produk & Pilih salah satu produk dari katalog. & Halaman detail produk tampil. & \placeholder{ISI HASIL AKTUAL} & \placeholder{Lulus/Tidak}\\
+3 & Keranjang & Menambah produk & Klik aksi tambah ke keranjang. & Produk masuk ke keranjang. & \placeholder{ISI HASIL AKTUAL} & \placeholder{Lulus/Tidak}\\
+4 & Checkout & Membuat pesanan & Isi data checkout dan kirim pesanan. & Pesanan dibuat dan diproses. & \placeholder{ISI HASIL AKTUAL} & \placeholder{Lulus/Tidak}\\
+5 & Pembayaran & Menunggu pembayaran & Lanjutkan dari checkout ke halaman pembayaran. & Status menunggu pembayaran tampil. & \placeholder{ISI HASIL AKTUAL} & \placeholder{Lulus/Tidak}\\
+6 & Autentikasi & Login pelanggan & Masukkan kredensial valid. & Pelanggan berhasil masuk. & \placeholder{ISI HASIL AKTUAL} & \placeholder{Lulus/Tidak}\\
+7 & Wishlist & Menyimpan produk & Tambahkan produk ke wishlist. & Produk tersimpan pada wishlist. & \placeholder{ISI HASIL AKTUAL} & \placeholder{Lulus/Tidak}\\
+8 & Komparasi & Membandingkan produk & Pilih beberapa produk untuk dibandingkan. & Halaman komparasi menampilkan produk terpilih. & \placeholder{ISI HASIL AKTUAL} & \placeholder{Lulus/Tidak}\\
+9 & Pengaduan & Membuat pengaduan & Isi formulir pengaduan. & Pengaduan tersimpan atau terkirim. & \placeholder{ISI HASIL AKTUAL} & \placeholder{Lulus/Tidak}\\
+10 & Admin & Mengelola produk & Login admin dan ubah data produk. & Data produk berhasil dikelola. & \placeholder{ISI HASIL AKTUAL} & \placeholder{Lulus/Tidak}\\
+\bottomrule
+\end{longtable}
+
+\section{Kendala Teknis dan Solusi}
+
+Kendala teknis tidak boleh dibuat tanpa bukti. Tabel berikut disiapkan sebagai tempat pencatatan kendala setelah proses validasi dan pengujian aktual dilakukan.
+
+\begin{longtable}{>{\centering\arraybackslash}p{0.08\textwidth}p{0.30\textwidth}p{0.30\textwidth}p{0.22\textwidth}}
+\caption{Kendala teknis dan solusi}\\
+\toprule
+No & Kendala & Solusi & Status\\
+\midrule
+1 & \placeholder{ISI KENDALA TEKNIS AKTUAL} & \placeholder{ISI SOLUSI YANG DILAKUKAN} & \placeholder{ISI STATUS}\\
+2 & \placeholder{ISI KENDALA TEKNIS AKTUAL} & \placeholder{ISI SOLUSI YANG DILAKUKAN} & \placeholder{ISI STATUS}\\
+\bottomrule
+\end{longtable}
+
+\section{Evaluasi Hasil}
+
+Hasil kegiatan magang menunjukkan bahwa pengalaman di \tempatmagang\ dapat diterapkan ke proyek studi kasus \proyekstudi\ tanpa membuka data internal perusahaan atau klien. Repository \proyekstudi\ telah memiliki struktur aplikasi frontend dan backend yang dapat dijelaskan sebagai sistem informasi e-commerce produk optik. Kualitas hasil terlihat dari pemisahan tanggung jawab antara view, store, repository API, controller backend, dan panel admin. Kuantitas hasil dapat dilihat dari banyaknya modul fitur seperti katalog, detail produk, keranjang, checkout, pembayaran, pesanan, profil, wishlist, komparasi, pelacakan, pengaduan, ulasan, pengiriman, dan admin.
+
+Fitur yang dapat dikategorikan selesai perlu divalidasi melalui pengujian langsung. Fitur yang belum selesai atau masih memerlukan perbaikan juga harus dicatat berdasarkan hasil pengujian aktual. Dampak bagi tempat magang adalah tersedianya sistem dan dokumentasi yang dapat membantu proses evaluasi serta pengembangan lanjutan.
+
+\chapter{PENUTUP}
+
+\section{Kesimpulan}
+
+Berdasarkan kegiatan magang dan audit repository, kesimpulan yang diperoleh adalah sebagai berikut:
+
+\begin{enumerate}
+  \item Magang di \tempatmagang\ memberi pengalaman pada pengembangan dan pemeliharaan sistem e-commerce, terutama dalam memahami issue, bug, debugging, pengujian, dan alur development sampai production.
+  \item Proyek \proyekstudi\ dapat digunakan sebagai studi kasus akademik untuk menerapkan pengalaman magang tanpa membuka source code, data pelanggan, credential, endpoint, atau informasi production milik perusahaan atau klien.
+  \item Repository studi kasus menunjukkan pemisahan yang jelas antara frontend pelanggan, API backend, dan panel admin berbasis Filament.
+  \item Fitur utama yang dapat dibahas meliputi katalog produk, detail produk, keranjang, checkout, ekspedisi, pembayaran, pesanan, profil, wishlist, komparasi produk, pengaduan, ulasan, dan panel admin.
+  \item Integrasi teknologi seperti Pinia, Vue Router, Axios, Laravel Sanctum, Filament, RajaOngkir jika tersedia, dan Xendit mendukung kebutuhan sistem e-commerce berbasis web.
+  \item Laporan masih memerlukan pelengkapan data resmi, gambar, hasil pengujian aktual, dan validasi pembimbing sebelum dapat diserahkan sebagai dokumen final.
+\end{enumerate}
+
+\section{Saran}
+
+Saran yang dapat diberikan berdasarkan pembahasan adalah sebagai berikut:
+
+\begin{enumerate}
+  \item Data profil perusahaan, tanggal magang, pembimbing, dan struktur organisasi perlu dilengkapi dari sumber resmi \tempatmagang.
+  \item Diagram sistem, DFD, ERD, dan screenshot antarmuka perlu dibuat atau dimasukkan agar pembahasan BAB III lebih kuat.
+  \item Pengujian \textit{black-box} perlu dijalankan pada aplikasi aktual untuk mengisi hasil aktual dan status pengujian.
+  \item Dokumentasi API, alur ekspedisi, dan alur pembayaran perlu diperinci agar integrasi frontend, backend, RajaOngkir jika tersedia, dan Xendit mudah dipahami tanpa menampilkan secret key atau data transaksi asli.
+  \item Judul dan subjudul teknologi perlu divalidasi dengan pembimbing agar selaras dengan konteks magang di \tempatmagang\ dan stack repository aktual, yaitu Vue, Laravel, Filament, modul shipping, dan Xendit.
+\end{enumerate}
+
+\clearpage
+\bibliographystyle{ieeetr}
+\bibliography{references}
+
+\appendix
+\chapter{LAMPIRAN}
+
+\section*{Lampiran A. Bukti Administrasi Magang}
+\addcontentsline{toc}{section}{Lampiran A. Bukti Administrasi Magang}
+
+\placeholder{TANDA LAMPIRAN: surat permohonan atau penerimaan magang}
+
+\section*{Lampiran B. Agenda Kegiatan Magang}
+\addcontentsline{toc}{section}{Lampiran B. Agenda Kegiatan Magang}
+
+\placeholder{TANDA LAMPIRAN: agenda kegiatan magang asli}
+
+\section*{Lampiran C. Screenshot Sistem}
+\addcontentsline{toc}{section}{Lampiran C. Screenshot Sistem}
+
+\placeholder{TANDA LAMPIRAN: screenshot halaman katalog, detail produk, keranjang, checkout, pesanan, profil, dan dashboard admin}
+
+\section*{Lampiran D. Hasil Pengujian}
+\addcontentsline{toc}{section}{Lampiran D. Hasil Pengujian}
+
+\placeholder{TANDA LAMPIRAN: bukti hasil pengujian aplikasi}
+
+\end{document}

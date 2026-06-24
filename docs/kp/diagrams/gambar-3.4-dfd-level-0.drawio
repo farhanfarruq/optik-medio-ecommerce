@@ -1,0 +1,24 @@
+<mxfile host="app.diagrams.net" modified="2026-06-23T00:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="gambar-3-4" name="Gambar 3.4 DFD Level 0">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="Gambar 3.4 DFD Level 0 sistem Optik Medio" style="text;html=1;strokeColor=none;fillColor=none;fontSize=20;fontStyle=1" vertex="1" parent="1"><mxGeometry x="310" y="40" width="560" height="40" as="geometry"/></mxCell>
+        <mxCell id="system" value="0&#xa;Sistem E-Commerce&#xa;Optik Medio" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=16;fontStyle=1" vertex="1" parent="1"><mxGeometry x="455" y="270" width="250" height="150" as="geometry"/></mxCell>
+        <mxCell id="customer" value="Pelanggan" style="whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14" vertex="1" parent="1"><mxGeometry x="90" y="160" width="140" height="60" as="geometry"/></mxCell>
+        <mxCell id="admin" value="Admin" style="whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14" vertex="1" parent="1"><mxGeometry x="90" y="500" width="140" height="60" as="geometry"/></mxCell>
+        <mxCell id="xendit" value="Xendit" style="whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14" vertex="1" parent="1"><mxGeometry x="910" y="160" width="140" height="60" as="geometry"/></mxCell>
+        <mxCell id="raja" value="RajaOngkir" style="whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14" vertex="1" parent="1"><mxGeometry x="910" y="500" width="140" height="60" as="geometry"/></mxCell>
+        <mxCell id="e1" value="data akun, produk, checkout, pembayaran" style="endArrow=block;html=1;rounded=0;fontSize=12" edge="1" parent="1" source="customer" target="system"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" value="katalog, invoice, status pesanan" style="endArrow=block;html=1;rounded=0;fontSize=12" edge="1" parent="1" source="system" target="customer"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" value="data produk, pesanan, pengiriman" style="endArrow=block;html=1;rounded=0;fontSize=12" edge="1" parent="1" source="admin" target="system"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" value="laporan dan status operasional" style="endArrow=block;html=1;rounded=0;fontSize=12" edge="1" parent="1" source="system" target="admin"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5" value="permintaan invoice" style="endArrow=block;html=1;rounded=0;fontSize=12" edge="1" parent="1" source="system" target="xendit"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6" value="checkout URL dan webhook pembayaran" style="endArrow=block;html=1;rounded=0;fontSize=12" edge="1" parent="1" source="xendit" target="system"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e7" value="tujuan, berat, kurir" style="endArrow=block;html=1;rounded=0;fontSize=12" edge="1" parent="1" source="system" target="raja"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e8" value="layanan dan ongkir" style="endArrow=block;html=1;rounded=0;fontSize=12" edge="1" parent="1" source="raja" target="system"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

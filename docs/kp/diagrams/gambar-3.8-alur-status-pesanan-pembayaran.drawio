@@ -1,0 +1,35 @@
+<mxfile host="app.diagrams.net" modified="2026-06-23T00:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="gambar-3-8" name="Gambar 3.8 Status Pesanan Pembayaran">
+    <mxGraphModel dx="1300" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="Gambar 3.8 Alur status pesanan dan pembayaran" style="text;html=1;strokeColor=none;fillColor=none;fontSize=20;fontStyle=1" vertex="1" parent="1"><mxGeometry x="290" y="30" width="600" height="40" as="geometry"/></mxCell>
+        <mxCell id="lane-pay" value="Status Pembayaran" style="swimlane;html=1;startSize=30;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="1"><mxGeometry x="40" y="120" width="1080" height="190" as="geometry"/></mxCell>
+        <mxCell id="lane-order" value="Status Pesanan" style="swimlane;html=1;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="1"><mxGeometry x="40" y="360" width="1080" height="210" as="geometry"/></mxCell>
+        <mxCell id="pay1" value="Menunggu pembayaran" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="lane-pay"><mxGeometry x="70" y="70" width="150" height="50" as="geometry"/></mxCell>
+        <mxCell id="pay2" value="Invoice Xendit dibuat" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="lane-pay"><mxGeometry x="280" y="70" width="150" height="50" as="geometry"/></mxCell>
+        <mxCell id="pay3" value="Webhook diterima" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="lane-pay"><mxGeometry x="490" y="70" width="150" height="50" as="geometry"/></mxCell>
+        <mxCell id="pay4" value="Pembayaran lunas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="lane-pay"><mxGeometry x="700" y="45" width="150" height="50" as="geometry"/></mxCell>
+        <mxCell id="pay5" value="Gagal atau expired" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450" vertex="1" parent="lane-pay"><mxGeometry x="700" y="115" width="150" height="50" as="geometry"/></mxCell>
+        <mxCell id="ord1" value="Order dibuat" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="lane-order"><mxGeometry x="70" y="80" width="130" height="50" as="geometry"/></mxCell>
+        <mxCell id="ord2" value="Diproses" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="lane-order"><mxGeometry x="280" y="80" width="130" height="50" as="geometry"/></mxCell>
+        <mxCell id="ord3" value="Dikirim" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="lane-order"><mxGeometry x="490" y="80" width="130" height="50" as="geometry"/></mxCell>
+        <mxCell id="ord4" value="Diterima" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="lane-order"><mxGeometry x="700" y="80" width="130" height="50" as="geometry"/></mxCell>
+        <mxCell id="ord5" value="Selesai" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="lane-order"><mxGeometry x="910" y="80" width="130" height="50" as="geometry"/></mxCell>
+        <mxCell id="ord6" value="Dibatalkan" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450" vertex="1" parent="lane-order"><mxGeometry x="490" y="145" width="130" height="45" as="geometry"/></mxCell>
+        <mxCell id="e1" value="" style="endArrow=block;html=1;rounded=0" edge="1" parent="lane-pay" source="pay1" target="pay2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" value="pelanggan bayar" style="endArrow=block;html=1;rounded=0" edge="1" parent="lane-pay" source="pay2" target="pay3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" value="sukses" style="endArrow=block;html=1;rounded=0" edge="1" parent="lane-pay" source="pay3" target="pay4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" value="failed atau expired" style="endArrow=block;html=1;rounded=0" edge="1" parent="lane-pay" source="pay3" target="pay5"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5" value="" style="endArrow=block;html=1;rounded=0" edge="1" parent="lane-order" source="ord1" target="ord2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6" value="" style="endArrow=block;html=1;rounded=0" edge="1" parent="lane-order" source="ord2" target="ord3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e7" value="" style="endArrow=block;html=1;rounded=0" edge="1" parent="lane-order" source="ord3" target="ord4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e8" value="" style="endArrow=block;html=1;rounded=0" edge="1" parent="lane-order" source="ord4" target="ord5"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e9" value="jika gagal" style="endArrow=block;html=1;rounded=0" edge="1" parent="lane-order" source="ord1" target="ord6"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="sync1" value="lunas memicu proses pesanan" style="endArrow=block;html=1;rounded=0;dashed=1;fontSize=12" edge="1" parent="1" source="pay4" target="ord2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="sync2" value="gagal memicu batal atau bayar ulang" style="endArrow=block;html=1;rounded=0;dashed=1;fontSize=12" edge="1" parent="1" source="pay5" target="ord6"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

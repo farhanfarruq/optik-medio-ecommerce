@@ -29,25 +29,24 @@ use App\Http\Controllers\API\OpticalController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
-// ─── Public Endpoints ────────────────────────────────────────────────────────
+// ==========================================
+// 1. Health Check
+// ==========================================
 Route::get('/health', function () {
     try {
-        DB::connection()->getPdo();
-
-        return response()->json([
-            'status' => 'ok',
-            'time' => now()->toISOString(),
-            'app_env' => app()->environment(),
-            'database' => 'ok',
-        ]);
-    } catch (\Throwable $e) {
-        return response()->json([
-            'status' => 'error',
-            'time' => now()->toISOString(),
-            'app_env' => app()->environment(),
-            'database' => 'error',
-        ], 503);
+        DB::select('select 1');
+        $database = 'ok';
+    } catch (Throwable) {
+        $database = 'error';
     }
+
+    return response()->json([
+        'status' => 'ok',
+        'time' => now(),
+        'app_env' => app()->environment(),
+        'database' => $database,
+        'message' => 'Backend is running'
+    ]);
 });
 
 Route::get('/settings', [AppSettingController::class, 'index']);

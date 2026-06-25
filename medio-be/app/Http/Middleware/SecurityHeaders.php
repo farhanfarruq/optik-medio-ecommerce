@@ -37,7 +37,16 @@ class SecurityHeaders
 
         // Cross-Origin headers — proteksi tambahan terhadap Spectre-class attacks.
         $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin');
-        $response->headers->set('Cross-Origin-Resource-Policy', 'same-site');
+
+        $isPublicAsset = $request->is('storage/*')
+            || $request->is('images/*')
+            || $request->is('favicon*')
+            || $request->is('build/*');
+
+        $response->headers->set(
+            'Cross-Origin-Resource-Policy',
+            $isPublicAsset ? 'cross-origin' : 'same-site'
+        );
 
         // CSP hanya di production agar tidak memblokir resource local
         // (http://localhost, Filament admin dev, Vite HMR, dsb).
@@ -60,6 +69,17 @@ class SecurityHeaders
                 $frontendOrigin,
             ]);
 
+            $scriptSources = [
+                "'self'",
+                "'unsafe-inline'",
+            ];
+
+            // Filament/Livewire/Alpine evaluate admin UI expressions at runtime.
+            // Keep unsafe-eval scoped to the admin panel so API/frontend CSP stays tighter.
+            if ($request->is('admin') || $request->is('admin/*')) {
+                $scriptSources[] = "'unsafe-eval'";
+            }
+
             $response->headers->set(
                 'Content-Security-Policy',
                 implode('; ', [
@@ -71,14 +91,14 @@ class SecurityHeaders
                     "form-action 'self'",
                     "manifest-src 'self'",
                     "worker-src 'self' blob:",
-                    "img-src 'self' data: blob: https:",
+                    "img-src 'self' data: blob: https: http:",
                     "media-src 'self' data: blob:",
                     "font-src 'self' data: https://fonts.gstatic.com https://fonts.googleapis.com https://fonts.bunny.net",
                     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.bunny.net",
                     // FOLLOW-UP (Phase 6 — OBS-1 area): migrate ke nonce-based CSP
                     // dengan menghapus 'unsafe-inline'. Butuh rework template
                     // Filament + Vue inline scripts.
-                    "script-src 'self' 'unsafe-inline'",
+                    'script-src ' . implode(' ', $scriptSources),
                     'connect-src ' . implode(' ', $connectSources),
                     'upgrade-insecure-requests',
                 ])

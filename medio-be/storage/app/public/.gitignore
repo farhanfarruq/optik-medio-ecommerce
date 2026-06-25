@@ -1,2 +1,5 @@
 *
 !.gitignore
+!categories/
+!categories/seed/
+!categories/seed/*.png

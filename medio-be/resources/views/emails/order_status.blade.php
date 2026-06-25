@@ -55,6 +55,12 @@
                                         📦 Pesanan Anda Telah Diterima
                                     </p>
                                 </div>
+                            @elseif($eventType === 'completed')
+                                <div style="background: #f0fdf4; border: 1px solid #86efac; padding: 16px 20px; margin: 16px 0 24px; text-align: center;">
+                                    <p style="margin: 0; color: #15803d; font-size: 20px; font-weight: 800;">
+                                        ✅ Pesanan Anda Selesai
+                                    </p>
+                                </div>
                             @endif
 
                             <!-- Order Details -->
@@ -92,6 +98,10 @@
                             @elseif($eventType === 'delivered')
                                 <p style="margin: 0 0 28px; color: #8a7a60; font-size: 14px; line-height: 1.6;">
                                     Terima kasih telah berbelanja di Optik Medio! Jangan lupa berikan ulasan produk Anda.
+                                </p>
+                            @elseif($eventType === 'completed')
+                                <p style="margin: 0 0 28px; color: #8a7a60; font-size: 14px; line-height: 1.6;">
+                                    Pesanan Anda otomatis kami tandai selesai karena sudah berstatus diterima selama 3 hari tanpa perubahan status.
                                 </p>
                             @endif
 

@@ -507,7 +507,7 @@ class OrderResource extends Resource
 
                             if ($type === 'order_update') {
                                 $eventType = match ($record->status) {
-                                    'processing', 'cancelled', 'delivered' => $record->status,
+                                    'processing', 'cancelled', 'delivered', 'completed' => $record->status,
                                     'paid' => $record->is_payment_verified ? 'payment_verified' : 'paid',
                                     default => $record->status,
                                 };

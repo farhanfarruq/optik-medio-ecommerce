@@ -27,7 +27,7 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->onFailure(fn () => \Illuminate\Support\Facades\Log::error('SendAppointmentReminder job failed.'));
 
-        // Auto-complete order delivered lewat 3 hari dan kirim review request — setiap hari jam 10:00
+        // Auto-complete order diterima lewat 3 hari, kirim notifikasi selesai, lalu review request — setiap hari jam 10:00
         $schedule->job(new SendReviewRequest())
             ->dailyAt('10:00')
             ->withoutOverlapping()

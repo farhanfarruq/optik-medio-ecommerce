@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\SendReviewRequest;
+use App\Mail\OrderStatusMail;
 use App\Mail\ReviewRequestMail;
 use App\Models\Category;
 use App\Models\Complain;
@@ -90,7 +91,7 @@ class DeliveredOrderAutoCompletionTest extends TestCase
         return $order;
     }
 
-    public function test_delivered_order_after_three_days_is_completed_and_review_email_is_sent(): void
+    public function test_delivered_order_after_three_days_is_completed_and_completion_email_is_sent(): void
     {
         Mail::fake();
 
@@ -103,7 +104,28 @@ class DeliveredOrderAutoCompletionTest extends TestCase
         $this->assertSame('completed', $order->status);
         $this->assertNotNull($order->review_requested_at);
 
+        Mail::assertSent(OrderStatusMail::class, fn (OrderStatusMail $mail) => $mail->order->is($order) && $mail->eventType === 'completed');
         Mail::assertSent(ReviewRequestMail::class, fn (ReviewRequestMail $mail) => $mail->order->is($order));
+    }
+
+    public function test_delivered_order_before_three_days_is_not_completed(): void
+    {
+        Mail::fake();
+
+        $deliveredAt = now()->subDays(2);
+        $order = $this->createDeliveredOrder([
+            'delivered_at' => $deliveredAt,
+            'updated_at' => $deliveredAt,
+        ]);
+
+        Mail::fake();
+
+        (new SendReviewRequest())->handle();
+
+        $this->assertSame('delivered', $order->refresh()->status);
+        $this->assertNull($order->review_requested_at);
+
+        Mail::assertNothingSent();
     }
 
     public function test_delivered_order_with_active_return_or_complain_is_not_completed(): void

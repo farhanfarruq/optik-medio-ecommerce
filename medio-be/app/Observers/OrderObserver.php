@@ -65,7 +65,7 @@ class OrderObserver
 
         // Notifikasi user berdasarkan perubahan status
         if ($order->wasChanged('status')) {
-            $notifiableStatuses = ['processing', 'cancelled', 'delivered'];
+            $notifiableStatuses = ['processing', 'cancelled', 'delivered', 'completed'];
             if (in_array($order->status, $notifiableStatuses)) {
                 $this->sendStatusEmail($order, $order->status);
             }

@@ -169,7 +169,7 @@ onMounted(loadTracking);
 
           <!-- Kiri: Timeline -->
           <div class="premium-card p-4 sm:p-6">
-            <h2 class="mb-4 text-sm font-black uppercase tracking-wider sm:mb-6 sm:text-base" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Riwayat Pesanan</h2>
+            <h2 class="mb-4 text-sm font-black uppercase tracking-wider sm:mb-6 sm:text-base" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Riwayat Pesanan</h2>
 
             <div v-if="timeline.length === 0" class="flex items-center gap-2 py-4" style="color: #5c4a3a;">
               <span class="material-symbols-outlined text-sm">info</span>

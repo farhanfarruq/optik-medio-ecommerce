@@ -275,7 +275,7 @@ onUnmounted(stopPolling);
               <p class="text-[10px] font-black uppercase tracking-[0.24em] mb-2" style="color: var(--gold);">
                 {{ isCod ? 'Cash On Delivery' : isXendit ? 'Pembayaran Online' : 'Transfer Manual' }}
               </p>
-              <h2 class="text-xl font-black mb-2" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">
+              <h2 class="text-xl font-black mb-2" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">
                 {{ isCod ? 'Pesanan Sedang Diproses' : isXendit ? 'Selesaikan Pembayaran Online' : 'Selesaikan Transfer Anda' }}
               </h2>
               <p class="text-sm leading-relaxed" style="color: var(--graphite);">
@@ -402,7 +402,7 @@ onUnmounted(stopPolling);
           <!-- Kanan: Langkah selanjutnya -->
           <div class="space-y-4">
             <div class="border p-6" style="background: var(--ink); border-color: #3d2c0e;">
-              <h3 class="text-base font-black mb-5 text-white" style="font-family: 'Cormorant Garamond', serif;">Langkah Selanjutnya</h3>
+              <h3 class="text-base font-black mb-5 text-white" style="font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Langkah Selanjutnya</h3>
               <ol class="space-y-4">
                 <template v-if="isCod">
                   <li class="flex gap-3 text-sm" style="color: rgba(255,255,255,0.75);">

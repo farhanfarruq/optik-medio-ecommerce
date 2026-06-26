@@ -762,7 +762,7 @@ const submitOrder = async () => {
                 <span class="material-symbols-outlined">package_2</span>
               </div>
               <div>
-                <h2 class="text-xl font-bold text-ink" style="font-family: 'Cormorant Garamond', serif;">Cara Mendapatkan Pesanan</h2>
+                <h2 class="text-xl font-bold text-ink" style="font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Cara Mendapatkan Pesanan</h2>
                 <p class="text-xs text-graphite/65">Pilih apakah pesanan dikirim atau diambil langsung di toko</p>
               </div>
             </div>
@@ -823,7 +823,7 @@ const submitOrder = async () => {
                   <span class="material-symbols-outlined">location_on</span>
                 </div>
                 <div>
-                  <h2 class="text-xl font-bold text-ink" style="font-family: 'Cormorant Garamond', serif;">Alamat Pengiriman</h2>
+                  <h2 class="text-xl font-bold text-ink" style="font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Alamat Pengiriman</h2>
                   <p class="text-xs text-graphite/65">Kirim pesanan Anda ke lokasi tujuan</p>
                 </div>
               </div>
@@ -899,7 +899,7 @@ const submitOrder = async () => {
               <div class="w-10 h-10 rounded-lg bg-mist flex items-center justify-center text-graphite/80">
                 <span class="material-symbols-outlined">sell</span>
               </div>
-              <h2 class="text-xl font-bold text-ink" style="font-family: 'Cormorant Garamond', serif;">Punya Promo atau Diskon?</h2>
+              <h2 class="text-xl font-bold text-ink" style="font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Punya Promo atau Diskon?</h2>
             </div>
             
             <p class="text-xs text-graphite/65 mb-4">* Anda hanya dapat menggunakan salah satu: Promo Eksklusif ATAU Kode Diskon.</p>
@@ -1000,7 +1000,7 @@ const submitOrder = async () => {
               <div class="w-10 h-10 rounded-lg bg-mist flex items-center justify-center text-graphite/80">
                 <span class="material-symbols-outlined">local_shipping</span>
               </div>
-              <h2 class="text-xl font-bold text-ink" style="font-family: 'Cormorant Garamond', serif;">Metode Pengiriman</h2>
+              <h2 class="text-xl font-bold text-ink" style="font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Metode Pengiriman</h2>
             </div>
 
             <div class="flex flex-col gap-4">
@@ -1037,7 +1037,7 @@ const submitOrder = async () => {
                 <span class="material-symbols-outlined">credit_card</span>
               </div>
               <div>
-                <h2 class="font-black text-lg" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Metode Pembayaran</h2>
+                <h2 class="font-black text-lg" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Metode Pembayaran</h2>
                 <p class="text-xs text-graphite/65 mt-0.5">Pilih cara pembayaran yang Anda inginkan</p>
               </div>
             </div>
@@ -1118,7 +1118,7 @@ const submitOrder = async () => {
         <!-- Right Column: Summary -->
         <div class="w-full lg:w-2/5 xl:w-1/3">
           <div class="premium-card p-6 lg:p-8">
-            <h2 class="text-xl font-bold text-ink mb-8" style="font-family: 'Cormorant Garamond', serif;">Ringkasan Pesanan</h2>
+            <h2 class="text-xl font-bold text-ink mb-8" style="font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Ringkasan Pesanan</h2>
 
             <div class="space-y-4 mb-8">
               <div
@@ -1263,7 +1263,7 @@ const submitOrder = async () => {
       <div v-if="showAddressModal" role="dialog" aria-modal="true" aria-labelledby="checkout-address-modal-title" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
         <div class="bg-porcelain w-full max-w-lg rounded-lg shadow-soft p-8 flex flex-col max-h-[80vh]">
           <div class="flex items-center justify-between mb-8">
-            <h2 id="checkout-address-modal-title" class="text-2xl font-bold text-ink" style="font-family: 'Cormorant Garamond', serif;">Pilih Alamat</h2>
+            <h2 id="checkout-address-modal-title" class="text-2xl font-bold text-ink" style="font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Pilih Alamat</h2>
             <button @click="showAddressModal = false" aria-label="Tutup dialog pilih alamat" class="w-10 h-10 rounded-lg hover:bg-mist flex items-center justify-center transition-all">
               <span class="material-symbols-outlined" aria-hidden="true">close</span>
             </button>
@@ -1436,7 +1436,7 @@ const submitOrder = async () => {
 }
 
 .checkout-sticky-cta__price strong {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
   font-size: 22px;
   font-weight: 700;
   color: var(--gold);

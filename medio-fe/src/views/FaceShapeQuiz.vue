@@ -123,7 +123,7 @@ onMounted(() => {
       <div class="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-8">
         <aside class="premium-card p-6 h-fit">
           <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-3" style="color: var(--gold);">Quiz Cepat</p>
-          <h2 class="text-3xl font-black tracking-normal mb-4" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Preferensi Frame</h2>
+          <h2 class="text-3xl font-black tracking-normal mb-4" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Preferensi Frame</h2>
           <p class="text-sm leading-relaxed text-graphite/65 mb-6">Jawab empat pilihan cepat untuk mendapatkan rekomendasi frame yang lebih relevan.</p>
 
           <div class="space-y-5">
@@ -173,14 +173,14 @@ onMounted(() => {
         <section class="min-w-0">
           <div v-if="!hasSubmitted" class="premium-card p-10 min-h-[420px] flex flex-col justify-center">
             <span class="material-symbols-outlined text-6xl mb-5" style="color: var(--gold);">face</span>
-            <h2 class="text-3xl font-black mb-3" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Mulai dari bentuk wajah</h2>
+            <h2 class="text-3xl font-black mb-3" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Mulai dari bentuk wajah</h2>
             <p class="text-graphite/65 max-w-xl">Quiz ini memakai atribut produk optik yang sudah ada: bentuk frame, material, fit wajah, stok, dan rentang harga.</p>
           </div>
 
           <div v-else>
             <div class="premium-card p-6 mb-6">
               <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-2" style="color: var(--gold);">Hasil</p>
-              <h2 class="text-2xl font-black mb-2" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">
+              <h2 class="text-2xl font-black mb-2" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">
                 Rekomendasi {{ selectedFace?.label }}
               </h2>
               <p class="text-sm text-graphite/65">{{ selectedFace?.note }}</p>

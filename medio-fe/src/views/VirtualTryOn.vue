@@ -312,7 +312,7 @@ watch(searchQuery, (query) => {
       </div>
       <section v-if="savedPreviews.length > 0" class="mt-10">
         <div class="flex items-end justify-between gap-4 mb-5">
-          <h2 class="text-2xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Preview Tersimpan</h2>
+          <h2 class="text-2xl font-black" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Preview Tersimpan</h2>
           <button @click="clearSavedPreviews" class="text-xs font-bold uppercase tracking-widest" style="color: #5c4a3a;">Bersihkan</button>
         </div>
         <div class="grid grid-cols-4 gap-4">

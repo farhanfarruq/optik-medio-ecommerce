@@ -48,7 +48,7 @@
               </span>
             </div>
             
-            <h2 class="text-3xl md:text-5xl font-black text-on-surface leading-tight mb-8" style="font-family: 'Cormorant Garamond', serif;">
+            <h2 class="text-3xl md:text-5xl font-black text-on-surface leading-tight mb-8" style="font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">
               {{ article.title }}
             </h2>
 
@@ -107,7 +107,7 @@
 
         <!-- Related Articles -->
         <div v-if="relatedArticles.length > 0" class="mt-8 border-t border-outline-variant/10 bg-surface-container-low p-6 md:p-10">
-          <h3 class="mb-6 text-2xl font-black text-on-surface" style="font-family: 'Cormorant Garamond', serif;">Artikel Terkait</h3>
+          <h3 class="mb-6 text-2xl font-black text-on-surface" style="font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Artikel Terkait</h3>
           <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
             <router-link v-for="related in relatedArticles" :key="related.id" :to="`/blog/${related.slug}`" class="group">
               <div class="mb-3 aspect-[4/3] overflow-hidden bg-surface-container">
@@ -223,7 +223,7 @@ onMounted(() => {
 /* Styling for Rich Editor content */
 .prose h1, .prose h2, .prose h3 {
   @apply text-on-surface font-black mt-12 mb-6 leading-tight;
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
 }
 .prose p {
   @apply mb-8 text-on-surface-variant leading-relaxed text-lg;

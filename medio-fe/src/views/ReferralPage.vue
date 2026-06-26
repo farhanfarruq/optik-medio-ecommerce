@@ -105,7 +105,7 @@ onMounted(() => {
       <template v-else>
         <!-- Cara Kerja -->
         <section class="mb-12">
-          <h2 class="text-2xl font-black mb-8" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Cara Kerja</h2>
+          <h2 class="text-2xl font-black mb-8" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Cara Kerja</h2>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="border p-6 text-center" style="background: white; border-color: rgba(184,138,68,0.2);">
               <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style="background: rgba(184,138,68,0.15);">
@@ -134,13 +134,13 @@ onMounted(() => {
         <!-- Kode Referral User (jika login) -->
         <template v-if="isLoggedIn && referralData">
           <section class="mb-10">
-            <h2 class="text-xl font-black mb-6" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Kode Referral Anda</h2>
+            <h2 class="text-xl font-black mb-6" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Kode Referral Anda</h2>
 
             <div class="border p-8" style="background: var(--porcelain); border-color: rgba(184,138,68,0.35);">
               <div class="flex items-center justify-between gap-4 mb-6">
                 <div>
                   <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-2" style="color: #5c4a3a;">Kode Unik Anda</p>
-                  <p class="text-4xl font-black tracking-[0.3em]" style="color: var(--ink); font-family: 'JetBrains Mono', monospace;">
+                  <p class="text-4xl font-black tracking-[0.3em]" style="color: var(--ink); font-family: Inter, system-ui, sans-serif;">
                     {{ referralData.code }}
                   </p>
                 </div>
@@ -185,7 +185,7 @@ onMounted(() => {
 
           <!-- Riwayat Penggunaan -->
           <section v-if="referralData.recent_uses?.length" class="mb-10">
-            <h2 class="text-xl font-black mb-4" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Teman yang Bergabung</h2>
+            <h2 class="text-xl font-black mb-4" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Teman yang Bergabung</h2>
             <div class="border" style="background: white; border-color: rgba(184,138,68,0.15);">
               <div
                 v-for="(use, i) in referralData.recent_uses"
@@ -215,7 +215,7 @@ onMounted(() => {
 
         <!-- Gunakan Kode Referral (jika login tapi belum pakai) -->
         <section v-if="isLoggedIn" class="mb-10">
-          <h2 class="text-xl font-black mb-4" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Punya Kode Referral?</h2>
+          <h2 class="text-xl font-black mb-4" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Punya Kode Referral?</h2>
           <div class="border p-6" style="background: white; border-color: rgba(184,138,68,0.15);">
             <p class="text-sm mb-4" style="color: var(--graphite);">Masukkan kode referral dari teman untuk mendapatkan poin bonus.</p>
             <div class="flex gap-3">
@@ -243,7 +243,7 @@ onMounted(() => {
         <!-- CTA untuk yang belum login -->
         <section v-if="!isLoggedIn" class="text-center py-12 border" style="background: var(--porcelain); border-color: rgba(184,138,68,0.2);">
           <span class="material-symbols-outlined text-5xl mb-4 block" style="color: var(--gold);">group_add</span>
-          <h3 class="text-xl font-black mb-3" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Daftar dan Dapatkan Poin</h3>
+          <h3 class="text-xl font-black mb-3" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Daftar dan Dapatkan Poin</h3>
           <p class="text-sm mb-6" style="color: #5c4a3a;">Login atau daftar untuk mendapatkan kode referral Anda dan mulai mengundang teman.</p>
           <div class="flex gap-3 justify-center">
             <button

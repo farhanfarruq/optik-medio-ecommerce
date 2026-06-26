@@ -1656,7 +1656,7 @@ onUnmounted(() => {
 .blog-card:hover .blog-card__image { transform: scale(1.04); }
 
 .blog-card__title {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
   font-size: clamp(0.95rem, 0.85rem + 0.4vw, 1.25rem);
   font-weight: 600;
   color: var(--ink);
@@ -2225,7 +2225,7 @@ onUnmounted(() => {
 }
 
 .product-card__name {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
   font-size: clamp(14px, 0.85rem + 0.4vw, 18px);
   font-weight: 600;
   color: var(--ink);

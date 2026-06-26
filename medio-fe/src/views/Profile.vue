@@ -1347,7 +1347,7 @@ const deleteAddress = async (id: number) => {
 
         <!-- Affiliate Section -->
         <div v-if="currentSection === 'affiliate'" class="space-y-6">
-          <h2 class="font-black text-2xl" style="color: var(--ink); font-family: Outfit, sans-serif;">Afiliasi &amp; Komisi</h2>
+          <h2 class="font-black text-2xl" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Afiliasi &amp; Komisi</h2>
           <div v-if="isLoadingAffiliate" class="flex items-center gap-2 py-8">
             <span class="material-symbols-outlined animate-spin" style="color: var(--gold);">sync</span>
             <span class="text-sm text-graphite/65">Memuat data afiliasi...</span>
@@ -1365,7 +1365,7 @@ const deleteAddress = async (id: number) => {
               <div class="flex justify-between items-start mb-6">
                 <div>
                   <p class="text-xs font-black uppercase tracking-widest mb-1" style="color: var(--gold);">Kode Afiliasi</p>
-                  <p class="font-black text-2xl" style="color: var(--ink); font-family: Outfit, sans-serif;">{{ affiliateProfile.affiliate_code }}</p>
+                  <p class="font-black text-2xl" style="color: var(--ink); font-family: Inter, system-ui, sans-serif;">{{ affiliateProfile.affiliate_code }}</p>
                 </div>
                 <span class="px-4 py-1.5 text-xs font-black uppercase" :style="affiliateProfile.status === 'approved' ? 'background: rgba(22,163,74,0.1); color: #16a34a;' : 'background: rgba(245,158,11,0.1); color: #d97706;'">{{ affiliateProfile.status }}</span>
               </div>

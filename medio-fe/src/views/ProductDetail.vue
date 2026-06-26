@@ -2401,7 +2401,7 @@ const goNextImage = () => {
 }
 
 .pdp-sticky-cta__amount {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
   font-size: 22px;
   font-weight: 700;
   color: var(--ink);

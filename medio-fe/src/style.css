@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -61,8 +59,8 @@
   * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
   html { background: var(--ivory); scroll-behavior: smooth; }
   body { @apply min-h-screen bg-background text-on-surface font-body; letter-spacing: 0; }
-  h1, h2, h3 { font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; letter-spacing: 0; color: var(--ink); }
-  h4, h5, h6 { font-family: 'Montserrat', system-ui, sans-serif; font-weight: 600; letter-spacing: 0; color: var(--ink); }
+h1, h2, h3 { font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif; font-weight: 700; letter-spacing: 0; color: var(--ink); }
+h4, h5, h6 { font-family: Inter, system-ui, sans-serif; font-weight: 600; letter-spacing: 0; color: var(--ink); }
   a, button, input, select, textarea { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ivory)]; }
   button, a[role='button'], .cursor-action { @apply cursor-pointer; }
   ::selection { background: var(--gold-soft); color: var(--ink); }
@@ -109,7 +107,7 @@
   /* Editorial typography */
   .eyebrow { @apply inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-gold; }
   .eyebrow-mute { @apply inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em]; color: rgba(43, 41, 38, 0.62); }
-  .editorial-display { font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; letter-spacing: 0; line-height: 1.04; color: var(--ink); }
+.editorial-display { font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif; font-weight: 700; letter-spacing: 0; line-height: 1.04; color: var(--ink); }
   .editorial-h1 { @apply editorial-display; font-size: clamp(2rem, 1.4rem + 3.2vw, 4.25rem); }
   .editorial-h2 { @apply editorial-display; font-size: clamp(1.625rem, 1.1rem + 2.4vw, 3rem); }
   .editorial-h3 { @apply editorial-display; font-size: clamp(1.25rem, 0.95rem + 1.4vw, 2rem); }

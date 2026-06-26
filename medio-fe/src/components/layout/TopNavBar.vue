@@ -788,7 +788,7 @@ const cartCountLabel = computed(() => cartCount.value > 99 ? '99+' : String(cart
 }
 
 .top-nav__logo-text {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
   font-size: 20px;
   font-weight: 600;
   letter-spacing: 0;

@@ -372,7 +372,7 @@ const submitReview = async (item: any) => {
       <div class="premium-card p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4" style="background: var(--porcelain); border-color: rgba(184,138,68,0.15); box-shadow: 0 2px 12px rgba(0,0,0,0.04);">
         <div>
           <p class="text-xs font-black uppercase tracking-[0.25em] mb-2" style="color: var(--gold);">Nomor Pesanan</p>
-          <h2 class="text-2xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">#{{ order.order_number }}</h2>
+          <h2 class="text-2xl font-black" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">#{{ order.order_number }}</h2>
           <p class="text-xs mt-1 flex items-center gap-1.5" style="color: #5c4a3a;">
             <span class="material-symbols-outlined text-sm">calendar_today</span>
             {{ new Date(order.created_at).toLocaleString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}
@@ -709,7 +709,7 @@ const submitReview = async (item: any) => {
 
             <div class="flex justify-between items-end">
               <span class="text-sm font-bold" style="color: var(--graphite);">Total</span>
-              <span class="text-xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">
+              <span class="text-xl font-black" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">
                 {{ formatCurrency(order.total_price || order.total_amount || 0) }}
               </span>
             </div>

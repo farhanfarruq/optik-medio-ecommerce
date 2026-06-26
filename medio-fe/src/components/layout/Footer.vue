@@ -236,7 +236,7 @@ const storeLocationUrl = computed(() => settings.value?.store_location_url || '#
 }
 
 .site-footer__logo {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
   font-weight: 600;
   font-size: clamp(1.75rem, 1.4rem + 0.6vw, 2.125rem);
   color: var(--ivory);
@@ -287,7 +287,7 @@ const storeLocationUrl = computed(() => settings.value?.store_location_url || '#
 
 /* Headings + lists */
 .site-footer__heading {
-  font-family: 'Montserrat', system-ui, sans-serif;
+  font-family: Inter, system-ui, sans-serif;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;

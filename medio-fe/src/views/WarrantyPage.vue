@@ -195,7 +195,7 @@ onMounted(() => {
 
       <div v-if="!isLoggedIn" class="text-center py-16 border" style="background: var(--porcelain); border-color: rgba(184,138,68,0.2);">
         <span class="material-symbols-outlined text-5xl mb-4 block" style="color: var(--gold);">shield</span>
-        <h3 class="text-xl font-black mb-3" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Login untuk Melihat Garansi</h3>
+        <h3 class="text-xl font-black mb-3" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Login untuk Melihat Garansi</h3>
         <p class="text-sm mb-6" style="color: #5c4a3a;">Masuk untuk melihat status garansi dan mengajukan klaim servis.</p>
         <button @click="router.push('/login')" class="btn-primary px-6 py-3">Login</button>
       </div>
@@ -351,7 +351,7 @@ onMounted(() => {
 
         <!-- Form Klaim Baru -->
         <div v-else-if="activeTab === 'new-claim'" class="border p-8" style="background: white; border-color: rgba(184,138,68,0.2);">
-          <h3 class="text-lg font-black mb-6" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Ajukan Klaim Servis</h3>
+          <h3 class="text-lg font-black mb-6" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Ajukan Klaim Servis</h3>
 
           <div class="space-y-4">
             <div>

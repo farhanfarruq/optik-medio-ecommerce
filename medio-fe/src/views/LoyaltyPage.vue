@@ -76,7 +76,7 @@ onMounted(() => {
 
       <!-- Cara Kerja -->
       <section class="mb-12">
-        <h2 class="text-2xl font-black mb-8" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Cara Kerja</h2>
+        <h2 class="text-2xl font-black mb-8" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Cara Kerja</h2>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div v-for="(step, i) in [
             { icon: 'shopping_bag', title: 'Belanja', desc: 'Setiap pembelian menghasilkan poin loyalty.' },
@@ -95,7 +95,7 @@ onMounted(() => {
 
       <!-- Level Membership -->
       <section class="mb-12">
-        <h2 class="text-2xl font-black mb-6" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Level Membership</h2>
+        <h2 class="text-2xl font-black mb-6" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Level Membership</h2>
         <div v-if="isLoading" class="flex justify-center py-8">
           <span class="material-symbols-outlined animate-spin text-3xl" style="color: var(--gold);">sync</span>
         </div>
@@ -109,7 +109,7 @@ onMounted(() => {
               : 'border-color: rgba(184,138,68,0.15); background: white;'"
           >
             <div v-if="currentLevel?.id === level.id" class="absolute top-3 right-3 text-[10px] px-2 py-0.5 font-black uppercase" style="background: var(--gold); color: white;">Level Anda</div>
-            <p class="text-xl font-black mb-1" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">{{ level.name }}</p>
+            <p class="text-xl font-black mb-1" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">{{ level.name }}</p>
             <p class="text-xs mb-3" style="color: #5c4a3a;">Mulai dari {{ level.min_points?.toLocaleString('id-ID') }} poin</p>
             <div v-if="level.discount_percentage > 0" class="flex items-center gap-2 mb-2">
               <span class="material-symbols-outlined text-sm" style="color: var(--gold);">percent</span>
@@ -126,7 +126,7 @@ onMounted(() => {
           <div class="flex items-center justify-between gap-4 mb-6">
             <div>
               <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-1" style="color: #5c4a3a;">Poin Anda</p>
-              <p class="text-4xl font-black" style="color: var(--gold); font-family: 'Cormorant Garamond', serif;">
+              <p class="text-4xl font-black" style="color: var(--gold); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">
                 {{ userPoints.toLocaleString('id-ID') }}
               </p>
               <p class="text-xs mt-1" style="color: #5c4a3a;">= Rp {{ (userPoints * 1000).toLocaleString('id-ID') }} diskon</p>
@@ -158,7 +158,7 @@ onMounted(() => {
 
         <!-- Riwayat Poin -->
         <section v-if="loyaltyHistory.length > 0">
-          <h2 class="text-xl font-black mb-4" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Riwayat Poin</h2>
+          <h2 class="text-xl font-black mb-4" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Riwayat Poin</h2>
           <div class="border" style="background: white; border-color: rgba(184,138,68,0.15);">
             <div v-for="(log, i) in loyaltyHistory.slice(0, 10)" :key="i" class="flex items-center justify-between px-6 py-4 border-b last:border-b-0" style="border-color: #f0ece4;">
               <div>
@@ -177,7 +177,7 @@ onMounted(() => {
       <template v-else>
         <section class="text-center py-12 border" style="background: var(--porcelain); border-color: rgba(184,138,68,0.2);">
           <span class="material-symbols-outlined text-5xl mb-4 block" style="color: var(--gold);">toll</span>
-          <h3 class="text-xl font-black mb-3" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Mulai Kumpulkan Poin</h3>
+          <h3 class="text-xl font-black mb-3" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Mulai Kumpulkan Poin</h3>
           <p class="text-sm mb-6" style="color: #5c4a3a;">Daftar atau login untuk mulai mengumpulkan poin dari setiap pembelian.</p>
           <div class="flex gap-3 justify-center">
             <button @click="router.push('/login')" class="px-6 py-3 border text-xs font-black uppercase tracking-wider" style="border-color: var(--mist); color: #5c4a3a;">Masuk</button>

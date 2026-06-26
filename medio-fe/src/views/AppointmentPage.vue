@@ -229,7 +229,7 @@ onMounted(() => {
           <div class="flex items-center gap-4">
             <span class="material-symbols-outlined text-4xl shrink-0" style="color: var(--gold);">calendar_today</span>
             <div>
-              <p class="text-lg font-black" style="font-family: 'Cormorant Garamond', serif; color: #fff;">Siap booking kunjungan?</p>
+              <p class="text-lg font-black" style="font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif; color: #fff;">Siap booking kunjungan?</p>
               <p class="text-sm" style="color: rgba(255,255,255,0.78);">Pilih cabang, layanan, tanggal, lalu tekan tombol buat appointment.</p>
             </div>
           </div>
@@ -248,7 +248,7 @@ onMounted(() => {
 
           <!-- Form Booking -->
           <div ref="bookingFormRef" class="space-y-6 scroll-mt-28">
-            <h2 class="text-xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Buat Appointment Baru</h2>
+            <h2 class="text-xl font-black" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Buat Appointment Baru</h2>
 
             <!-- Pilih Cabang -->
             <div class="border p-6" style="background: white; border-color: rgba(184,138,68,0.2);">
@@ -358,7 +358,7 @@ onMounted(() => {
 
           <!-- Appointment Saya -->
           <div>
-            <h2 class="text-xl font-black mb-4" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">Appointment Saya</h2>
+            <h2 class="text-xl font-black mb-4" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">Appointment Saya</h2>
 
             <div v-if="!isLoggedIn" class="border p-6 text-center" style="background: var(--porcelain); border-color: rgba(184,138,68,0.2);">
               <p class="text-sm mb-3" style="color: #5c4a3a;">Login untuk melihat appointment Anda.</p>
@@ -416,7 +416,7 @@ onMounted(() => {
               <div class="flex items-start justify-between gap-3 mb-4">
                 <div>
                   <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: #5c4a3a;">Detail Appointment</p>
-                  <h3 class="text-base font-black mt-1" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">
+                  <h3 class="text-base font-black mt-1" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">
                     {{ selectedAppointment.appointment_number }}
                   </h3>
                 </div>

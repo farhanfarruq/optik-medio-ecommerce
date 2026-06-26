@@ -17,7 +17,7 @@
 
         <div class="space-y-12">
           <section>
-            <h2 class="text-xl font-black mb-4 text-on-surface" style="font-family: 'Cormorant Garamond', serif;">1. Data yang Kami Kumpulkan</h2>
+            <h2 class="text-xl font-black mb-4 text-on-surface" style="font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">1. Data yang Kami Kumpulkan</h2>
             <p class="text-on-surface-variant leading-relaxed mb-4">
               Kami mengumpulkan informasi pribadi yang Anda berikan saat mendaftar, melakukan pemesanan, atau menghubungi layanan pelanggan kami. Data ini meliputi:
             </p>
@@ -30,21 +30,21 @@
           </section>
 
           <section>
-            <h2 class="text-xl font-black mb-4 text-on-surface" style="font-family: 'Cormorant Garamond', serif;">2. Penggunaan Informasi</h2>
+            <h2 class="text-xl font-black mb-4 text-on-surface" style="font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">2. Penggunaan Informasi</h2>
             <p class="text-on-surface-variant leading-relaxed">
               Informasi yang kami kumpulkan digunakan secara eksklusif untuk memproses pesanan Anda, memverifikasi pembayaran, mengatur pengiriman melalui ekspedisi mitra, serta memberikan bantuan teknis atau layanan purna jual yang Anda butuhkan.
             </p>
           </section>
 
           <section>
-            <h2 class="text-xl font-black mb-4 text-on-surface" style="font-family: 'Cormorant Garamond', serif;">3. Keamanan Data</h2>
+            <h2 class="text-xl font-black mb-4 text-on-surface" style="font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">3. Keamanan Data</h2>
             <p class="text-on-surface-variant leading-relaxed">
               Keamanan data Anda adalah prioritas kami. Kami menggunakan enkripsi standar industri untuk melindungi transaksi finansial dan membatasi akses ke data pribadi Anda hanya kepada karyawan yang memerlukannya untuk memproses pesanan.
             </p>
           </section>
           
           <section>
-            <h2 class="text-xl font-black mb-4 text-on-surface" style="font-family: 'Cormorant Garamond', serif;">4. Pembaruan Kebijakan</h2>
+            <h2 class="text-xl font-black mb-4 text-on-surface" style="font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">4. Pembaruan Kebijakan</h2>
             <p class="text-on-surface-variant leading-relaxed">
               Kami berhak memperbarui Kebijakan Privasi ini sewaktu-waktu. Perubahan akan segera berlaku setelah dipublikasikan di halaman ini. Kami menyarankan Anda untuk meninjau halaman ini secara berkala.
             </p>

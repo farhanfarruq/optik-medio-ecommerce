@@ -109,7 +109,7 @@ onMounted(async () => {
           <div class="flex items-start justify-between gap-4 flex-wrap">
             <div>
               <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-1" style="color: #5c4a3a;">Komplain #{{ complain.id }}</p>
-              <h1 class="text-xl font-black" style="color: var(--ink); font-family: 'Cormorant Garamond', serif;">{{ complain.subject }}</h1>
+              <h1 class="text-xl font-black" style="color: var(--ink); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">{{ complain.subject }}</h1>
             </div>
             <span class="text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-lg"
               :style="`background: ${statusColor}18; color: ${statusColor}; border: 1px solid ${statusColor}40;`">

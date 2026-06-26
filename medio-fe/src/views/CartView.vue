@@ -569,7 +569,7 @@ const isCheckoutDisabled = computed(() =>
 }
 
 .cart-item__name {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
   font-size: clamp(14px, 0.85rem + 0.4vw, 18px);
   font-weight: 600;
   color: var(--ink);
@@ -601,7 +601,7 @@ const isCheckoutDisabled = computed(() =>
 }
 
 .cart-item__price {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
   font-size: clamp(15px, 0.85rem + 0.5vw, 18px);
   font-weight: 700;
   color: #6F4E1D;
@@ -1041,7 +1041,7 @@ const isCheckoutDisabled = computed(() =>
 }
 
 .cart-sticky-cta__price strong {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
   font-size: 22px;
   font-weight: 700;
   color: var(--ink);

@@ -17,6 +17,8 @@ const isLoadingOrders = ref(false);
 const isSubmitting = ref(false);
 const orders = ref<any[]>([]);
 const attachment = ref<File | null>(null);
+const allowedAttachmentExtensions = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'mp4', 'mov', 'webm'];
+const maxAttachmentSize = 15 * 1024 * 1024;
 const complaintMode = ref<'general' | 'shipping_protection'>(
   route.query.mode === 'shipping_protection' ? 'shipping_protection' : 'general',
 );
@@ -55,7 +57,29 @@ const loadOrders = async () => {
 
 const handleAttachment = (event: Event) => {
   const input = event.target as HTMLInputElement;
-  attachment.value = input.files?.[0] || null;
+  const file = input.files?.[0] || null;
+
+  if (!file) {
+    attachment.value = null;
+    return;
+  }
+
+  const extension = file.name.split('.').pop()?.toLowerCase();
+  if (!extension || !allowedAttachmentExtensions.includes(extension)) {
+    attachment.value = null;
+    input.value = '';
+    showToast('Format lampiran tidak valid. Gunakan JPG, PNG, WEBP, PDF, MP4, MOV, atau WEBM.', 'error');
+    return;
+  }
+
+  if (file.size > maxAttachmentSize) {
+    attachment.value = null;
+    input.value = '';
+    showToast('Ukuran lampiran maksimal 15 MB.', 'error');
+    return;
+  }
+
+  attachment.value = file;
 };
 
 const submitComplaint = async () => {
@@ -74,7 +98,9 @@ const submitComplaint = async () => {
     showToast('Komplain berhasil dikirim.', 'success');
     router.push(form.value.order_id ? `/orders/${form.value.order_id}` : '/profile');
   } catch (error: any) {
-    const message = error?.response?.data?.message || 'Gagal mengirim komplain.';
+    const errors = error?.response?.data?.errors;
+    const firstError = errors ? Object.values(errors).flat()[0] : null;
+    const message = firstError || error?.response?.data?.message || 'Gagal mengirim komplain.';
     showToast(message, 'error');
   } finally {
     isSubmitting.value = false;

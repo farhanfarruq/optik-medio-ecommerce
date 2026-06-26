@@ -52,7 +52,7 @@ class AppointmentResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultSort('appointment_date', 'asc')
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('appointment_number')->label('No.')->weight('bold')->copyable(),
                 Tables\Columns\TextColumn::make('customer_name')->label('Pelanggan')->searchable(),

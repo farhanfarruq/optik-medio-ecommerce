@@ -69,7 +69,7 @@ Route::prefix('auth')->group(function () {
     Route::middleware('throttle:10,10')->post('/verify-otp', [AuthController::class, 'verifyOtp']);
     Route::middleware('throttle:5,10')->post('/resend-otp', [AuthController::class, 'resendOtp']);
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
         Route::patch('/profile', [AuthController::class, 'updateProfile']);
@@ -135,7 +135,7 @@ Route::get('/branches/{id}/availability', [AppointmentController::class, 'availa
 Route::post('/prescriptions/validate', [AppointmentController::class, 'validatePrescription']);
 
 // ─── Protected Endpoints (requires auth) ─────────────────────────────────────
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
     // Orders
     Route::prefix('orders')->group(function () {

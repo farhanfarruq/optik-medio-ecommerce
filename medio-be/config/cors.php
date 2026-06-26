@@ -8,7 +8,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | paths harus cover semua route yang diakses frontend: api/*, auth/*, events, dll.
-    | allowed_origins_patterns dipakai untuk Railway wildcard domain.
+    | Jangan pakai wildcard origin saat supports_credentials=true.
     |
     */
 
@@ -26,11 +26,7 @@ return [
         'http://127.0.0.1:5173',
     ])),
 
-    // Wildcard pattern untuk semua subdomain Railway
-    'allowed_origins_patterns' => [
-        '#^https://.*\.railway\.app$#',
-        '#^https://.*\.up\.railway\.app$#',
-    ],
+    'allowed_origins_patterns' => [],
 
     'allowed_headers' => [
         'Accept',

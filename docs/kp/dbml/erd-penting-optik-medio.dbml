@@ -1,0 +1,243 @@
+// ERD inti Optik Medio E-Commerce
+// Import ke https://dbdiagram.io
+// Versi ringkas: hanya tabel dan kolom penting agar garis relasi tidak terlalu ramai.
+
+Project optik_medio_ecommerce_core {
+  database_type: "MySQL"
+  Note: "ERD inti untuk laporan: user, produk, order, pembayaran, cabang, appointment, review, dan garansi."
+}
+
+Table users {
+  id bigint [pk, increment]
+  name varchar(255)
+  email varchar(255) [unique, not null]
+  role varchar(50)
+  phone varchar(255)
+  loyalty_points int
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table categories {
+  id bigint [pk, increment]
+  name varchar(255)
+  slug varchar(255) [unique]
+  description text
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table products {
+  id bigint [pk, increment]
+  category_id bigint
+  name varchar(255)
+  slug varchar(255) [unique]
+  sku varchar(255)
+  brand varchar(255)
+  price decimal(15,2)
+  stock int
+  weight int
+  is_active boolean
+  is_prescription_required boolean
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table product_variants {
+  id bigint [pk, increment]
+  product_id bigint [not null]
+  sku varchar(255) [unique]
+  name varchar(255)
+  color varchar(255)
+  lens_size varchar(255)
+  stock int
+  price decimal(15,2)
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table shipping_addresses {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  recipient_name varchar(255)
+  phone varchar(255)
+  province varchar(255)
+  city varchar(255)
+  district varchar(255)
+  postal_code varchar(255)
+  address text
+  is_default boolean
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table orders {
+  id bigint [pk, increment]
+  order_number varchar(255) [unique]
+  user_id bigint [not null]
+  shipping_address_id bigint
+  status varchar(50)
+  subtotal decimal(15,2)
+  shipping_cost decimal(15,2)
+  discount_amount decimal(15,2)
+  total_price decimal(15,2)
+  courier varchar(255)
+  tracking_number varchar(255)
+  is_payment_verified boolean
+  paid_at timestamp
+  shipped_at timestamp
+  delivered_at timestamp
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table order_items {
+  id bigint [pk, increment]
+  order_id bigint [not null]
+  product_id bigint [not null]
+  product_name varchar(255)
+  product_price decimal(15,2)
+  quantity int
+  subtotal decimal(15,2)
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table banks {
+  id bigint [pk, increment]
+  name varchar(255)
+  code varchar(255)
+  account_name varchar(255)
+  account_number varchar(255)
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table payment_methods {
+  id bigint [pk, increment]
+  name varchar(255)
+  code varchar(255) [unique]
+  type varchar(50)
+  provider varchar(255)
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table payments {
+  id bigint [pk, increment]
+  order_id bigint [not null]
+  payment_method_id bigint
+  transaction_id varchar(255) [unique]
+  provider varchar(255)
+  gross_amount decimal(15,2)
+  status varchar(50)
+  paid_at timestamp
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table store_branches {
+  id bigint [pk, increment]
+  name varchar(255)
+  code varchar(20) [unique]
+  address text
+  city varchar(255)
+  province varchar(255)
+  phone varchar(255)
+  operating_hours json
+  appointment_capacity int
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table appointments {
+  id bigint [pk, increment]
+  appointment_number varchar(255) [unique]
+  user_id bigint [not null]
+  branch_id bigint [not null]
+  order_id bigint
+  appointment_date date
+  appointment_time time
+  service_type varchar(255)
+  status varchar(255)
+  customer_name varchar(255)
+  customer_phone varchar(255)
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table product_reviews {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  product_id bigint [not null]
+  order_item_id bigint
+  rating tinyint
+  comment text
+  is_approved boolean
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table warranties {
+  id bigint [pk, increment]
+  warranty_number varchar(255) [unique]
+  user_id bigint [not null]
+  order_id bigint [not null]
+  order_item_id bigint [not null]
+  product_name varchar(255)
+  product_sku varchar(255)
+  purchase_date date
+  warranty_expires_at date
+  status varchar(255)
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table service_claims {
+  id bigint [pk, increment]
+  claim_number varchar(255) [unique]
+  warranty_id bigint [not null]
+  user_id bigint [not null]
+  claim_type varchar(255)
+  status varchar(255)
+  description text
+  service_cost decimal(10,2)
+  is_covered_by_warranty boolean
+  resolved_at timestamp
+  created_at timestamp
+  updated_at timestamp
+}
+
+// Relasi inti dibuat minimal supaya diagram dbdiagram.io lebih rapi.
+
+Ref: products.category_id > categories.id
+Ref: product_variants.product_id > products.id
+
+Ref: shipping_addresses.user_id > users.id
+
+Ref: orders.user_id > users.id
+Ref: orders.shipping_address_id > shipping_addresses.id
+Ref: order_items.order_id > orders.id
+Ref: order_items.product_id > products.id
+
+Ref: payments.order_id > orders.id
+Ref: payments.payment_method_id > payment_methods.id
+
+Ref: appointments.user_id > users.id
+Ref: appointments.branch_id > store_branches.id
+Ref: appointments.order_id > orders.id
+
+Ref: product_reviews.user_id > users.id
+Ref: product_reviews.product_id > products.id
+Ref: product_reviews.order_item_id > order_items.id
+
+Ref: warranties.user_id > users.id
+Ref: warranties.order_id > orders.id
+Ref: warranties.order_item_id > order_items.id
+Ref: service_claims.warranty_id > warranties.id
+Ref: service_claims.user_id > users.id

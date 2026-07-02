@@ -209,10 +209,10 @@ const handleUserClick = () => {
   else router.push('/login');
 };
 
-// Top offset untuk drawer/overlay — sinkron dengan promo banner + tinggi nav (72px)
+// Saat drawer mobile terbuka, navbar ikut geser keluar, jadi overlay mulai dari bawah promo banner saja.
 const drawerTop = computed(() => {
   const bannerH = cartStore.isPromoBannerVisible ? 36 : 0;
-  return `${bannerH + 72}px`;
+  return `${bannerH}px`;
 });
 
 const desktopNavItems = [
@@ -462,7 +462,11 @@ const cartCountLabel = computed(() => cartCount.value > 99 ? '99+' : String(cart
   <!-- Top navigation bar -->
   <nav
     class="top-nav"
-    :class="{ 'top-nav--light': isLightNav, 'top-nav--has-banner': cartStore.isPromoBannerVisible }"
+    :class="{
+      'top-nav--light': isLightNav,
+      'top-nav--has-banner': cartStore.isPromoBannerVisible,
+      'top-nav--menu-open': isMobileMenuOpen,
+    }"
     role="navigation"
     aria-label="Navigasi utama"
   >
@@ -705,6 +709,8 @@ const cartCountLabel = computed(() => cartCount.value > 99 ? '99+' : String(cart
   box-shadow: var(--shadow-card);
   transition:
     top var(--motion-slow) var(--easing-standard),
+    transform var(--motion-slow) var(--easing-standard),
+    opacity var(--motion-base) ease,
     background-color var(--motion-slow) var(--easing-standard),
     border-color var(--motion-slow) var(--easing-standard);
 }
@@ -740,6 +746,14 @@ const cartCountLabel = computed(() => cartCount.value > 99 ? '99+' : String(cart
 }
 
 .top-nav--has-banner { top: 36px; }
+
+@media (max-width: 1023.98px) {
+  .top-nav--menu-open {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+}
 
 .top-nav--light {
   background: rgba(252, 250, 246, 0.78);

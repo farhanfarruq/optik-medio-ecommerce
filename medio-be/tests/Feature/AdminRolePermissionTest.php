@@ -12,32 +12,20 @@ class AdminRolePermissionTest extends TestCase
 
     public function test_user_role_constants_are_defined(): void
     {
-        $this->assertSame('owner', User::ROLE_OWNER);
         $this->assertSame('admin', User::ROLE_ADMIN);
-        $this->assertSame('finance', User::ROLE_FINANCE);
-        $this->assertSame('warehouse', User::ROLE_WAREHOUSE);
-        $this->assertSame('customer_service', User::ROLE_CUSTOMER_SERVICE);
-        $this->assertSame('content_manager', User::ROLE_CONTENT_MANAGER);
         $this->assertSame('user', User::ROLE_USER);
     }
 
-    public function test_staff_roles_list_contains_all_non_user_roles(): void
+    public function test_staff_roles_list_contains_admin_only(): void
     {
-        $this->assertContains('owner', User::STAFF_ROLES);
-        $this->assertContains('admin', User::STAFF_ROLES);
-        $this->assertContains('finance', User::STAFF_ROLES);
-        $this->assertContains('warehouse', User::STAFF_ROLES);
-        $this->assertContains('customer_service', User::STAFF_ROLES);
-        $this->assertContains('content_manager', User::STAFF_ROLES);
+        $this->assertSame(['admin'], User::STAFF_ROLES);
         $this->assertNotContains('user', User::STAFF_ROLES);
     }
 
-    public function test_is_staff_returns_true_for_admin_roles(): void
+    public function test_is_staff_returns_true_for_admin_role(): void
     {
-        foreach (User::STAFF_ROLES as $role) {
-            $user = User::factory()->create(['role' => $role]);
-            $this->assertTrue($user->isStaff(), "Role {$role} should be staff");
-        }
+        $user = User::factory()->create(['role' => 'admin']);
+        $this->assertTrue($user->isStaff());
     }
 
     public function test_is_staff_returns_false_for_regular_user(): void
@@ -48,21 +36,11 @@ class AdminRolePermissionTest extends TestCase
 
     public function test_has_role_returns_true_for_matching_role(): void
     {
-        $user = User::factory()->create(['role' => 'finance']);
-        $this->assertTrue($user->hasRole('finance'));
-        $this->assertTrue($user->hasRole('admin', 'finance'));
-        $this->assertFalse($user->hasRole('owner', 'admin'));
-    }
-
-    public function test_is_owner_or_admin_returns_true_for_owner_and_admin(): void
-    {
-        $owner = User::factory()->create(['role' => 'owner']);
         $admin = User::factory()->create(['role' => 'admin']);
-        $finance = User::factory()->create(['role' => 'finance']);
 
-        $this->assertTrue($owner->isOwnerOrAdmin());
-        $this->assertTrue($admin->isOwnerOrAdmin());
-        $this->assertFalse($finance->isOwnerOrAdmin());
+        $this->assertTrue($admin->hasRole('admin'));
+        $this->assertTrue($admin->hasRole('admin', 'user'));
+        $this->assertFalse($admin->hasRole('user'));
     }
 
     public function test_regular_user_cannot_access_admin_panel(): void

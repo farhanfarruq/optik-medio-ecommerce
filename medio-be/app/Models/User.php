@@ -18,22 +18,12 @@ class User extends Authenticatable implements FilamentUser
     use HasApiTokens, HasFactory, Notifiable;
 
     // Role constants
-    const ROLE_OWNER           = 'owner';
-    const ROLE_ADMIN           = 'admin';
-    const ROLE_FINANCE         = 'finance';
-    const ROLE_WAREHOUSE       = 'warehouse';
-    const ROLE_CUSTOMER_SERVICE = 'customer_service';
-    const ROLE_CONTENT_MANAGER = 'content_manager';
-    const ROLE_USER            = 'user';
+    const ROLE_ADMIN = 'admin';
+    const ROLE_USER  = 'user';
 
     /** Semua role yang dianggap staff (bisa login ke admin panel). */
     const STAFF_ROLES = [
-        self::ROLE_OWNER,
         self::ROLE_ADMIN,
-        self::ROLE_FINANCE,
-        self::ROLE_WAREHOUSE,
-        self::ROLE_CUSTOMER_SERVICE,
-        self::ROLE_CONTENT_MANAGER,
     ];
 
     protected $fillable = ['name', 'email', 'phone', 'password', 'role', 'loyalty_points', 'referred_by_affiliator_id'];
@@ -56,12 +46,6 @@ class User extends Authenticatable implements FilamentUser
     public function hasRole(string ...$roles): bool
     {
         return in_array($this->role, $roles, true);
-    }
-
-    /** Cek apakah user adalah owner atau admin penuh. */
-    public function isOwnerOrAdmin(): bool
-    {
-        return $this->hasRole(self::ROLE_OWNER, self::ROLE_ADMIN);
     }
 
     public function orders(): HasMany

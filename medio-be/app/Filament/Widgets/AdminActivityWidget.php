@@ -32,13 +32,8 @@ class AdminActivityWidget extends BaseWidget
                     ->label('Role')
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
-                        'owner'           => 'success',
-                        'admin'           => 'primary',
-                        'finance'         => 'info',
-                        'warehouse'       => 'warning',
-                        'customer_service'=> 'gray',
-                        'content_manager' => 'gray',
-                        default           => 'gray',
+                        'admin' => 'primary',
+                        default => 'gray',
                     })
                     ->placeholder('-'),
                 Tables\Columns\TextColumn::make('order.order_number')

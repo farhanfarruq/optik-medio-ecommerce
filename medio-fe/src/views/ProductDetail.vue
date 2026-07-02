@@ -600,9 +600,9 @@ const addToCartLabelMobile = computed(() => {
   if (!product.value || product.value.stock <= 0) return 'Stok Habis';
   if (isStandaloneLensProduct.value) return 'Beli Lensa';
   if (isFrameProduct.value && (product.value as any).compatible_lens_options?.length > 0) {
-    return selectedLensOption.value ? 'Tambah ke Cart' : 'Pilih Lensa';
+    return selectedLensOption.value ? '+ Keranjang' : 'Pilih Lensa';
   }
-  return 'Tambah ke Cart';
+  return '+ Keranjang';
 });
 
 const addToCartIcon = computed(() => {

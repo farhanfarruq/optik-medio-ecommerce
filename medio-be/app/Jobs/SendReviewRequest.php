@@ -24,27 +24,12 @@ class SendReviewRequest implements ShouldQueue
         $cutoff = now()->subDays(3);
 
         $orders = Order::with(['user', 'items'])
-            ->where('status', 'delivered')
-            ->where(function ($q) use ($cutoff) {
-                $q->where(function ($inner) use ($cutoff) {
-                    // Order yang punya delivered_at dan sudah lewat cutoff
-                    $inner->whereNotNull('delivered_at')
-                          ->where('delivered_at', '<=', $cutoff);
-                })->orWhere(function ($inner) use ($cutoff) {
-                    // Order lama yang delivered_at-nya null, pakai updated_at sebagai fallback
-                    $inner->whereNull('delivered_at')
-                          ->where('updated_at', '<=', $cutoff);
-                });
-            })
-            ->whereDoesntHave('returnRequest', fn ($query) => $query
-                ->whereIn('status', ['pending', 'approved']))
-            ->whereDoesntHave('complains', fn ($query) => $query
-                ->whereIn('status', ['open', 'in_progress']))
+            ->autoCompletableDelivered($cutoff)
             ->get();
 
         foreach ($orders as $order) {
             try {
-                $updateData = ['status' => 'completed'];
+                $updateData = ['status' => Order::STATUS_COMPLETED];
 
                 // Isi delivered_at jika masih null (pakai updated_at sebagai estimasi waktu delivered)
                 if ($order->delivered_at === null) {

@@ -30,9 +30,9 @@ class AutoCompleteDeliveredOrders extends Command
      */
     public function handle(): int
     {
-        $days    = (int) $this->option('days');
+        $days    = max(1, (int) $this->option('days'));
         $dryRun  = (bool) $this->option('dry-run');
-        $chunk   = (int) $this->option('chunk');
+        $chunk   = max(1, (int) $this->option('chunk'));
         $cutoff  = now()->subDays($days);
 
         $this->info("=== Auto-Complete Delivered Orders ===");
@@ -40,29 +40,8 @@ class AutoCompleteDeliveredOrders extends Command
         $this->info("Mode    : " . ($dryRun ? '🔍 DRY RUN (tidak ada perubahan)' : '✅ LIVE (akan mengubah status)'));
         $this->newLine();
 
-        // Query order yang eligible:
-        // 1. Status masih 'delivered'
-        // 2. delivered_at <= cutoff ATAU (delivered_at null DAN updated_at <= cutoff)
-        //    → order lama yang delivered_at-nya tidak terisi, pakai updated_at sebagai fallback
-        // 3. Tidak ada return request aktif
-        // 4. Tidak ada komplain aktif
         $query = Order::with(['user'])
-            ->where('status', 'delivered')
-            ->where(function ($q) use ($cutoff) {
-                $q->where(function ($inner) use ($cutoff) {
-                    // Order yang punya delivered_at dan sudah lewat cutoff
-                    $inner->whereNotNull('delivered_at')
-                          ->where('delivered_at', '<=', $cutoff);
-                })->orWhere(function ($inner) use ($cutoff) {
-                    // Order lama yang delivered_at-nya null, pakai updated_at sebagai fallback
-                    $inner->whereNull('delivered_at')
-                          ->where('updated_at', '<=', $cutoff);
-                });
-            })
-            ->whereDoesntHave('returnRequest', fn ($q) => $q
-                ->whereIn('status', ['pending', 'approved']))
-            ->whereDoesntHave('complains', fn ($q) => $q
-                ->whereIn('status', ['open', 'in_progress']));
+            ->autoCompletableDelivered($cutoff);
 
         $total = $query->count();
 
@@ -99,7 +78,7 @@ class AutoCompleteDeliveredOrders extends Command
 
         // Konfirmasi jika dijalankan secara interaktif
         if ($this->input->isInteractive()) {
-            if (! $this->confirm("Lanjutkan mengubah {$total} order ke status 'completed'?")) {
+            if (! $this->confirm('Lanjutkan mengubah ' . $total . ' order ke status ' . Order::STATUS_COMPLETED . '?')) {
                 $this->warn("Dibatalkan.");
                 return self::SUCCESS;
             }
@@ -114,7 +93,7 @@ class AutoCompleteDeliveredOrders extends Command
         $query->chunkById($chunk, function ($orders) use (&$processed, &$failed, $bar) {
             foreach ($orders as $order) {
                 try {
-                    $updateData = ['status' => 'completed'];
+                    $updateData = ['status' => Order::STATUS_COMPLETED];
 
                     // Isi delivered_at jika masih null (pakai updated_at sebagai estimasi)
                     if ($order->delivered_at === null) {

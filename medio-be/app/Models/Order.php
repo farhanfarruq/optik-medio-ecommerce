@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,6 +14,9 @@ class Order extends Model
 {
     use SoftDeletes;
 
+    public const STATUS_DELIVERED = 'delivered';
+    public const STATUS_COMPLETED = 'completed';
+
     public const STATUS_OPTIONS = [
         'unpaid'                      => 'Belum Bayar',
         'paid'                        => 'Sudah Bayar',
@@ -21,8 +25,8 @@ class Order extends Model
         'lens_processing'             => 'Proses Lensa',
         'processing'                  => 'Diproses',
         'shipped'                     => 'Dikirim',
-        'delivered'                   => 'Diterima',
-        'completed'                   => 'Selesai',
+        self::STATUS_DELIVERED        => 'Diterima',
+        self::STATUS_COMPLETED        => 'Selesai',
         'cancelled'                   => 'Dibatalkan',
         'refunded'                    => 'Dikembalikan',
     ];
@@ -189,6 +193,25 @@ class Order extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function scopeAutoCompletableDelivered(Builder $query, $cutoff): Builder
+    {
+        return $query
+            ->where('status', self::STATUS_DELIVERED)
+            ->where(function ($q) use ($cutoff) {
+                $q->where(function ($inner) use ($cutoff) {
+                    $inner->whereNotNull('delivered_at')
+                          ->where('delivered_at', '<=', $cutoff);
+                })->orWhere(function ($inner) use ($cutoff) {
+                    $inner->whereNull('delivered_at')
+                          ->where('updated_at', '<=', $cutoff);
+                });
+            })
+            ->whereDoesntHave('returnRequest', fn ($q) => $q
+                ->whereIn('status', ['pending', 'approved']))
+            ->whereDoesntHave('complains', fn ($q) => $q
+                ->whereIn('status', ['open', 'in_progress']));
     }
 
     public function bank(): BelongsTo

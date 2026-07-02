@@ -432,8 +432,8 @@ const productPromoDiscountLabel = (product: Product): string | null => {
   const { discountPromos } = getProductPromos(product);
   if (!discountPromos.length) return null;
   const p = discountPromos[0];
-  if (p.discount_type === 'percentage') return `Diskon ${Math.round(Number(p.discount_value || 0))}%`;
-  return `Diskon ${formatMoney(Number(p.discount_value || 0))}`;
+  if (p.discount_type === 'percentage') return `-${Math.round(Number(p.discount_value || 0))}%`;
+  return `-${formatMoney(Number(p.discount_value || 0))}`;
 };
 
 onUnmounted(() => {
@@ -944,19 +944,17 @@ onUnmounted(() => {
 
             <div class="product-card__badges">
               <span v-if="product.is_best_seller" class="product-badge product-badge--ink">
-                <span class="material-symbols-outlined text-base" aria-hidden="true">trending_up</span>
                 Terlaris
               </span>
               <span v-if="productPromoBuyLabel(product)" class="product-badge product-badge--gold">
-                <span class="material-symbols-outlined text-base" aria-hidden="true">redeem</span>
                 {{ productPromoBuyLabel(product) }}
               </span>
-              <span v-if="productPromoDiscountLabel(product)" class="product-badge product-badge--red">
-                <span class="material-symbols-outlined text-base" aria-hidden="true">percent</span>
-                {{ productPromoDiscountLabel(product) }}
-              </span>
-              <span v-if="product.is_not_for_sale" class="product-badge product-badge--gold">Informasi</span>
+              <span v-if="product.is_not_for_sale" class="product-badge product-badge--gold">Info</span>
             </div>
+
+            <span v-if="productPromoDiscountLabel(product)" class="product-card__discount-corner">
+              {{ productPromoDiscountLabel(product) }}
+            </span>
 
             <div v-if="product.stock <= 0 && !product.is_not_for_sale" class="product-card__out-overlay">
               <span class="product-card__out-pill">Stok Habis</span>
@@ -2087,16 +2085,16 @@ onUnmounted(() => {
 
 .product-card__media {
   position: relative;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 1 / 1;
   overflow: hidden;
-  background: linear-gradient(145deg, var(--ivory), var(--mist));
+  background: #f7f3ec;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px;
+  padding: 16px;
 }
 
-@media (min-width: 768px) { .product-card__media { padding: 24px; } }
+@media (min-width: 768px) { .product-card__media { padding: 18px; } }
 
 .product-card__image {
   width: 100%;
@@ -2150,11 +2148,12 @@ onUnmounted(() => {
 
 .product-card__badges {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: 7px;
+  left: 7px;
+  max-width: calc(100% - 54px);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   align-items: flex-start;
   pointer-events: none;
 }
@@ -2162,28 +2161,45 @@ onUnmounted(() => {
 .product-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 10px;
+  max-width: 100%;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   line-height: 1;
   border: 1px solid transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.product-badge .material-symbols-outlined { font-size: 12px; }
-
 .product-badge--ink {
-  background: rgba(21, 18, 14, 0.86);
+  background: rgba(21, 18, 14, 0.82);
   color: #fff;
   border-color: rgba(184, 138, 68, 0.30);
   backdrop-filter: blur(4px);
 }
 
 .product-badge--gold { background: var(--gold); color: var(--ink); }
-.product-badge--red { background: #dc2626; color: #fff; }
+
+.product-card__discount-corner {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 38px;
+  padding: 4px 5px;
+  border-bottom-left-radius: 6px;
+  background: rgba(255, 238, 210, 0.95);
+  color: #f0442e;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+  box-shadow: 0 1px 0 rgba(240, 68, 46, 0.12);
+  pointer-events: none;
+}
 
 .product-card__out-overlay {
   position: absolute;

@@ -5,7 +5,7 @@
 // Composables baru tersedia: useFormatMoney.
 // ─────────────────────────────────────────────────────────────────────────
 import { logger } from '../../core/utils/logger';
-import { ref, onMounted, computed, watch, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
 import { useCartStore } from '../../stores/cartStore';
 import { shippingRepository, type Location } from '../../repositories/ShippingRepository';
 import { orderRepository } from '../../repositories/OrderRepository';
@@ -54,6 +54,9 @@ const isSubmitting = ref(false);
 const shippingResults = ref<any[]>([]);
 const shippingError = ref('');
 const checkoutError = ref('');
+let shippingDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+let shippingRequestInFlight = '';
+let lastShippingResultKey = '';
 
 const isProvLoading = ref(false);
 const isCityLoading = ref(false);
@@ -86,65 +89,9 @@ const needsBankSelection = computed(() =>
   selectedPaymentMethod.value?.requires_bank_selection ?? false
 );
 
-// ── Xendit Payment Modal ─────────────────────────────────────────────────────
-const showXenditModal = ref(false);
-const xenditCheckoutUrl = ref('');
-const xenditOrderId = ref<number | null>(null);
-const xenditPickupQuery = ref<Record<string, string> | null>(null);
-const isPollingPayment = ref(false);
-
-const openXenditModal = (url: string, orderId: number, pickupQuery: Record<string, string> | null = null) => {
-  xenditCheckoutUrl.value = url;
-  xenditOrderId.value = orderId;
-  xenditPickupQuery.value = pickupQuery;
-  showXenditModal.value = true;
-  startPaymentPolling(orderId);
-};
-
-const closeXenditModal = () => {
-  showXenditModal.value = false;
-  stopPaymentPolling();
-  if (xenditOrderId.value) {
-    // Jika pickup: ke waiting-payment dulu (pembayaran belum tentu selesai)
-    router.push(`/waiting-payment/${xenditOrderId.value}`);
-  }
-};
-
-let paymentPollInterval: ReturnType<typeof setInterval> | null = null;
-
-const startPaymentPolling = (orderId: number) => {
-  isPollingPayment.value = true;
-  paymentPollInterval = setInterval(async () => {
-    try {
-      const { data } = await apiClient.get(`/orders/${orderId}`);
-      const status = data?.status || data?.data?.status;
-      if (status && !['unpaid', 'pending'].includes(status.toLowerCase())) {
-        stopPaymentPolling();
-        showXenditModal.value = false;
-        showToast('Pembayaran berhasil! Pesanan sedang diproses.', 'success');
-        // Jika pickup: redirect ke halaman booking setelah pembayaran lunas
-        if (xenditPickupQuery.value) {
-          router.push({ path: '/appointment', query: xenditPickupQuery.value });
-        } else {
-          router.push(`/orders/${orderId}`);
-        }
-      }
-    } catch (e: any) {
-      // Stop polling jika 401 (user tidak terautentikasi) atau 404 (order tidak ditemukan)
-      if (e?.response?.status === 401 || e?.response?.status === 404) {
-        stopPaymentPolling();
-      }
-      // Error lain (network, 500) — biarkan polling lanjut
-    }
-  }, 3000);
-};
-
-const stopPaymentPolling = () => {
-  isPollingPayment.value = false;
-  if (paymentPollInterval) {
-    clearInterval(paymentPollInterval);
-    paymentPollInterval = null;
-  }
+// ── Xendit Payment ───────────────────────────────────────────────────────────
+const openXenditCheckout = (url: string) => {
+  window.location.assign(url);
 };
 
 // State Diskon
@@ -487,7 +434,11 @@ watch(() => form.value.district_id, async (newVal) => {
         form.value.district = selectedDist ? selectedDist.name : '';
         form.value.postal_code = (selectedDist as any)?.postal_code || form.value.postal_code;
         checkoutError.value = '';
-        calculateShipping();
+        scheduleCalculateShipping();
+    } else {
+        shippingResults.value = [];
+        form.value.selected_service = '';
+        lastShippingResultKey = '';
     }
 });
 
@@ -524,28 +475,44 @@ const isAddressComplete = computed(() => {
   );
 });
 
+const scheduleCalculateShipping = () => {
+  if (shippingDebounceTimer) clearTimeout(shippingDebounceTimer);
+  shippingDebounceTimer = setTimeout(() => {
+    calculateShipping();
+  }, 400);
+};
+
 const calculateShipping = async () => {
   if (form.value.district_id && cartStore.items.length > 0) {
+    const totalWeight = cartStore.items.reduce((sum: number, item: any) => {
+      const itemWeight = Number(item.weight || 0);
+      const itemQty = Number(item.quantity || 0);
+      return sum + (itemWeight * itemQty);
+    }, 0);
+
+    if (!Number.isFinite(totalWeight) || totalWeight <= 0) {
+      shippingError.value = 'Berat produk di keranjang tidak valid, jadi ongkir belum bisa dihitung.';
+      return;
+    }
+
+    const roundedWeight = Math.round(totalWeight);
+    const requestKey = `${form.value.district_id}:${roundedWeight}`;
+    if (shippingRequestInFlight === requestKey || (lastShippingResultKey === requestKey && shippingResults.value.length > 0)) {
+      return;
+    }
+
     isCalculating.value = true;
+    shippingRequestInFlight = requestKey;
     shippingResults.value = [];
     shippingError.value = '';
 
     try {
-      const totalWeight = cartStore.items.reduce((sum: number, item: any) => {
-        const itemWeight = Number(item.weight || 0);
-        const itemQty = Number(item.quantity || 0);
-        return sum + (itemWeight * itemQty);
-      }, 0);
-
-      if (!Number.isFinite(totalWeight) || totalWeight <= 0) {
-        shippingError.value = 'Berat produk di keranjang tidak valid, jadi ongkir belum bisa dihitung.';
-        return;
-      }
-
       const response = await shippingRepository.calculateCost(
         form.value.district_id,
-        Math.round(totalWeight)
+        roundedWeight
       );
+
+      if (`${form.value.district_id}:${roundedWeight}` !== requestKey) return;
 
       shippingResults.value = (response || []).map((item: any) => ({
         courier: String(item.courier || '').toLowerCase(),
@@ -557,13 +524,17 @@ const calculateShipping = async () => {
 
       if (shippingResults.value.length > 0) {
         form.value.selected_service = `${shippingResults.value[0].courier}_${shippingResults.value[0].service}`;
+        lastShippingResultKey = requestKey;
       } else {
         shippingError.value = 'Tidak ada layanan pengiriman yang tersedia untuk kecamatan ini.';
       }
     } catch (error: any) {
       logger.error('Failed to calculate shipping', error);
-      shippingError.value = error?.response?.data?.message || 'Gagal menghitung ongkir untuk tujuan ini.';
+      shippingError.value = error?.response?.status === 429
+        ? 'Terlalu banyak percobaan hitung ongkir. Tunggu sebentar, lalu coba lagi.'
+        : error?.response?.data?.message || 'Gagal menghitung ongkir untuk tujuan ini.';
     } finally {
+      if (shippingRequestInFlight === requestKey) shippingRequestInFlight = '';
       isCalculating.value = false;
       if (shippingResults.value.length > 0) {
         await calculateCheckoutTotals(shippingResults.value[0].cost);
@@ -571,6 +542,10 @@ const calculateShipping = async () => {
     }
   }
 };
+
+onUnmounted(() => {
+  if (shippingDebounceTimer) clearTimeout(shippingDebounceTimer);
+});
 
 const selectedShipping = computed(() => {
   if (!form.value.selected_service) return null;
@@ -675,9 +650,7 @@ const submitOrder = async () => {
     } : null;
 
     if (orderResponse.payment?.checkout_url) {
-      // Xendit: buka modal pembayaran. Setelah selesai, WaitingPayment/callback
-      // akan menangani redirect ke booking jika pickup.
-      openXenditModal(orderResponse.payment.checkout_url, orderResponse.id, pickupQuery);
+      openXenditCheckout(orderResponse.payment.checkout_url);
     } else if (isManualPayment.value) {
       showToast('Pesanan berhasil! Silakan selesaikan pembayaran.', 'success');
       // Untuk pickup + manual: ke waiting-payment dulu, setelah lunas baru booking
@@ -1291,84 +1264,10 @@ const submitOrder = async () => {
     </Teleport>
 
     <!-- ╔══════════════════════════════════════════════════╗ -->
-    <!-- ║         XENDIT PAYMENT MODAL OVERLAY            ║ -->
-    <!-- ╚══════════════════════════════════════════════════╝ -->
-    <Teleport to="body">
-      <div
-        v-if="showXenditModal"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Pembayaran via Xendit"
-        class="fixed inset-0 z-[9999] flex items-center justify-center"
-        style="background: rgba(10,8,5,0.75); backdrop-filter: blur(20px);"
-      >
-        <div
-          class="relative w-full flex flex-col"
-          style="max-width: 520px; max-height: 92vh; background: #faf8f5; border: 1px solid rgba(184,138,68,0.2); box-shadow: 0 30px 80px rgba(0,0,0,0.35);"
-        >
-          <!-- Header -->
-          <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color: rgba(184,138,68,0.15);">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 flex items-center justify-center" style="background: rgba(184,138,68,0.1);">
-                <span class="material-symbols-outlined text-base" style="color: var(--gold);">lock</span>
-              </div>
-              <div>
-                <p class="text-xs font-black uppercase tracking-[0.2em]" style="color: var(--ink);">Pembayaran Aman</p>
-                <p class="text-[10px]" style="color: #5c4a3a;">Diproses oleh Xendit · SSL Terenkripsi</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-3">
-              <!-- Polling indicator -->
-              <div v-if="isPollingPayment" class="flex items-center gap-1.5">
-                <div class="w-1.5 h-1.5 rounded-full animate-pulse" style="background: var(--gold);"></div>
-                <span class="text-[10px]" style="color: #5c4a3a;">Menunggu pembayaran...</span>
-              </div>
-              <button
-                @click="closeXenditModal"
-                class="w-9 h-9 flex items-center justify-center transition-all hover:opacity-70"
-                style="background: rgba(184,138,68,0.1); color: #6F4E1D;"
-                title="Tutup dan lanjutkan nanti"
-              >
-                <span class="material-symbols-outlined text-base">close</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Iframe Xendit -->
-          <div class="flex-1 relative" style="min-height: 500px;">
-            <iframe
-              v-if="xenditCheckoutUrl"
-              :src="xenditCheckoutUrl"
-              class="w-full h-full border-0"
-              style="min-height: 500px;"
-              allow="payment"
-              title="Xendit Payment"
-            ></iframe>
-            <div v-else class="flex items-center justify-center h-full">
-              <div class="w-8 h-8 rounded-lg border-4 border-t-transparent animate-spin" style="border-color: rgba(184,138,68,0.25); border-top-color: var(--gold);"></div>
-            </div>
-          </div>
-
-          <!-- Footer -->
-          <div class="px-6 py-3 border-t flex items-center justify-between" style="border-color: rgba(184,138,68,0.15); background: rgba(245,242,238,0.6);">
-            <p class="text-[10px]" style="color: #5c4a3a;">Tutup jendela ini untuk melanjutkan pembayaran nanti dari halaman pesanan.</p>
-            <button
-              @click="closeXenditModal"
-              class="text-[10px] font-black uppercase tracking-wider underline flex-shrink-0 ml-4"
-              style="color: #5c4a3a;"
-            >
-              Bayar Nanti
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
-
-    <!-- ╔══════════════════════════════════════════════════╗ -->
     <!-- ║         STICKY MOBILE CHECKOUT CTA              ║ -->
     <!-- ╚══════════════════════════════════════════════════╝ -->
     <div
-      v-if="cartStore.items.length > 0 && !showXenditModal"
+      v-if="cartStore.items.length > 0"
       class="checkout-sticky-cta sticky-cta-mobile"
     >
       <div class="checkout-sticky-cta__price">

@@ -33,6 +33,10 @@ const reviewDrafts = ref<Record<number, ReviewDraft>>({});
 const existingComplain = ref<any>(null);
 const existingShippingProtectionClaim = ref<any>(null);
 
+const openXenditCheckout = (url: string) => {
+  window.location.assign(url);
+};
+
 const returnForm = ref({
   reason: RETURN_REASONS[0]?.value || '',
   description: '',
@@ -715,13 +719,14 @@ const submitReview = async (item: any) => {
             </div>
 
             <div v-if="['UNPAID', 'PENDING'].includes(normalizedStatus) && order.payment?.checkout_url" class="mt-6">
-              <a
-                :href="order.payment.checkout_url"
+              <button
+                type="button"
+                @click="openXenditCheckout(order.payment.checkout_url)"
                 class="block w-full text-center py-4 rounded-lg font-black text-sm uppercase tracking-wider text-white transition-all hover:shadow-soft active:scale-95 shadow-card"
                 style="background: linear-gradient(135deg, var(--ink) 0%, #3d2c0e 100%);"
               >
                 Bayar Sekarang
-              </a>
+              </button>
             </div>
           </div>
 

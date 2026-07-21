@@ -50,6 +50,10 @@ const isManualTransfer = computed(() => {
   return !provider || provider === 'manual';
 });
 
+const openXenditCheckout = (url: string) => {
+  window.location.assign(url);
+};
+
 const breadcrumbs = computed(() => [
   { label: 'Pesanan', to: '/orders' },
   { label: order.value?.order_number || '...', to: order.value ? `/orders/${order.value.id}` : undefined },
@@ -295,16 +299,15 @@ onUnmounted(stopPolling);
             <div v-if="isXendit && order?.payment?.checkout_url && order?.status === 'unpaid'" class="premium-card p-6">
               <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-3" style="color: #5c4a3a;">Lanjutkan Pembayaran</p>
               <p class="text-sm mb-4" style="color: var(--graphite);">Klik tombol di bawah untuk membuka halaman pembayaran Xendit. Setelah selesai, halaman ini akan otomatis diperbarui.</p>
-              <a
-                :href="order.payment.checkout_url"
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                @click="openXenditCheckout(order.payment.checkout_url)"
                 class="btn-primary inline-flex px-6 py-3 text-xs uppercase tracking-[0.12em]"
                 style="background: linear-gradient(135deg, var(--ink) 0%, #3d2c0e 100%);"
               >
                 <span class="material-symbols-outlined text-sm">open_in_new</span>
                 Buka Halaman Pembayaran
-              </a>
+              </button>
               <button
                 @click="syncPaymentManual"
                 class="btn-outline ml-3 px-4 py-3 text-xs uppercase tracking-[0.12em]"

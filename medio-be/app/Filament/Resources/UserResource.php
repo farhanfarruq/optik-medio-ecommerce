@@ -12,6 +12,11 @@ use Filament\Tables\Table;
 
 class UserResource extends Resource
 {
+    private const ROLE_OPTIONS = [
+        'user' => '👤 Customer',
+        'admin' => '🔧 Admin',
+    ];
+
     protected static ?string $model = User::class;
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-users';
     protected static string | \UnitEnum | null $navigationGroup = 'Pelanggan';
@@ -30,15 +35,7 @@ class UserResource extends Resource
                     ->required()
                     ->maxLength(255),
                 Forms\Components\Select::make('role')
-                    ->options([
-                        'owner'           => '👑 Owner',
-                        'admin'           => '🔧 Admin',
-                        'finance'         => '💰 Finance',
-                        'warehouse'       => '📦 Warehouse',
-                        'customer_service'=> '🎧 Customer Service',
-                        'content_manager' => '✍️ Content Manager',
-                        'user'            => '👤 User',
-                    ])
+                    ->options(self::ROLE_OPTIONS)
                     ->required(),
                 Forms\Components\TextInput::make('loyalty_points')
                     ->numeric()
@@ -61,14 +58,10 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('email')->searchable(),
                 Tables\Columns\TextColumn::make('role')
                     ->badge()
+                    ->formatStateUsing(fn (string $state): string => self::ROLE_OPTIONS[$state] ?? $state)
                     ->color(fn (string $state): string => match ($state) {
                         'user'            => 'primary',
                         'admin'           => 'danger',
-                        'owner'           => 'success',
-                        'finance'         => 'info',
-                        'warehouse'       => 'warning',
-                        'customer_service'=> 'gray',
-                        'content_manager' => 'gray',
                         default           => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('loyalty_points')->sortable(),
@@ -79,15 +72,7 @@ class UserResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('role')
-                    ->options([
-                        'owner'           => '👑 Owner',
-                        'admin'           => '🔧 Admin',
-                        'finance'         => '💰 Finance',
-                        'warehouse'       => '📦 Warehouse',
-                        'customer_service'=> '🎧 Customer Service',
-                        'content_manager' => '✍️ Content Manager',
-                        'user'            => '👤 User',
-                    ])
+                    ->options(self::ROLE_OPTIONS)
                     ->multiple(),
             ])
             ->actions([

@@ -1,5 +1,9 @@
 <?php
 
+/*
+ * Disabled: checkout memakai tarif live RajaOngkir.
+ * Biarkan kode ini tersimpan sebagai referensi jika tarif internal dibutuhkan lagi.
+
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ShippingRateResource\Pages\CreateShippingRate;
@@ -81,3 +85,4 @@ class ShippingRateResource extends Resource
         ];
     }
 }
+*/

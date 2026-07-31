@@ -539,7 +539,7 @@ const fetchAffiliateData = async () => {
     if (data.profile) {
       const commData = await affiliateRepository.getCommissions();
       affiliateCommissions.value = commData.data;
-      affiliateEarnings.value = await affiliateRepository.getEarnings();
+      affiliateEarnings.value = (await affiliateRepository.getEarnings()).reverse();
     } else {
       affiliateCommissions.value = [];
       affiliateEarnings.value = [];

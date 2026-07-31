@@ -63,7 +63,8 @@ class ExpeditionResource extends Resource
                 Tables\Columns\TextColumn::make('code')->searchable()->copyable(),
                 Tables\Columns\TextColumn::make('sort_order')->sortable(),
                 Tables\Columns\IconColumn::make('is_active')->boolean(),
-                Tables\Columns\TextColumn::make('shipping_rates_count')->counts('shippingRates')->label('Tarif'),
+                // Disabled: tarif ongkir checkout berasal dari RajaOngkir.
+                // Tables\Columns\TextColumn::make('shipping_rates_count')->counts('shippingRates')->label('Tarif'),
             ])
             ->actions([\Filament\Actions\EditAction::make()])
             ->bulkActions([
